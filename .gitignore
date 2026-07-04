@@ -1,0 +1,17 @@
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# macOS
+.DS_Store
+
+# AI
+.agents/
+.claude/
+CLAUDE.md
+CONTEXT.md
+skills-lock.json
+docs/agents/

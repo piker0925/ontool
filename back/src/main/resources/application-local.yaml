@@ -20,6 +20,12 @@ storage:
   upload-dir: uploads
   base-url: http://localhost:8080
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,info
+
 logging:
   level:
     org.hibernate.SQL: debug

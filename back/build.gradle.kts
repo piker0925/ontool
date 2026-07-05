@@ -2,6 +2,7 @@ plugins {
 	java
 	id("org.springframework.boot") version "4.1.0"
 	id("io.spring.dependency-management") version "1.1.7"
+	jacoco
 }
 
 group = "com"
@@ -40,6 +41,9 @@ dependencies {
 	// Image
 	implementation("net.coobird:thumbnailator:0.4.20")
 
+	// Monitoring
+	implementation("org.springframework.boot:spring-boot-starter-actuator")
+
 	// API Docs
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9")
 
@@ -55,4 +59,12 @@ dependencies {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+	finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+	dependsOn(tasks.test)
+	reports {
+		html.required = true
+	}
 }

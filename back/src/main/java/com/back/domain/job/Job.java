@@ -64,4 +64,8 @@ public class Job {
         createdAt = LocalDateTime.now();
         expiresAt = createdAt.plusHours(24);
     }
+
+    public void expireNow() {
+        this.expiresAt = LocalDateTime.now().minusSeconds(1);
+    }
 }

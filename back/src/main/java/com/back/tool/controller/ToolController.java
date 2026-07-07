@@ -50,7 +50,7 @@ public class ToolController {
 
     @PostMapping("/tools/{moduleId}/run")
     public RunResponse run(@PathVariable String moduleId,
-                           @RequestParam Map<String, String> params) {
+                           @RequestBody Map<String, String> params) {
         ToolModule module = toolService.getModule(moduleId);
         if (module.isHeavy()) {
             throw new AppException(ErrorCode.INVALID_MODULE_TYPE);
@@ -68,7 +68,8 @@ public class ToolController {
             throw new AppException(ErrorCode.INVALID_MODULE_TYPE);
         }
 
-        if (files.size() == 1) {
+        // 단일 파일이거나 모든 파일을 하나의 job으로 처리하는 모듈 (pdf-merge, gif-create)
+        if (files.size() == 1 || module.acceptsMultipleFiles()) {
             String tempId = UUID.randomUUID().toString();
             List<String> paths = saveFiles(tempId, files);
             Job job = jobService.create(moduleId, paths, params);
@@ -89,7 +90,7 @@ public class ToolController {
         return files.stream().map(file -> {
             String name = StringUtils.cleanPath(
                     file.getOriginalFilename() != null ? file.getOriginalFilename() : "upload");
-            Path dest = uploadDir.resolve("temp").resolve(tempId).resolve(name);
+            Path dest = uploadDir.toAbsolutePath().resolve("temp").resolve(tempId).resolve(name);
             try {
                 Files.createDirectories(dest.getParent());
                 file.transferTo(dest.toFile());

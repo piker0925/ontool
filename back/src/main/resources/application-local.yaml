@@ -7,10 +7,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
+    show-sql: false
   security:
     user:
       name: admin
@@ -28,4 +25,4 @@ management:
 
 logging:
   level:
-    org.hibernate.SQL: debug
+    org.hibernate.SQL: warn

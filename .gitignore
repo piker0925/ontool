@@ -8,6 +8,9 @@ out/
 # macOS
 .DS_Store
 
+# Runtime
+uploads/
+
 # AI
 .agents/
 .claude/

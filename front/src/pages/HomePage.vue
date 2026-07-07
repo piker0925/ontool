@@ -34,7 +34,7 @@ import type {Module} from '../types'
 import {useToolFilter} from '../composables/useToolFilter'
 import ToolCard from '../components/ToolCard.vue'
 
-const {activeCategory, setCategory} = useToolFilter()
+const {activeCategory} = useToolFilter()
 const modules = ref<Module[]>([])
 const loading = ref(true)
 

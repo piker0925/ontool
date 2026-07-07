@@ -110,7 +110,7 @@ const modules = ref<Module[]>([])
 const paletteRef = ref<InstanceType<typeof CommandPalette> | null>(null)
 
 const {activeCategory, setCategory} = useToolFilter()
-const {favoriteIds, isFavorite} = useFavorites()
+const {favoriteIds} = useFavorites()
 
 const shortcutKey = navigator.userAgent.includes('Mac') ? '⌘K' : 'Ctrl K'
 

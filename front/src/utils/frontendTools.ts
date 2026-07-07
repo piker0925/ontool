@@ -1,6 +1,7 @@
 // ── JSON ────────────────────────────────────────────────────────────────────
 
-function sortedReplacer(_key: string, value: unknown) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function sortedReplacer(_key: string, value: any): any {
     if (value && typeof value === 'object' && !Array.isArray(value))
         return Object.fromEntries(Object.entries(value as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b)))
     return value

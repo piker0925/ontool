@@ -1,0 +1,94 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'back/**'
+      - 'docker-compose.prod.yml'
+      - 'nginx/**'
+      - '.github/workflows/deploy.yml'
+
+jobs:
+  build-and-push:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./back
+          platforms: linux/arm64
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/devtoolbox-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to OCI
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy compose & nginx config to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: opc
+          key: ${{ secrets.OCI_SSH_KEY }}
+          source: "docker-compose.prod.yml,nginx"
+          target: "~/DevToolbox"
+
+      - name: Deploy
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: opc
+          key: ${{ secrets.OCI_SSH_KEY }}
+          envs: GHCR_TOKEN,DB_USERNAME,DB_PASSWORD,DB_ROOT_PASSWORD,ADMIN_USERNAME,ADMIN_PASSWORD,CORS_ORIGIN,STORAGE_BASE_URL,GH_ACTOR
+          script: |
+            mkdir -p ~/DevToolbox
+
+            cat > ~/DevToolbox/.env << EOF
+            DB_USERNAME=${DB_USERNAME}
+            DB_PASSWORD=${DB_PASSWORD}
+            DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+            ADMIN_USERNAME=${ADMIN_USERNAME}
+            ADMIN_PASSWORD=${ADMIN_PASSWORD}
+            CORS_ORIGIN=${CORS_ORIGIN}
+            STORAGE_BASE_URL=${STORAGE_BASE_URL}
+            EOF
+
+            echo "${GHCR_TOKEN}" | docker login ghcr.io -u ${GH_ACTOR} --password-stdin
+            cd ~/DevToolbox
+            docker compose -f docker-compose.prod.yml pull backend
+            docker compose -f docker-compose.prod.yml up -d
+            docker image prune -f
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
+          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
+          STORAGE_BASE_URL: ${{ secrets.STORAGE_BASE_URL }}
+          GH_ACTOR: ${{ github.actor }}

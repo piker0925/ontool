@@ -13,6 +13,13 @@ spring:
       name: ${ADMIN_USERNAME}
       password: ${ADMIN_PASSWORD}
 
+cors:
+  origin: ${CORS_ORIGIN:http://localhost:5173}
+
+storage:
+  base-url: ${STORAGE_BASE_URL}
+  upload-dir: uploads
+
 management:
   endpoints:
     web:

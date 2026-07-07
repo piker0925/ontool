@@ -8,11 +8,11 @@ function sortedReplacer(_key: string, value: any): any {
 }
 
 export function formatJson(input: string, indent: number | string = 2, sortKeys = false): string {
-    return JSON.stringify(JSON.parse(input), sortKeys ? sortedReplacer : null, indent)
+    return JSON.stringify(JSON.parse(input), sortKeys ? sortedReplacer : undefined, indent)
 }
 
 export function minifyJson(input: string, sortKeys = false): string {
-    return JSON.stringify(JSON.parse(input), sortKeys ? sortedReplacer : null)
+    return JSON.stringify(JSON.parse(input), sortKeys ? sortedReplacer : undefined)
 }
 
 // ── Base64 ───────────────────────────────────────────────────────────────────

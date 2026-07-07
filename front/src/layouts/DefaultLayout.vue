@@ -97,6 +97,7 @@ import {useRoute, useRouter} from 'vue-router'
 import {LayoutGrid, Search, Zap} from 'lucide-vue-next'
 import {apiClient} from '../api/client'
 import {MOCK_MODULES} from '../api/mock'
+import {normalizeApiModules} from '../api/modules'
 import type {Module} from '../types'
 import {CATEGORY_CONFIG, CATEGORY_ORDER, getCategoryConfig} from '../utils/categoryConfig'
 import {useToolFilter} from '../composables/useToolFilter'
@@ -166,7 +167,7 @@ onUnmounted(() => {
 async function loadModules() {
   try {
     const {data} = await apiClient.get<Module[]>('/api/v1/modules')
-    modules.value = data
+    modules.value = normalizeApiModules(data)
   } catch {
     modules.value = MOCK_MODULES
   }

@@ -12,7 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
 @Component
-@Profile("local")
+@Profile({"local", "prod"})
 public class LocalFileStorage implements FileStorage {
 
     private final Path uploadDir;

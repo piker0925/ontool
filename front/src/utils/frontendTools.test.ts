@@ -171,6 +171,25 @@ describe('convertKeyboard', () => {
     it('한글 → 영어 단어 (한글)', () => {
         expect(convertKeyboard('한글', 'ko-en')).toBe('gksrmf')
     })
+    it('영어 → 한글 복합 모음 (화)', () => {
+        // ghk = ㅎ+ㅗ+ㅏ → ㅗ+ㅏ가 결합모음 ㅘ가 되어 화
+        expect(convertKeyboard('ghk', 'en-ko')).toBe('화')
+    })
+    it('한글 → 영어 복합 모음 분해 (화)', () => {
+        expect(convertKeyboard('화', 'ko-en')).toBe('ghk')
+    })
+    it('영어 → 한글 복합 받침 (값)', () => {
+        // rkqt = ㄱ+ㅏ+ㅂ+ㅅ → ㅂ+ㅅ가 결합받침 ㅄ이 되어 값
+        expect(convertKeyboard('rkqt', 'en-ko')).toBe('값')
+    })
+    it('한글 → 영어 복합 받침 분해 (값)', () => {
+        expect(convertKeyboard('값', 'ko-en')).toBe('rkqt')
+    })
+    it('영어 → 한글 복합 받침 뒤에 모음이 오면 마지막 자모만 다음 음절 초성으로 이동 (달구)', () => {
+        // ekfrn = ㄷ+ㅏ+ㄹ+ㄱ+ㅜ → ㄹ+ㄱ이 결합받침 ㄺ으로 임시 확정되지만,
+        // 모음 ㅜ가 오면 ㄺ의 마지막 자모(ㄱ)만 다음 음절 초성으로 이동하고 ㄹ은 받침으로 남아 "달구"
+        expect(convertKeyboard('ekfrn', 'en-ko')).toBe('달구')
+    })
 })
 
 describe('normalizeWhitespace', () => {

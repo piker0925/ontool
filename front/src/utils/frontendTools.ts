@@ -184,6 +184,32 @@ const JAMO_TO_EN: Record<string, string> = Object.fromEntries(
     Object.entries(EN_TO_JAMO).map(([k, v]) => [v, k])
 )
 
+// 두벌식: 두 개의 낱자를 연속 입력해 만드는 복합 모음·복합 받침
+const JUNG_COMBOS: Record<string, string> = {
+    'ㅗㅏ': 'ㅘ', 'ㅗㅐ': 'ㅙ', 'ㅗㅣ': 'ㅚ',
+    'ㅜㅓ': 'ㅝ', 'ㅜㅔ': 'ㅞ', 'ㅜㅣ': 'ㅟ',
+    'ㅡㅣ': 'ㅢ',
+}
+const JONG_COMBOS: Record<string, string> = {
+    'ㄱㅅ': 'ㄳ', 'ㄴㅈ': 'ㄵ', 'ㄴㅎ': 'ㄶ',
+    'ㄹㄱ': 'ㄺ', 'ㄹㅁ': 'ㄻ', 'ㄹㅂ': 'ㄼ', 'ㄹㅅ': 'ㄽ', 'ㄹㅌ': 'ㄾ', 'ㄹㅍ': 'ㄿ', 'ㄹㅎ': 'ㅀ',
+    'ㅂㅅ': 'ㅄ',
+}
+const JUNG_SPLIT: Record<string, [string, string]> = Object.fromEntries(
+    Object.entries(JUNG_COMBOS).map(([pair, combo]) => [combo, [pair[0], pair[1]]]),
+)
+const JONG_SPLIT: Record<string, [string, string]> = Object.fromEntries(
+    Object.entries(JONG_COMBOS).map(([pair, combo]) => [combo, [pair[0], pair[1]]]),
+)
+
+function jamoToEn(jamo: string): string {
+    const direct = JAMO_TO_EN[jamo]
+    if (direct !== undefined) return direct
+    const split = JUNG_SPLIT[jamo] ?? JONG_SPLIT[jamo]
+    if (!split) return ''
+    return (JAMO_TO_EN[split[0]] ?? '') + (JAMO_TO_EN[split[1]] ?? '')
+}
+
 const SYLLABLE_BASE = 0xAC00
 
 function isVowelJamo(j: string): boolean {
@@ -207,9 +233,9 @@ export function convertKeyboard(text: string, direction: 'ko-en' | 'en-ko'): str
             const ci = Math.floor(offset / 28 / 21)
             const vi = Math.floor((offset / 28) % 21)
             const ji = offset % 28
-            return (JAMO_TO_EN[CHOSUNG[ci]] ?? '') +
-                (JAMO_TO_EN[JUNGSUNG[vi]] ?? '') +
-                (ji > 0 ? (JAMO_TO_EN[JONGSUNG[ji]] ?? '') : '')
+            return jamoToEn(CHOSUNG[ci]) +
+                jamoToEn(JUNGSUNG[vi]) +
+                (ji > 0 ? jamoToEn(JONGSUNG[ji]) : '')
         }).join('')
     }
 
@@ -238,10 +264,15 @@ export function convertKeyboard(text: string, direction: 'ko-en' | 'en-ko'): str
         } else if (cho && jung && !jong) {
             // CHO_JUNG
             if (isV) {
-                result.push(buildSyllable(cho, jung))
-                cho = '';
-                jung = ''
-                result.push(jamo)
+                const combined = JUNG_COMBOS[jung + jamo]
+                if (combined) {
+                    jung = combined
+                } else {
+                    result.push(buildSyllable(cho, jung))
+                    cho = '';
+                    jung = ''
+                    result.push(jamo)
+                }
             } else if (JONGSUNG.includes(jamo)) {
                 jong = jamo  // tentative jongsung — confirmed only if next char is not a vowel
             } else {
@@ -252,17 +283,29 @@ export function convertKeyboard(text: string, direction: 'ko-en' | 'en-ko'): str
         } else {
             // CHO_JUNG_JONG
             if (isV) {
-                // jongsung was actually the cho of the next syllable
-                const prevJong = jong
-                result.push(buildSyllable(cho, jung))
-                cho = prevJong;
+                // jongsung was tentative and migrates to become the next syllable's chosung.
+                // A compound jongsung splits: its first jamo stays as this syllable's jongsung,
+                // only the last jamo migrates (e.g. "닭" + 이 → 달기, not 다ㄺ+이).
+                const split = JONG_SPLIT[jong]
+                if (split) {
+                    result.push(buildSyllable(cho, jung, split[0]))
+                    cho = split[1]
+                } else {
+                    result.push(buildSyllable(cho, jung))
+                    cho = jong
+                }
                 jung = jamo;
                 jong = ''
             } else {
-                result.push(buildSyllable(cho, jung, jong))
-                cho = jamo;
-                jung = '';
-                jong = ''
+                const combined = JONG_COMBOS[jong + jamo]
+                if (combined) {
+                    jong = combined
+                } else {
+                    result.push(buildSyllable(cho, jung, jong))
+                    cho = jamo;
+                    jung = '';
+                    jong = ''
+                }
             }
         }
     }

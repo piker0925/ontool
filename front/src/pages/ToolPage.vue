@@ -40,7 +40,7 @@
         </div>
 
         <!-- Heavy params (있을 때만) -->
-        <div v-if="heavyConfig" class="shrink-0 border-b border-slate-100 p-4 flex flex-col gap-3">
+        <div v-if="heavyConfig?.params.length" class="shrink-0 border-b border-slate-100 p-4 flex flex-col gap-3">
           <span class="text-[11px] font-medium text-slate-400">파라미터</span>
           <div v-for="p in heavyConfig.params" :key="p.key" class="flex flex-col gap-1">
             <label class="text-[11px] text-slate-500">{{ p.label }}</label>
@@ -80,7 +80,14 @@
         </div>
 
         <div class="flex flex-1 flex-col p-6 overflow-auto">
-          <FileUploader :moduleId="mod.id" :params="heavyFormValues" @uploaded="onUploaded"/>
+          <FileUploader
+              :accept="heavyConfig?.fileAccept"
+              :moduleId="mod.id"
+              :multiple="heavyConfig?.fileMultiple ?? true"
+              :params="heavyFormValues"
+              :reorderable="heavyConfig?.reorderable ?? false"
+              @uploaded="onUploaded"
+          />
         </div>
       </div>
 
@@ -273,6 +280,9 @@ interface ModuleConfig {
   params: ParamDef[]
   resultType?: 'image'
   textInput?: { label: string; placeholder: string; filename: string }
+  fileAccept?: string
+  fileMultiple?: boolean
+  reorderable?: boolean
 }
 
 // ── Light 모듈 CONFIGS ────────────────────────────────────────────────────
@@ -417,6 +427,25 @@ const MODULE_CONFIGS: Record<string, ModuleConfig> = {
 // ── Heavy 모듈 CONFIGS ────────────────────────────────────────────────────
 
 const HEAVY_CONFIGS: Record<string, ModuleConfig> = {
+  'image-to-pdf': {
+    params: [],
+    fileAccept: '.jpg,.jpeg,.png',
+  },
+  'pdf-merge': {
+    params: [],
+    fileAccept: '.pdf',
+    reorderable: true,
+  },
+  'pdf-split': {
+    params: [],
+    fileAccept: '.pdf',
+    fileMultiple: false,
+  },
+  'markdown-to-pdf': {
+    params: [],
+    fileAccept: '.md',
+    fileMultiple: false,
+  },
   'gif-create': {
     params: [
       {key: 'delay', label: '프레임 간격 (ms)', type: 'text', placeholder: '100', default: '100'},

@@ -280,11 +280,18 @@ interface ModuleConfig {
 const MODULE_CONFIGS: Record<string, ModuleConfig> = {
   // 이미지 생성기
   'qr-code': {
-    params: [{key: 'content', label: 'URL 또는 텍스트', type: 'text', placeholder: 'https://example.com'}],
+    params: [
+      {key: 'content', label: 'URL 또는 텍스트', type: 'text', placeholder: 'https://example.com'},
+      {key: 'size', label: '크기 (px)', type: 'text', placeholder: '300', default: '300'},
+    ],
     resultType: 'image',
   },
   'barcode': {
-    params: [{key: 'content', label: '바코드 내용', type: 'text', placeholder: '1234567890'}],
+    params: [
+      {key: 'content', label: '바코드 내용', type: 'text', placeholder: '1234567890'},
+      {key: 'width', label: '너비 (px)', type: 'text', placeholder: '400', default: '400'},
+      {key: 'height', label: '높이 (px)', type: 'text', placeholder: '120', default: '120'},
+    ],
     resultType: 'image',
   },
 
@@ -392,7 +399,10 @@ const MODULE_CONFIGS: Record<string, ModuleConfig> = {
 
   // DevOps
   'cron': {
-    params: [{key: 'expression', label: 'Cron 표현식', type: 'text', placeholder: '0 0 * * *'}],
+    params: [
+      {key: 'expression', label: 'Cron 표현식', type: 'text', placeholder: '0 0 * * *'},
+      {key: 'count', label: '다음 실행 횟수', type: 'text', placeholder: '5', default: '5'},
+    ],
   },
   'docker-compose': {
     params: [{key: 'command', label: 'docker run 명령어', type: 'textarea', placeholder: 'docker run -p 8080:8080 -e ENV=prod nginx'}],
@@ -407,6 +417,11 @@ const MODULE_CONFIGS: Record<string, ModuleConfig> = {
 // ── Heavy 모듈 CONFIGS ────────────────────────────────────────────────────
 
 const HEAVY_CONFIGS: Record<string, ModuleConfig> = {
+  'gif-create': {
+    params: [
+      {key: 'delay', label: '프레임 간격 (ms)', type: 'text', placeholder: '100', default: '100'},
+    ],
+  },
   'image-resize': {
     params: [
       {key: 'width', label: '너비 (px)', type: 'text', placeholder: '800', default: '800'},

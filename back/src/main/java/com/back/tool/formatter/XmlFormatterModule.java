@@ -2,6 +2,7 @@ package com.back.tool.formatter;
 
 import com.back.tool.model.ToolInput;
 import com.back.tool.model.ToolModule;
+import com.back.tool.model.ToolParams;
 import com.back.tool.model.ToolProcessingException;
 import com.back.tool.model.ToolResult;
 import org.springframework.stereotype.Component;
@@ -37,24 +38,39 @@ public class XmlFormatterModule implements ToolModule {
 
     @Override
     public ToolResult process(ToolInput input) {
-        String xml = input.params().getOrDefault("xml", "");
-        boolean minify = "true".equalsIgnoreCase(input.params().getOrDefault("minify", "false"));
+        ToolParams params = ToolParams.of(input);
+        String xml = params.requireString("xml");
+        boolean minify = params.getBool("minify", false);
+        int indentWidth = params.getInt("indentWidth", 2, 1, 8);
+        boolean declaration = params.getBool("declaration", false);
         try {
             DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             Document doc = builder.parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
 
             if (minify) removeWhitespaceNodes(doc.getDocumentElement());
+            doc.setXmlStandalone(true); // 선언 출력 시 standalone="no"가 붙지 않도록
 
             Transformer transformer = TransformerFactory.newInstance().newTransformer();
-            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, declaration ? "no" : "yes");
+            if (declaration) {
+                transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+            }
             if (!minify) {
                 transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-                transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+                transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount",
+                        String.valueOf(indentWidth));
             }
 
             StringWriter writer = new StringWriter();
             transformer.transform(new DOMSource(doc), new StreamResult(writer));
-            return ToolResult.ofText(writer.toString().trim());
+            String result = writer.toString().trim();
+            if (declaration && !minify) {
+                // JDK Transformer는 선언 뒤에 줄바꿈을 넣지 않으므로 보정
+                result = result.replaceFirst("\\?>\\s*", "?>\n");
+            }
+            return ToolResult.ofText(result);
+        } catch (ToolProcessingException e) {
+            throw e;
         } catch (Exception e) {
             throw new ToolProcessingException("XML 처리 실패: " + e.getMessage(), e);
         }

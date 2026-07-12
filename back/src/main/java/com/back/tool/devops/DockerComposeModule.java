@@ -2,6 +2,7 @@ package com.back.tool.devops;
 
 import com.back.tool.model.ToolInput;
 import com.back.tool.model.ToolModule;
+import com.back.tool.model.ToolParams;
 import com.back.tool.model.ToolProcessingException;
 import com.back.tool.model.ToolResult;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
@@ -12,6 +13,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Component
 public class DockerComposeModule implements ToolModule {
@@ -20,6 +22,21 @@ public class DockerComposeModule implements ToolModule {
             .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
             .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
             .build();
+
+    /** 값 없이 쓰이는 플래그 — 조용히 건너뛴다 (compose에 대응 개념이 없거나 불필요). */
+    private static final Set<String> BOOLEAN_FLAGS = Set.of(
+            "-d", "--detach", "--rm", "-i", "--interactive", "-t", "--tty",
+            "-it", "-ti", "-itd", "-dit", "--init", "--privileged",
+            "-P", "--publish-all", "--read-only", "--no-healthcheck");
+
+    /** 미지원이지만 값을 하나 소비하는 플래그 — 값까지 묶어 경고 처리해 이미지 오인식을 막는다. */
+    private static final Set<String> UNSUPPORTED_VALUE_FLAGS = Set.of(
+            "-m", "--memory", "--memory-swap", "--cpus", "--cpu-shares",
+            "-u", "--user", "-w", "--workdir", "--entrypoint", "-h", "--hostname",
+            "-l", "--label", "--log-driver", "--log-opt", "--health-cmd", "--health-interval",
+            "--add-host", "--dns", "--cap-add", "--cap-drop", "--security-opt",
+            "--device", "--ulimit", "--expose", "--link", "--ip", "--mac-address",
+            "--pid", "--shm-size", "--tmpfs", "--platform", "--pull", "--stop-timeout");
 
     @Override
     public String getId() { return "docker-compose"; }
@@ -35,7 +52,7 @@ public class DockerComposeModule implements ToolModule {
 
     @Override
     public ToolResult process(ToolInput input) {
-        String command = input.params().getOrDefault("command", "").trim();
+        String command = ToolParams.of(input).requireString("command").trim();
         try {
             List<String> tokens = tokenize(command);
             // strip "docker" and "run"
@@ -48,47 +65,88 @@ public class DockerComposeModule implements ToolModule {
             List<String> ports = new ArrayList<>();
             List<String> envs = new ArrayList<>();
             List<String> volumes = new ArrayList<>();
+            List<String> warnings = new ArrayList<>();
 
             int i = 0;
             while (i < tokens.size()) {
                 String tok = tokens.get(i);
-                switch (tok) {
-                    case "-p", "--publish" -> { ports.add(tokens.get(++i)); i++; }
-                    case "-e", "--env" -> { envs.add(tokens.get(++i)); i++; }
-                    case "-v", "--volume" -> { volumes.add(tokens.get(++i)); i++; }
-                    case "--name" -> { service.put("container_name", tokens.get(++i)); i++; }
-                    case "--network" -> { service.put("network_mode", tokens.get(++i)); i++; }
-                    case "--restart" -> { service.put("restart", tokens.get(++i)); i++; }
-                    case "-d", "--detach" -> i++;
+                if (!tok.startsWith("-")) {
+                    service.put("image", tok);
+                    // 이미지 뒤 나머지 토큰은 컨테이너 command
+                    if (i + 1 < tokens.size()) {
+                        service.put("command", String.join(" ", tokens.subList(i + 1, tokens.size())));
+                    }
+                    break;
+                }
+
+                // "--flag=value" 형태 분리
+                String flag = tok;
+                String inlineValue = null;
+                if (tok.startsWith("--")) {
+                    int eq = tok.indexOf('=');
+                    if (eq >= 0) {
+                        flag = tok.substring(0, eq);
+                        inlineValue = tok.substring(eq + 1);
+                    }
+                }
+
+                int[] cursor = {i};
+                switch (flag) {
+                    case "-p", "--publish" -> ports.add(flagValue(tokens, cursor, flag, inlineValue));
+                    case "-e", "--env" -> envs.add(flagValue(tokens, cursor, flag, inlineValue));
+                    case "-v", "--volume" -> volumes.add(flagValue(tokens, cursor, flag, inlineValue));
+                    case "--name" -> service.put("container_name", flagValue(tokens, cursor, flag, inlineValue));
+                    case "--network" -> service.put("network_mode", flagValue(tokens, cursor, flag, inlineValue));
+                    case "--restart" -> service.put("restart", flagValue(tokens, cursor, flag, inlineValue));
                     default -> {
-                        if (!tok.startsWith("-")) {
-                            service.put("image", tok);
-                            // remaining tokens are the container command
-                            if (i + 1 < tokens.size()) {
-                                service.put("command", String.join(" ", tokens.subList(i + 1, tokens.size())));
+                        if (!BOOLEAN_FLAGS.contains(flag)) {
+                            String warned = tok;
+                            if (inlineValue == null && UNSUPPORTED_VALUE_FLAGS.contains(flag)
+                                    && cursor[0] + 1 < tokens.size()) {
+                                warned = flag + " " + tokens.get(++cursor[0]);
                             }
-                            i = tokens.size();
-                        } else {
-                            i++;
+                            warnings.add(warned);
                         }
                     }
                 }
+                i = cursor[0] + 1;
             }
 
             if (!ports.isEmpty()) service.put("ports", ports);
             if (!envs.isEmpty()) service.put("environment", envs);
             if (!volumes.isEmpty()) service.put("volumes", volumes);
 
+            if (service.get("image") == null) {
+                throw new ToolProcessingException(
+                        "이미지 이름을 찾을 수 없습니다. 'docker run [옵션] 이미지 [명령]' 형식으로 입력해 주세요.");
+            }
+
             String serviceName = (String) service.getOrDefault("container_name",
-                    ((String) service.getOrDefault("image", "app")).replaceAll("[:/].*", ""));
+                    ((String) service.get("image")).replaceAll("[:/].*", ""));
 
             Map<String, Object> compose = new LinkedHashMap<>();
             compose.put("services", Map.of(serviceName, service));
 
-            return ToolResult.ofText(YAML.writeValueAsString(compose).trim());
+            StringBuilder out = new StringBuilder();
+            for (String warned : warnings) {
+                out.append("# 경고: 지원하지 않는 옵션 '").append(warned).append("'은(는) 변환에서 제외되었습니다.\n");
+            }
+            out.append(YAML.writeValueAsString(compose).trim());
+            return ToolResult.ofText(out.toString());
+        } catch (ToolProcessingException e) {
+            throw e;
         } catch (Exception e) {
             throw new ToolProcessingException("변환 실패: " + e.getMessage(), e);
         }
+    }
+
+    /** 인라인(=) 값이 있으면 그 값을, 없으면 다음 토큰을 값으로 소비한다. */
+    private String flagValue(List<String> tokens, int[] cursor, String flag, String inlineValue) {
+        if (inlineValue != null) return inlineValue;
+        if (cursor[0] + 1 >= tokens.size()) {
+            throw new ToolProcessingException("옵션 '" + flag + "'의 값이 없습니다. (예: " + flag + " 값)");
+        }
+        return tokens.get(++cursor[0]);
     }
 
     private List<String> tokenize(String cmd) {

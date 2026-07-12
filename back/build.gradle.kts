@@ -46,11 +46,11 @@ dependencies {
 	implementation("com.google.zxing:javase:3.5.3")
 
 	// Security — BouncyCastle (RSA/EC key pair, PEM)
-	implementation("org.bouncycastle:bcprov-jdk18on:1.78.1")
-	implementation("org.bouncycastle:bcpkix-jdk18on:1.78.1")
+	implementation("org.bouncycastle:bcprov-jdk18on:1.80")
+	implementation("org.bouncycastle:bcpkix-jdk18on:1.80")
 
 	// Code generation
-	implementation("org.jsonschema2pojo:jsonschema2pojo-core:1.2.1")
+	implementation("org.jsonschema2pojo:jsonschema2pojo-core:1.2.2")
 	implementation("org.openapitools:openapi-generator:7.5.0") {
 		exclude(group = "org.slf4j", module = "slf4j-simple")
 	}

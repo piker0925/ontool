@@ -2,6 +2,8 @@ package com.back.tool.security;
 
 import com.back.tool.model.ToolInput;
 import com.back.tool.model.ToolResult;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,12 +13,30 @@ import org.junit.jupiter.api.io.TempDir;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class VulnScanModuleTest {
+
+    private static final ObjectMapper JSON = new ObjectMapper();
+
+    /** log4j-core 2.14.1에 대한 OSV 응답 축약본 (Log4Shell). */
+    private static final String LOG4SHELL_RESPONSE = """
+            {"vulns":[{
+              "id":"GHSA-jfh8-c2jp-5v3q",
+              "summary":"Remote code injection in Log4j",
+              "aliases":["CVE-2021-44228"],
+              "severity":[{"type":"CVSS_V3","score":"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H"}],
+              "database_specific":{"severity":"CRITICAL"},
+              "affected":[{
+                "package":{"ecosystem":"Maven","name":"org.apache.logging.log4j:log4j-core"},
+                "ranges":[{"type":"ECOSYSTEM","events":[{"introduced":"2.0-beta9"},{"fixed":"2.3.1"},{"introduced":"2.4"},{"fixed":"2.15.0"}]}]
+              }]
+            }]}
+            """;
 
     @TempDir
     Path tempDir;
@@ -36,10 +56,98 @@ class VulnScanModuleTest {
         server.stop(0);
     }
 
+    private static JsonNode parseTable(ToolResult result) throws Exception {
+        JsonNode root = JSON.readTree(result.textResult());
+        assertThat(root.path("type").asText()).isEqualTo("table");
+        return root;
+    }
+
+    private static List<List<String>> rowsOf(JsonNode table) {
+        List<List<String>> rows = new ArrayList<>();
+        for (JsonNode row : table.path("rows")) {
+            List<String> cells = new ArrayList<>();
+            row.forEach(c -> cells.add(c.asText()));
+            rows.add(cells);
+        }
+        return rows;
+    }
+
     @Test
-    void reportsVulnerabilityWhenOsvReturnsId() throws Exception {
+    void vulnerableDependencyProducesStructuredTableRow() throws Exception {
         server.createContext("/v1/query", exchange -> {
-            byte[] body = "{\"vulns\":[{\"id\":\"CVE-2021-44228\"}]}".getBytes();
+            byte[] body = LOG4SHELL_RESPONSE.getBytes();
+            exchange.sendResponseHeaders(200, body.length);
+            exchange.getResponseBody().write(body);
+            exchange.getResponseBody().close();
+        });
+        server.start();
+
+        Path gradle = tempDir.resolve("build.gradle");
+        Files.writeString(gradle, """
+                dependencies {
+                    implementation("org.apache.logging.log4j:log4j-core:2.14.1")
+                }
+                """);
+
+        VulnScanModule module = new VulnScanModule(baseUrl);
+        ToolResult result = module.process(new ToolInput(List.of(gradle), Map.of()));
+
+        assertThat(result.isFile()).isFalse();
+        JsonNode table = parseTable(result);
+
+        List<String> columns = new ArrayList<>();
+        table.path("columns").forEach(c -> columns.add(c.asText()));
+        assertThat(columns).containsExactly("의존성", "버전", "CVE ID", "심각도", "수정 버전", "링크");
+
+        // 패턴 A: OSV 응답에서 추출한 각 필드가 정확한 값으로 행에 들어가야 한다.
+        assertThat(rowsOf(table)).containsExactly(List.of(
+                "org.apache.logging.log4j:log4j-core",
+                "2.14.1",
+                "CVE-2021-44228",
+                "CRITICAL",
+                "2.3.1, 2.15.0",
+                "https://osv.dev/vulnerability/GHSA-jfh8-c2jp-5v3q"
+        ));
+    }
+
+    @Test
+    void onlyVulnerableDependencyAppearsInTable() throws Exception {
+        // 패턴 B: 취약 의존성과 안전한 의존성을 함께 스캔 —
+        // "전부 취약"으로 뭉개는 구현과 "취약한 것만" 정확히 보고하는 구현을 구분한다.
+        server.createContext("/v1/query", exchange -> {
+            String reqBody = new String(exchange.getRequestBody().readAllBytes());
+            byte[] body = reqBody.contains("log4j-core")
+                    ? LOG4SHELL_RESPONSE.getBytes()
+                    : "{}".getBytes();
+            exchange.sendResponseHeaders(200, body.length);
+            exchange.getResponseBody().write(body);
+            exchange.getResponseBody().close();
+        });
+        server.start();
+
+        Path gradle = tempDir.resolve("build.gradle");
+        Files.writeString(gradle, """
+                dependencies {
+                    implementation("org.apache.logging.log4j:log4j-core:2.14.1")
+                    implementation("com.example:safe-lib:1.0.0")
+                }
+                """);
+
+        VulnScanModule module = new VulnScanModule(baseUrl);
+        ToolResult result = module.process(new ToolInput(List.of(gradle), Map.of()));
+
+        List<List<String>> rows = rowsOf(parseTable(result));
+        assertThat(rows).hasSize(1);
+        assertThat(rows.get(0).get(0)).isEqualTo("org.apache.logging.log4j:log4j-core");
+        assertThat(rows.get(0).get(2)).isEqualTo("CVE-2021-44228");
+        assertThat(result.textResult()).doesNotContain("safe-lib");
+    }
+
+    @Test
+    void fallsBackToOsvIdAndDashWhenOptionalFieldsMissing() throws Exception {
+        // aliases/severity/fixed가 없는 취약점 — CVE ID는 OSV id로, 나머지는 '-'로 채워야 한다.
+        server.createContext("/v1/query", exchange -> {
+            byte[] body = "{\"vulns\":[{\"id\":\"GHSA-xxxx-yyyy-zzzz\"}]}".getBytes();
             exchange.sendResponseHeaders(200, body.length);
             exchange.getResponseBody().write(body);
             exchange.getResponseBody().close();
@@ -56,12 +164,46 @@ class VulnScanModuleTest {
         VulnScanModule module = new VulnScanModule(baseUrl);
         ToolResult result = module.process(new ToolInput(List.of(gradle), Map.of()));
 
-        assertThat(result.isFile()).isFalse();
-        assertThat(result.textResult())
-                .contains("스캔 대상: 1개")
-                .contains("log4j:log4j:1.2.17")
-                .contains("CVE 발견")
-                .contains("총 1개 의존성에서 취약점 발견");
+        assertThat(rowsOf(parseTable(result))).containsExactly(List.of(
+                "log4j:log4j",
+                "1.2.17",
+                "GHSA-xxxx-yyyy-zzzz",
+                "-",
+                "-",
+                "https://osv.dev/vulnerability/GHSA-xxxx-yyyy-zzzz"
+        ));
+    }
+
+    @Test
+    void sortsRowsBySeverity() throws Exception {
+        // 심각도 낮은 취약점이 먼저 응답돼도 결과는 CRITICAL이 먼저 와야 한다.
+        server.createContext("/v1/query", exchange -> {
+            byte[] body = """
+                    {"vulns":[
+                      {"id":"GHSA-low1","aliases":["CVE-2020-0001"],"database_specific":{"severity":"LOW"}},
+                      {"id":"GHSA-crit1","aliases":["CVE-2020-0002"],"database_specific":{"severity":"CRITICAL"}}
+                    ]}
+                    """.getBytes();
+            exchange.sendResponseHeaders(200, body.length);
+            exchange.getResponseBody().write(body);
+            exchange.getResponseBody().close();
+        });
+        server.start();
+
+        Path gradle = tempDir.resolve("build.gradle");
+        Files.writeString(gradle, """
+                dependencies {
+                    implementation("com.example:lib:1.0.0")
+                }
+                """);
+
+        VulnScanModule module = new VulnScanModule(baseUrl);
+        ToolResult result = module.process(new ToolInput(List.of(gradle), Map.of()));
+
+        List<List<String>> rows = rowsOf(parseTable(result));
+        assertThat(rows).hasSize(2);
+        assertThat(rows.get(0).get(2)).isEqualTo("CVE-2020-0002"); // CRITICAL 먼저
+        assertThat(rows.get(1).get(2)).isEqualTo("CVE-2020-0001"); // LOW 나중
     }
 
     @Test
@@ -87,7 +229,7 @@ class VulnScanModuleTest {
         assertThat(result.textResult())
                 .contains("스캔 대상: 1개")
                 .contains("취약점이 없습니다")
-                .doesNotContain("CVE 발견");
+                .doesNotContain("\"type\"");
     }
 
     @Test

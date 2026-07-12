@@ -2,6 +2,7 @@ package com.back.tool.security;
 
 import com.back.tool.model.ToolInput;
 import com.back.tool.model.ToolModule;
+import com.back.tool.model.ToolParams;
 import com.back.tool.model.ToolProcessingException;
 import com.back.tool.model.ToolResult;
 import org.bouncycastle.util.io.pem.PemObject;
@@ -12,6 +13,8 @@ import java.io.StringWriter;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.spec.ECGenParameterSpec;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class RsaKeyModule implements ToolModule {
@@ -30,10 +33,11 @@ public class RsaKeyModule implements ToolModule {
 
     @Override
     public ToolResult process(ToolInput input) {
-        try {
-            String keyType = input.params().getOrDefault("keyType", "RSA").toUpperCase();
-            int keySize = Integer.parseInt(input.params().getOrDefault("keySize", "2048"));
+        ToolParams params = ToolParams.of(input);
+        String keyType = params.getString("keyType", "RSA").toUpperCase();
+        int keySize = params.getInt("keySize", 2048, 256, 8192);
 
+        try {
             KeyPairGenerator gen = KeyPairGenerator.getInstance(keyType);
             if (keyType.equals("EC")) {
                 String curve = keySize == 384 ? "secp384r1" : keySize == 521 ? "secp521r1" : "secp256r1";
@@ -45,7 +49,18 @@ public class RsaKeyModule implements ToolModule {
 
             String pub = toPem("PUBLIC KEY", pair.getPublic().getEncoded());
             String priv = toPem("PRIVATE KEY", pair.getPrivate().getEncoded());
-            return ToolResult.ofText(pub + "\n" + priv);
+
+            return ToolResult.ofJson(Map.of(
+                    "type", "keyvalue",
+                    "items", List.of(
+                            Map.of("key", "키 정보", "value",
+                                    keyType + " " + keySize + "비트 · 공개키 X.509(SPKI) / 개인키 PKCS#8"),
+                            Map.of("key", "공개키 (PEM)", "value", pub),
+                            Map.of("key", "개인키 (PEM)", "value", priv)
+                    )
+            ));
+        } catch (ToolProcessingException e) {
+            throw e;
         } catch (Exception e) {
             throw new ToolProcessingException("키쌍 생성 실패: " + e.getMessage(), e);
         }

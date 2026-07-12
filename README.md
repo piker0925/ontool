@@ -72,7 +72,7 @@ isHeavy() = false → 즉시 처리 → 바로 응답
 
 - **DB 기반 큐**: `Job` 테이블의 `PENDING` 상태가 큐 역할. `SELECT FOR UPDATE SKIP LOCKED`로 다중 워커가 동일 Job을 중복 처리하지 않도록 보장
 - **비동기 워커**: `@Scheduled` + `@Async` + `ThreadPoolTaskExecutor`. PENDING Job을 꺼내 `process()` 호출
-- **결과 분기**: 파일 결과 → `FileStorage` 인터페이스로 저장 (개발: 로컬 디스크, 운영: Cloudinary CDN). 텍스트 결과 → Job 레코드에 직접 저장
+- **결과 분기**: 파일 결과 → `FileStorage` 인터페이스로 저장 (개발·운영 모두 로컬 디스크, 운영은 Docker 볼륨). 텍스트 결과 → Job 레코드에 직접 저장
 - **SSE 알림**: `SseEmitter`로 Job 상태 변경을 클라이언트에 실시간 푸시
 - **배치**: 파일 N개 → Job N개 생성. `batch_id`로 묶어 진행률 집계
 
@@ -106,7 +106,7 @@ Heavy 도구의 처리 단위인 `Job` 테이블이 큐의 핵심이다.
 | 주요 라이브러리 | PDFBox, Thumbnailator, flexmark+openhtmltopdf, ZXing, Bouncy Castle, Jackson |
 | 테스트 | JUnit 5, Testcontainers, Awaitility |
 | 프론트엔드 | Vue 3, Vite |
-| 인프라 | Docker Compose, Oracle Cloud Always Free, Vercel, Cloudinary |
+| 인프라 | Docker Compose, Oracle Cloud Always Free, Vercel, nginx (리버스 프록시 + TLS) |
 | API 문서 | Swagger UI (springdoc-openapi) |
 
 ---
@@ -121,7 +121,7 @@ DevToolbox/
 │       │   ├── config/          # AsyncConfig, SecurityConfig, WebMvcConfig
 │       │   ├── exception/       # AppException, ErrorCode, GlobalExceptionHandler
 │       │   ├── response/        # ErrorResponse
-│       │   └── storage/         # FileStorage 인터페이스, LocalFileStorage, CloudinaryFileStorage
+│       │   └── storage/         # FileStorage 인터페이스, LocalFileStorage, OrphanFileSweeper
 │       └── domain/
 │           ├── tool/            # ToolModule 인터페이스 + 30개 구현체
 │           │   ├── pdf/

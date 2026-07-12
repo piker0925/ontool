@@ -52,6 +52,7 @@ class JobWorkerTest extends AbstractMySQLIntegrationTest {
         job.setStatus(JobStatus.PENDING);
         job.setInputPaths(List.of());
         job.setParams(Map.of());
+        job.setExpiresAt(java.time.LocalDateTime.now().plusHours(1));
         return jobRepository.save(job);
     }
 
@@ -66,6 +67,37 @@ class JobWorkerTest extends AbstractMySQLIntegrationTest {
 
         assertThat(jobRepository.findById(job.getId()).orElseThrow().getResultText())
                 .isEqualTo("ok");
+    }
+
+    @Test
+    void processJob_deletesInputTempDir_butKeepsUnrelatedFiles() throws Exception {
+        java.nio.file.Path uploadDir = java.nio.file.Path.of("build/test-uploads");
+        String tempId = java.util.UUID.randomUUID().toString();
+        java.nio.file.Path inputDir = uploadDir.resolve("temp").resolve(tempId);
+        java.nio.file.Files.createDirectories(inputDir);
+        java.nio.file.Path inputFile = inputDir.resolve("input.txt");
+        java.nio.file.Files.writeString(inputFile, "hi");
+
+        // 이 job과 무관한 파일 — 삭제되면 안 된다 (넓게 잘못 지우는 구현을 걸러냄)
+        java.nio.file.Path unrelated = uploadDir.resolve("temp").resolve("keep").resolve("other.txt");
+        java.nio.file.Files.createDirectories(unrelated.getParent());
+        java.nio.file.Files.writeString(unrelated, "keep");
+
+        Job job = new Job();
+        job.setModuleId("echo");
+        job.setStatus(JobStatus.PENDING);
+        job.setInputPaths(List.of(inputFile.toAbsolutePath().toString()));
+        job.setParams(Map.of());
+        job.setExpiresAt(java.time.LocalDateTime.now().plusHours(1));
+        jobRepository.save(job);
+
+        await().atMost(10, SECONDS).until(() ->
+                jobRepository.findById(job.getId())
+                        .map(j -> j.getStatus() == JobStatus.DONE)
+                        .orElse(false));
+
+        assertThat(java.nio.file.Files.exists(inputDir)).isFalse();
+        assertThat(java.nio.file.Files.exists(unrelated)).isTrue();
     }
 
     @Test
@@ -99,6 +131,26 @@ class JobWorkerTest extends AbstractMySQLIntegrationTest {
                 jobRepository.findById(expiring.getId()).isEmpty());
 
         assertThat(jobRepository.findById(surviving.getId())).isPresent();
+    }
+
+    @Test
+    void ttlScheduler_sweepsOldOrphanFile_keepsFreshOne() throws Exception {
+        // Job row가 전혀 없는 고아 파일도 mtime 기준으로 청소되어야 한다.
+        java.nio.file.Path uploadDir = java.nio.file.Path.of("build/test-uploads");
+
+        java.nio.file.Path oldOrphan = uploadDir.resolve("temp").resolve("orphan-old").resolve("x.png");
+        java.nio.file.Files.createDirectories(oldOrphan.getParent());
+        java.nio.file.Files.writeString(oldOrphan, "x");
+        // 기본 result-ttl(24h)보다 오래됨 → 스윕 대상
+        java.nio.file.Files.setLastModifiedTime(oldOrphan,
+                java.nio.file.attribute.FileTime.from(java.time.Instant.now().minus(java.time.Duration.ofHours(25))));
+
+        java.nio.file.Path freshOrphan = uploadDir.resolve("temp").resolve("orphan-new").resolve("y.png");
+        java.nio.file.Files.createDirectories(freshOrphan.getParent());
+        java.nio.file.Files.writeString(freshOrphan, "y");
+
+        await().atMost(5, SECONDS).until(() -> !java.nio.file.Files.exists(oldOrphan));
+        assertThat(java.nio.file.Files.exists(freshOrphan)).isTrue(); // 최신 고아는 살아남아야 한다
     }
 
     @TestConfiguration

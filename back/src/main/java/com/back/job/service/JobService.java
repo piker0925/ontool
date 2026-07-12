@@ -7,18 +7,28 @@ import com.back.job.entity.JobStatus;
 import com.back.job.repository.BatchStats;
 import com.back.job.repository.JobRepository;
 import com.back.stats.service.ToolStatsService;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
 public class JobService {
 
     private final JobRepository jobRepository;
     private final ToolStatsService toolStatsService;
+    private final Duration resultTtl;
+
+    public JobService(JobRepository jobRepository,
+                      ToolStatsService toolStatsService,
+                      @Value("${storage.result-ttl}") Duration resultTtl) {
+        this.jobRepository = jobRepository;
+        this.toolStatsService = toolStatsService;
+        this.resultTtl = resultTtl;
+    }
 
     public Job create(String moduleId, List<String> inputPaths, Map<String, String> params) {
         return create(moduleId, null, inputPaths, params);
@@ -32,6 +42,7 @@ public class JobService {
         job.setStatus(JobStatus.PENDING);
         job.setInputPaths(inputPaths);
         job.setParams(params);
+        job.setExpiresAt(LocalDateTime.now().plus(resultTtl));
         return jobRepository.save(job);
     }
 

@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -39,6 +40,7 @@ class JobRepositoryTest extends AbstractMySQLIntegrationTest {
         job.setStatus(JobStatus.PENDING);
         job.setInputPaths(List.of("/uploads/a.jpg", "/uploads/b.jpg"));
         job.setParams(Map.of("quality", "80"));
+        job.setExpiresAt(LocalDateTime.now().plusHours(1));
         jobRepository.save(job);
 
         Job saved = jobRepository.findById(job.getId()).orElseThrow();
@@ -53,6 +55,7 @@ class JobRepositoryTest extends AbstractMySQLIntegrationTest {
         job.setModuleId("test");
         job.setStatus(JobStatus.PENDING);
         job.setInputPaths(List.of());
+        job.setExpiresAt(LocalDateTime.now().plusHours(1));
         jobRepository.save(job);
 
         CountDownLatch acquired = new CountDownLatch(1);

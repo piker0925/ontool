@@ -16,6 +16,8 @@ spring:
 storage:
   upload-dir: uploads
   base-url: http://localhost:8080
+  # 로컬은 짧게 두어 청소 동작을 빠르게 확인할 수 있게 한다.
+  result-ttl: PT2M
 
 management:
   endpoints:

@@ -1,6 +1,7 @@
 package com.back.job.service;
 
 import com.back.global.storage.FileStorage;
+import com.back.global.storage.OrphanFileSweeper;
 import com.back.job.entity.Job;
 import com.back.job.entity.JobStatus;
 import com.back.job.repository.JobRepository;
@@ -31,6 +32,7 @@ public class JobWorker {
     private final List<ToolModule> moduleList;
     private final FileStorage fileStorage;
     private final ThreadPoolTaskExecutor taskExecutor;
+    private final OrphanFileSweeper fileSweeper;
 
     private Map<String, ToolModule> modules;
 
@@ -76,7 +78,13 @@ public class JobWorker {
             job.setStatus(JobStatus.FAILED);
         } finally {
             jobRepository.save(job);
+            deleteInputs(job);
         }
+    }
+
+    // 입력 임시파일은 처리 순간까지만 필요하다. 완료(DONE/FAILED) 후 즉시 삭제해 결과 TTL까지 방치되지 않게 한다.
+    private void deleteInputs(Job job) {
+        job.inputTempDirs().forEach(fileSweeper::deleteRecursively);
     }
 
     private String ext(Path file) {

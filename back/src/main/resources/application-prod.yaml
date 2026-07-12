@@ -19,6 +19,8 @@ cors:
 storage:
   base-url: ${STORAGE_BASE_URL}
   upload-dir: uploads
+  # 결과 파일 보존 시간. 만료된 Job의 결과·입력 파일과 고아 파일 청소 기준.
+  result-ttl: PT1H
 
 management:
   endpoints:

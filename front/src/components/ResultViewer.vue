@@ -4,6 +4,8 @@
       <Button as-child>
         <a :href="url" download>⬇ 다운로드</a>
       </Button>
+      <!-- 파일 결과에 동반되는 advisory (예: 업스케일 경고) -->
+      <p v-if="text" class="text-[12px] text-amber-600 dark:text-amber-400">{{ text }}</p>
     </template>
     <template v-else-if="text">
       <Textarea :model-value="text" class="min-h-[240px] flex-1 resize-y font-mono text-sm" readonly/>

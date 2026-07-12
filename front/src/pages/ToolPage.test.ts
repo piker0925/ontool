@@ -1,4 +1,4 @@
-import {beforeEach, describe, expect, it, vi} from 'vitest'
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest'
 import {flushPromises, mount} from '@vue/test-utils'
 import {createMemoryHistory, createRouter} from 'vue-router'
 import ToolPage from './ToolPage.vue'
@@ -26,10 +26,16 @@ const router = createRouter({
     routes: [{path: '/tools/:moduleId', component: ToolPage}],
 })
 
+// mountAt으로 만든 wrapper를 추적해 매 테스트 후 언마운트한다.
+// 언마운트하지 않으면 BatchPoller의 setTimeout 폴링이 다음 테스트(다른 mock 상태)까지
+// 살아남아 "unexpected GET" 같은 미처리 프라미스 거부를 흘린다.
+const mountedWrappers: ReturnType<typeof mount>[] = []
+
 async function mountAt(moduleId: string, modules: Module[]) {
     mockModules(modules)
     await router.push(`/tools/${moduleId}`)
     const wrapper = mount(ToolPage, {global: {plugins: [router], stubs: {CommentSection: true}}})
+    mountedWrappers.push(wrapper)
     await flushPromises()
     return wrapper
 }
@@ -42,19 +48,11 @@ function inputForLabel(wrapper: ReturnType<typeof mount>, labelText: string) {
 
 beforeEach(() => vi.clearAllMocks())
 
+afterEach(() => {
+    mountedWrappers.splice(0).forEach(w => w.unmount())
+})
+
 describe('ToolPage 파라미터 필드 (024)', () => {
-    it('barcode 모듈에 너비/높이 입력 필드가 기본값과 함께 렌더링된다', async () => {
-        const wrapper = await mountAt('barcode', [
-            {id: 'barcode', name: '바코드 생성', category: '생성기', isHeavy: false},
-        ])
-
-        const width = inputForLabel(wrapper, '너비 (px)')
-        const height = inputForLabel(wrapper, '높이 (px)')
-
-        expect(width?.value).toBe('400')
-        expect(height?.value).toBe('120')
-    })
-
     it('cron 모듈에 count 입력 필드가 기본값 5와 함께 렌더링된다', async () => {
         const wrapper = await mountAt('cron', [
             {id: 'cron', name: 'Cron 표현식', category: 'DevOps', isHeavy: false},
@@ -65,16 +63,6 @@ describe('ToolPage 파라미터 필드 (024)', () => {
         expect(count?.value).toBe('5')
     })
 
-    it('qr-code 모듈에 size 입력 필드가 기본값 300과 함께 렌더링된다', async () => {
-        const wrapper = await mountAt('qr-code', [
-            {id: 'qr-code', name: 'QR 코드 생성', category: '생성기', isHeavy: false},
-        ])
-
-        const size = inputForLabel(wrapper, '크기 (px)')
-
-        expect(size?.value).toBe('300')
-    })
-
     it('gif-create 모듈에 delay 입력 필드가 기본값 100과 함께 렌더링된다', async () => {
         const wrapper = await mountAt('gif-create', [
             {id: 'gif-create', name: 'GIF 생성', category: '이미지', isHeavy: true},
@@ -83,6 +71,42 @@ describe('ToolPage 파라미터 필드 (024)', () => {
         const delay = inputForLabel(wrapper, '프레임 간격 (ms)')
 
         expect(delay?.value).toBe('100')
+    })
+})
+
+describe('ToolPage 통합 코드 생성기 (code-gen)', () => {
+    it('code-gen 모듈은 QR/Code128 형식 선택이 있는 통합 페이지를 렌더링한다', async () => {
+        const wrapper = await mountAt('code-gen', [])
+
+        const formatSelect = wrapper.findAll('select').at(0)
+        expect(formatSelect).toBeTruthy()
+        const options = formatSelect!.findAll('option').map(o => o.text())
+        expect(options).toEqual(['QR 코드', '바코드 · Code 128', '바코드 · EAN-13'])
+
+        // QR 기본 형식에서는 size 입력이 기본값 300으로 렌더링된다
+        const size = inputForLabel(wrapper, '크기 (px)')
+        expect(size?.value).toBe('300')
+    })
+
+    it('qr-code/barcode 백엔드 모듈은 통합 도구로 흡수되어 개별 페이지가 노출되지 않는다', async () => {
+        const wrapper = await mountAt('qr-code', [
+            {id: 'qr-code', name: 'QR 코드 생성', category: '생성기', isHeavy: false},
+            {id: 'barcode', name: '바코드 생성', category: '생성기', isHeavy: false},
+        ])
+
+        expect(wrapper.text()).toContain('모듈을 찾을 수 없습니다')
+    })
+
+    it('바코드 형식으로 바꾸면 너비/높이 입력이 기본값과 함께 렌더링된다', async () => {
+        const wrapper = await mountAt('code-gen', [])
+
+        const formatSelect = wrapper.findAll('select').at(0)!
+        await formatSelect.setValue('code128')
+
+        const width = inputForLabel(wrapper, '너비 (px)')
+        const height = inputForLabel(wrapper, '높이 (px)')
+        expect(width?.value).toBe('400')
+        expect(height?.value).toBe('120')
     })
 })
 

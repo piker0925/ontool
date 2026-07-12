@@ -1,22 +1,35 @@
 import {describe, expect, it} from 'vitest'
 import {
+    compositeOnBackground,
+    contrastRatio,
     convertKeyboard,
     countChars,
     dateToUnix,
     decodeBase64,
     decodeJwt,
     decodeUrl,
+    detectTimestampUnit,
     encodeBase64,
     encodeUrl,
+    formatInTimezone,
     formatJson,
+    formatRelativeTime,
+    formatUnixPattern,
+    formatUuidExport,
     generateUuid,
+    generateUuidV7,
+    getTimezoneOffset,
     hexToRgb,
     hslToRgb,
     minifyJson,
     normalizeWhitespace,
+    parseColor,
+    rgbaToHex,
     rgbToHex,
     rgbToHsl,
+    rgbToHsv,
     unixToDate,
+    wcagLevels,
 } from './frontendTools'
 
 describe('formatJson', () => {
@@ -124,6 +137,207 @@ describe('generateUuid', () => {
     })
     it('매번 다른 값', () => {
         expect(generateUuid()).not.toBe(generateUuid())
+    })
+})
+
+describe('generateUuidV7', () => {
+    it('버전 니블이 7, variant가 10xx', () => {
+        const uuid = generateUuidV7()
+        expect(uuid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
+    })
+    it('앞 48비트가 주어진 타임스탬프(밀리초)와 정확히 일치', () => {
+        // 0x018f4df73e00 = 1715000000000
+        const uuid = generateUuidV7(1715000000000)
+        const first12Hex = uuid.replace(/-/g, '').slice(0, 12)
+        expect(parseInt(first12Hex, 16)).toBe(1715000000000)
+        expect(first12Hex).toBe('018f4df73e00')
+    })
+    it('타임스탬프 순서대로 문자열 정렬 가능', () => {
+        const earlier = generateUuidV7(1700000000000)
+        const later = generateUuidV7(1700000000001)
+        expect(earlier < later).toBe(true)
+        // 랜덤 부분이 달라도 같은 밀리초 이후 값이 항상 뒤에 온다
+        const muchLater = generateUuidV7(1800000000000)
+        expect(later < muchLater).toBe(true)
+    })
+    it('같은 타임스탬프여도 랜덤 부분은 매번 다름', () => {
+        expect(generateUuidV7(1700000000000)).not.toBe(generateUuidV7(1700000000000))
+    })
+})
+
+describe('formatUuidExport', () => {
+    const uuids = ['aaa-111', 'bbb-222']
+    it('줄바꿈 형식', () => {
+        expect(formatUuidExport(uuids, 'lines')).toBe('aaa-111\nbbb-222')
+    })
+    it('JSON 배열 형식', () => {
+        expect(formatUuidExport(uuids, 'json')).toBe('["aaa-111","bbb-222"]')
+        expect(JSON.parse(formatUuidExport(uuids, 'json'))).toEqual(uuids)
+    })
+    it('CSV 형식 (헤더 포함)', () => {
+        expect(formatUuidExport(uuids, 'csv')).toBe('uuid\naaa-111\nbbb-222')
+    })
+    it('SQL IN절 형식', () => {
+        expect(formatUuidExport(uuids, 'sql')).toBe("IN ('aaa-111', 'bbb-222')")
+    })
+    it('단일 항목 SQL IN절', () => {
+        expect(formatUuidExport(['x'], 'sql')).toBe("IN ('x')")
+    })
+})
+
+describe('detectTimestampUnit', () => {
+    it('10자리 → 초', () => {
+        expect(detectTimestampUnit('1700000000')).toBe('s')
+    })
+    it('13자리 → 밀리초', () => {
+        expect(detectTimestampUnit('1700000000000')).toBe('ms')
+    })
+    it('짧은 값(0) → 초', () => {
+        expect(detectTimestampUnit('0')).toBe('s')
+    })
+    it('음수 10자리 → 초', () => {
+        expect(detectTimestampUnit('-1700000000')).toBe('s')
+    })
+})
+
+describe('formatInTimezone / getTimezoneOffset', () => {
+    const ms = 1700000000000 // 2023-11-14T22:13:20Z
+    it('UTC 기준 포맷', () => {
+        expect(formatInTimezone(ms, 'UTC')).toBe('2023-11-14 22:13:20')
+    })
+    it('Asia/Seoul 기준 포맷 (+9시간)', () => {
+        expect(formatInTimezone(ms, 'Asia/Seoul')).toBe('2023-11-15 07:13:20')
+    })
+    it('America/New_York 기준 포맷 (11월 = EST, -5시간)', () => {
+        expect(formatInTimezone(ms, 'America/New_York')).toBe('2023-11-14 17:13:20')
+    })
+    it('오프셋 문자열', () => {
+        expect(getTimezoneOffset(ms, 'Asia/Seoul')).toBe('+09:00')
+        expect(getTimezoneOffset(ms, 'Asia/Seoul', false)).toBe('+0900')
+        expect(getTimezoneOffset(ms, 'UTC')).toBe('+00:00')
+        expect(getTimezoneOffset(ms, 'America/New_York')).toBe('-05:00')
+    })
+})
+
+describe('formatUnixPattern', () => {
+    const ms = 1700000000123
+    it('ISO 형태 커스텀 패턴 (서울)', () => {
+        expect(formatUnixPattern(ms, 'YYYY-MM-DDTHH:mm:ssZ', 'Asia/Seoul')).toBe('2023-11-15T07:13:20+09:00')
+    })
+    it('RFC 2822 패턴 (UTC)', () => {
+        expect(formatUnixPattern(ms, 'ddd, DD MMM YYYY HH:mm:ss ZZ', 'UTC')).toBe('Tue, 14 Nov 2023 22:13:20 +0000')
+    })
+    it('밀리초 토큰 SSS', () => {
+        expect(formatUnixPattern(ms, 'ss.SSS', 'UTC')).toBe('20.123')
+    })
+    it('MM/DD/YYYY 패턴', () => {
+        expect(formatUnixPattern(ms, 'MM/DD/YYYY', 'UTC')).toBe('11/14/2023')
+    })
+})
+
+describe('formatRelativeTime', () => {
+    const now = 1700000000000
+    it('3시간 전', () => {
+        expect(formatRelativeTime(now - 3 * 3600_000, now)).toBe('3시간 전')
+    })
+    it('5분 전', () => {
+        expect(formatRelativeTime(now - 5 * 60_000, now)).toBe('5분 전')
+    })
+    it('2일 후 (미래)', () => {
+        expect(formatRelativeTime(now + 2 * 24 * 3600_000, now)).toBe('2일 후')
+    })
+    it('10초 미만은 방금 전', () => {
+        expect(formatRelativeTime(now - 3000, now)).toBe('방금 전')
+    })
+    it('1년 이상', () => {
+        expect(formatRelativeTime(now - 400 * 24 * 3600_000, now)).toBe('1년 전')
+    })
+})
+
+describe('parseColor', () => {
+    it('#RRGGBB → 알파 1', () => {
+        expect(parseColor('#ff0000')).toEqual({r: 255, g: 0, b: 0, a: 1})
+    })
+    it('#RRGGBBAA → 알파 파싱 (0x80 = 0.502)', () => {
+        expect(parseColor('#ff000080')).toEqual({r: 255, g: 0, b: 0, a: 0.502})
+    })
+    it('3자리 축약 HEX', () => {
+        expect(parseColor('#f00')).toEqual({r: 255, g: 0, b: 0, a: 1})
+    })
+    it('rgb() 문자열', () => {
+        expect(parseColor('rgb(99, 102, 241)')).toEqual({r: 99, g: 102, b: 241, a: 1})
+    })
+    it('rgba() 문자열', () => {
+        expect(parseColor('rgba(255, 0, 0, 0.5)')).toEqual({r: 255, g: 0, b: 0, a: 0.5})
+    })
+    it('hsl() 문자열 → RGB 변환', () => {
+        expect(parseColor('hsl(0, 100%, 50%)')).toEqual({r: 255, g: 0, b: 0, a: 1})
+        expect(parseColor('hsl(240, 100%, 50%)')).toEqual({r: 0, g: 0, b: 255, a: 1})
+    })
+    it('hsla() 문자열', () => {
+        expect(parseColor('hsla(0, 100%, 50%, 0.25)')).toEqual({r: 255, g: 0, b: 0, a: 0.25})
+    })
+    it('잘못된 형식은 에러', () => {
+        expect(() => parseColor('notacolor')).toThrow()
+        expect(() => parseColor('rgb(999, 0, 0)')).toThrow()
+        expect(() => parseColor('#12345')).toThrow()
+    })
+})
+
+describe('rgbaToHex', () => {
+    it('알파 1이면 6자리', () => {
+        expect(rgbaToHex(255, 0, 0, 1)).toBe('#ff0000')
+    })
+    it('알파 0.5면 8자리', () => {
+        expect(rgbaToHex(255, 0, 0, 0.5)).toBe('#ff000080')
+    })
+})
+
+describe('rgbToHsv', () => {
+    it('빨강 → hsv(0, 100%, 100%)', () => {
+        expect(rgbToHsv(255, 0, 0)).toEqual({h: 0, s: 100, v: 100})
+    })
+    it('파랑 → hsv(240, 100%, 100%)', () => {
+        expect(rgbToHsv(0, 0, 255)).toEqual({h: 240, s: 100, v: 100})
+    })
+    it('회색 → 채도 0', () => {
+        expect(rgbToHsv(128, 128, 128)).toEqual({h: 0, s: 0, v: 50})
+    })
+    it('HSL과 값이 다른 케이스 (HSV v=100, HSL l=50)', () => {
+        // 순색에서 HSV value는 100, HSL lightness는 50 — 두 모델이 실제로 구분되는지 확인
+        const hsv = rgbToHsv(255, 0, 0)
+        const hsl = rgbToHsl(255, 0, 0)
+        expect(hsv.v).toBe(100)
+        expect(hsl.l).toBe(50)
+    })
+})
+
+describe('WCAG 대비', () => {
+    it('흰색 vs 검정 = 21:1', () => {
+        expect(contrastRatio({r: 255, g: 255, b: 255}, {r: 0, g: 0, b: 0})).toBe(21)
+    })
+    it('같은 색 = 1:1', () => {
+        expect(contrastRatio({r: 128, g: 128, b: 128}, {r: 128, g: 128, b: 128})).toBe(1)
+    })
+    it('빨강 vs 흰색 ≈ 4:1 (독립 기준값)', () => {
+        expect(contrastRatio({r: 255, g: 0, b: 0}, {r: 255, g: 255, b: 255})).toBeCloseTo(4, 1)
+    })
+    it('레벨 판정: 21 → AA/AAA/AA-Large 모두 통과', () => {
+        expect(wcagLevels(21)).toEqual({aa: true, aaa: true, aaLarge: true})
+    })
+    it('레벨 판정: 4.5 → AA 통과, AAA 실패', () => {
+        expect(wcagLevels(4.5)).toEqual({aa: true, aaa: false, aaLarge: true})
+    })
+    it('레벨 판정: 2 → 전부 실패', () => {
+        expect(wcagLevels(2)).toEqual({aa: false, aaa: false, aaLarge: false})
+    })
+    it('알파 합성: 50% 검정을 흰 배경에 → 회색(128 근처)', () => {
+        const result = compositeOnBackground({r: 0, g: 0, b: 0, a: 0.5}, {r: 255, g: 255, b: 255})
+        expect(result).toEqual({r: 128, g: 128, b: 128})
+    })
+    it('알파 합성: 완전 불투명이면 배경 무시', () => {
+        const result = compositeOnBackground({r: 10, g: 20, b: 30, a: 1}, {r: 255, g: 255, b: 255})
+        expect(result).toEqual({r: 10, g: 20, b: 30})
     })
 })
 

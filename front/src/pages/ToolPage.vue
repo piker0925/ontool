@@ -36,7 +36,9 @@
           </span>
           <button
               :class="liked ? 'border-rose-300 text-rose-500' : 'border-border hover:border-rose-300 hover:text-rose-500'"
-              class="flex items-center gap-1.5 rounded-full border px-3 py-0.5 font-mono text-[12px] transition-colors"
+              :disabled="likePending"
+              :title="liked ? '좋아요 취소' : '좋아요'"
+              class="flex items-center gap-1.5 rounded-full border px-3 py-0.5 font-mono text-[12px] transition-colors disabled:opacity-60"
               @click="toggleLike"
           >
             <Heart :class="liked ? 'fill-rose-500 text-rose-500' : ''" class="size-3.5"/>
@@ -49,6 +51,7 @@
       <UnifiedConvertPage v-if="mod.id === 'data-convert'"/>
       <UnifiedEncoderPage v-else-if="mod.id === 'encoder'"/>
       <UnifiedTextUtilsPage v-else-if="mod.id === 'text-utils'"/>
+      <UnifiedCodeGenPage v-else-if="mod.id === 'code-gen'"/>
 
       <!-- Frontend-only -->
       <FrontendToolPage v-else-if="mod.isFrontendOnly" :moduleId="mod.id"/>
@@ -75,7 +78,8 @@
           <div v-if="heavyConfig?.params.length" class="flex shrink-0 flex-col gap-3 border-b border-border p-4">
             <span class="font-mono text-[11px] font-medium uppercase tracking-wider text-muted-foreground">파라미터</span>
             <div v-for="p in heavyConfig.params" :key="p.key" class="flex flex-col gap-1">
-              <label class="text-[11px] text-muted-foreground">{{ p.label }}</label>
+              <label v-if="p.type !== 'checkbox'" class="text-[11px] text-muted-foreground">{{ p.label }}</label>
+              <span v-if="p.type !== 'checkbox' && p.help" class="-mt-1 text-[11px] font-normal text-muted-foreground/60">— {{ p.help }}</span>
               <input
                   v-if="p.type === 'text'"
                   v-model="heavyFormValues[p.key]"
@@ -83,6 +87,25 @@
                   class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-ring focus:ring-2 focus:ring-ring/20"
                   type="text"
               />
+              <div v-else-if="p.type === 'number'" class="flex items-center gap-2">
+                <input
+                    v-model="heavyFormValues[p.key]"
+                    :placeholder="p.placeholder ?? ''"
+                    class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-ring focus:ring-2 focus:ring-ring/20"
+                    type="number"
+                />
+                <span v-if="p.unit" class="shrink-0 font-mono text-[11px] text-muted-foreground">{{ p.unit }}</span>
+              </div>
+              <label v-else-if="p.type === 'checkbox'" class="flex cursor-pointer items-center gap-2 text-[13px] text-foreground">
+                <input
+                    :checked="heavyFormValues[p.key] === 'true'"
+                    class="accent-primary"
+                    type="checkbox"
+                    @change="heavyFormValues[p.key] = ($event.target as HTMLInputElement).checked ? 'true' : 'false'"
+                />
+                {{ p.label }}
+                <span v-if="p.help" class="text-[11px] text-muted-foreground/60">— {{ p.help }}</span>
+              </label>
               <select
                   v-else-if="p.type === 'select'"
                   v-model="heavyFormValues[p.key]"
@@ -214,7 +237,8 @@
           <!-- CONFIGS 기반 입력 -->
           <div v-if="moduleConfig" class="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
             <div v-for="p in moduleConfig.params" :key="p.key" class="flex flex-col gap-1.5">
-              <label class="text-[11px] font-medium text-muted-foreground">{{ p.label }}</label>
+              <label v-if="p.type !== 'checkbox'" class="text-[11px] font-medium text-muted-foreground">{{ p.label }}</label>
+              <span v-if="p.type !== 'checkbox' && p.help" class="-mt-1 text-[11px] font-normal text-muted-foreground/60">— {{ p.help }}</span>
               <textarea
                   v-if="p.type === 'textarea'"
                   v-model="formValues[p.key]"
@@ -231,6 +255,26 @@
                   type="text"
                   @keydown="handleTextareaKeydown"
               />
+              <div v-else-if="p.type === 'number'" class="flex items-center gap-2">
+                <input
+                    v-model="formValues[p.key]"
+                    :placeholder="p.placeholder ?? ''"
+                    class="w-full rounded-md border border-input bg-muted/40 px-3 py-2 font-mono text-[13px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-ring focus:ring-2 focus:ring-ring/20"
+                    type="number"
+                    @keydown="handleTextareaKeydown"
+                />
+                <span v-if="p.unit" class="shrink-0 font-mono text-[11px] text-muted-foreground">{{ p.unit }}</span>
+              </div>
+              <label v-else-if="p.type === 'checkbox'" class="flex cursor-pointer items-center gap-2 text-[13px] text-foreground">
+                <input
+                    :checked="formValues[p.key] === 'true'"
+                    class="accent-primary"
+                    type="checkbox"
+                    @change="formValues[p.key] = ($event.target as HTMLInputElement).checked ? 'true' : 'false'"
+                />
+                {{ p.label }}
+                <span v-if="p.help" class="text-[11px] text-muted-foreground/60">— {{ p.help }}</span>
+              </label>
               <select
                   v-else-if="p.type === 'select'"
                   v-model="formValues[p.key]"
@@ -300,6 +344,12 @@
               <img :src="`data:image/png;base64,${result.text}`" alt="생성된 이미지"
                    class="max-w-full rounded border border-border bg-white shadow-sm"/>
               <Button class="text-[12px]" size="sm" variant="outline" @click="downloadImage">다운로드</Button>
+            </div>
+
+            <!-- 구조화 결과 (백엔드 ToolResult.ofJson 컨벤션) -->
+            <div v-else-if="structuredResult" class="flex h-full flex-col">
+              <p v-if="runError" class="px-3 pt-2 text-[11px] text-destructive/80">{{ runError }}</p>
+              <StructuredResultView :data="structuredResult"/>
             </div>
 
             <div v-else-if="result" class="flex h-full flex-col p-4">
@@ -375,267 +425,22 @@ import {buildFallbackParams} from '../utils/lightParams'
 import type {BatchProgress, Module, UploadResult} from '../types'
 import {isBatchResult} from '../types'
 import {Button} from '@/components/ui/button'
+import {HEAVY_CONFIGS, MODULE_CONFIGS} from '../config/toolConfigs'
 import {useRecentTools} from '../composables/useRecentTools'
+import {useLikes} from '../composables/useLikes'
+import {parseStructuredResult} from '../utils/structuredResult'
+import StructuredResultView from '../components/StructuredResultView.vue'
 import FrontendToolPage from '../components/FrontendToolPage.vue'
 import UnifiedConvertPage from '../components/UnifiedConvertPage.vue'
 import UnifiedEncoderPage from '../components/UnifiedEncoderPage.vue'
 import UnifiedTextUtilsPage from '../components/UnifiedTextUtilsPage.vue'
+import UnifiedCodeGenPage from '../components/UnifiedCodeGenPage.vue'
 import FileUploader from '../components/FileUploader.vue'
 import BatchPoller from '../components/BatchPoller.vue'
 import ResultViewer from '../components/ResultViewer.vue'
 import CommentSection from '../components/CommentSection.vue'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
-
-// ── 파라미터 타입 ─────────────────────────────────────────────────────────
-
-interface ParamDef {
-  key: string
-  label: string
-  type: 'textarea' | 'text' | 'select'
-  placeholder?: string
-  options?: string[]
-  default?: string
-}
-
-interface ModuleConfig {
-  params: ParamDef[]
-  resultType?: 'image'
-  sample?: Record<string, string>
-  textInput?: { label: string; placeholder: string; filename: string }
-  fileAccept?: string
-  fileMultiple?: boolean
-  reorderable?: boolean
-}
-
-// ── Light 모듈 CONFIGS ────────────────────────────────────────────────────
-
-const MODULE_CONFIGS: Record<string, ModuleConfig> = {
-  // 이미지 생성기
-  'qr-code': {
-    params: [
-      {key: 'content', label: 'URL 또는 텍스트', type: 'text', placeholder: 'https://example.com'},
-      {key: 'size', label: '크기 (px)', type: 'text', placeholder: '300', default: '300'},
-    ],
-    resultType: 'image',
-    sample: {content: 'https://github.com'},
-  },
-  'barcode': {
-    params: [
-      {key: 'content', label: '바코드 내용', type: 'text', placeholder: '1234567890'},
-      {key: 'width', label: '너비 (px)', type: 'text', placeholder: '400', default: '400'},
-      {key: 'height', label: '높이 (px)', type: 'text', placeholder: '120', default: '120'},
-    ],
-    resultType: 'image',
-    sample: {content: '0123456789'},
-  },
-
-  // 보안
-  'bcrypt': {
-    params: [
-      {key: 'password', label: '비밀번호', type: 'text', placeholder: '해시할 비밀번호 입력'},
-      {key: 'rounds', label: 'Rounds (강도)', type: 'select', options: ['10', '11', '12', '13'], default: '10'},
-    ],
-    sample: {password: 'p@ssw0rd!'},
-  },
-  'rsa-key': {
-    params: [
-      {key: 'preset', label: '키 유형 / 크기', type: 'select', options: ['RSA-2048', 'RSA-4096', 'EC-256', 'EC-384', 'EC-521'], default: 'RSA-2048'},
-    ],
-  },
-  'hmac': {
-    params: [
-      {key: 'text', label: '메시지', type: 'textarea', placeholder: 'HMAC 서명할 텍스트'},
-      {key: 'key', label: '서명 키', type: 'text', placeholder: 'secret-key'},
-      {key: 'algorithm', label: '알고리즘', type: 'select', options: ['HmacSHA256', 'HmacSHA512'], default: 'HmacSHA256'},
-    ],
-    sample: {text: 'hello world', key: 'secret-key'},
-  },
-  'aes': {
-    params: [
-      {key: 'text', label: '텍스트', type: 'textarea', placeholder: '암호화/복호화할 텍스트'},
-      {key: 'key', label: 'AES 키', type: 'text', placeholder: '16·24·32자 키'},
-      {key: 'mode', label: '모드', type: 'select', options: ['encrypt', 'decrypt'], default: 'encrypt'},
-    ],
-    sample: {text: '민감한 데이터', key: '0123456789abcdef'},
-  },
-
-  // 포맷터
-  'sql-formatter': {
-    params: [{key: 'sql', label: 'SQL', type: 'textarea', placeholder: 'SELECT * FROM users WHERE id = 1;'}],
-    sample: {sql: 'SELECT u.id, u.name, o.total FROM users u JOIN orders o ON o.user_id = u.id WHERE o.total > 1000 ORDER BY o.total DESC;'},
-  },
-  'xml-formatter': {
-    params: [
-      {key: 'xml', label: 'XML', type: 'textarea', placeholder: '<root><item>1</item></root>'},
-      {key: 'minify', label: '출력 형식', type: 'select', options: ['false', 'true'], default: 'false'},
-    ],
-    sample: {xml: '<root><item id="1"><name>foo</name></item><item id="2"><name>bar</name></item></root>'},
-  },
-  'html-entity': {
-    params: [
-      {key: 'text', label: '텍스트', type: 'textarea', placeholder: '<div>hello & world</div>'},
-      {key: 'mode', label: '모드', type: 'select', options: ['encode', 'decode'], default: 'encode'},
-    ],
-    sample: {text: '<div class="greeting">hello & world</div>'},
-  },
-
-  // 변환기
-  'json-yaml': {
-    params: [
-      {key: 'input', label: '입력', type: 'textarea', placeholder: '{"key": "value"}'},
-      {key: 'direction', label: '변환 방향', type: 'select', options: ['json-to-yaml', 'yaml-to-json'], default: 'json-to-yaml'},
-    ],
-    sample: {input: '{"name": "DevToolbox", "tags": ["dev", "tools"], "active": true}'},
-  },
-  'json-toml': {
-    params: [
-      {key: 'input', label: '입력', type: 'textarea', placeholder: '{"key": "value"}'},
-      {key: 'direction', label: '변환 방향', type: 'select', options: ['json-to-toml', 'toml-to-json'], default: 'json-to-toml'},
-    ],
-    sample: {input: '{"name": "DevToolbox", "tags": ["dev", "tools"], "active": true}'},
-  },
-  'json-xml': {
-    params: [
-      {key: 'input', label: '입력', type: 'textarea', placeholder: '{"key": "value"}'},
-      {key: 'direction', label: '변환 방향', type: 'select', options: ['json-to-xml', 'xml-to-json'], default: 'json-to-xml'},
-    ],
-    sample: {input: '{"name": "DevToolbox", "tags": ["dev", "tools"], "active": true}'},
-  },
-  'csv-json': {
-    params: [
-      {key: 'input', label: '입력', type: 'textarea', placeholder: 'name,age\nAlice,30'},
-      {key: 'direction', label: '변환 방향', type: 'select', options: ['csv-to-json', 'json-to-csv'], default: 'csv-to-json'},
-    ],
-    sample: {input: 'name,age\nAlice,30\nBob,25'},
-  },
-
-  // 텍스트
-  'text-diff': {
-    params: [
-      {key: 'original', label: '원본 텍스트', type: 'textarea', placeholder: '원본 텍스트 입력...'},
-      {key: 'revised', label: '수정된 텍스트', type: 'textarea', placeholder: '수정된 텍스트 입력...'},
-    ],
-    sample: {
-      original: 'The quick brown fox\njumps over the lazy dog',
-      revised: 'The quick red fox\nleaps over the lazy dog',
-    },
-  },
-  'regex-tester': {
-    params: [
-      {key: 'pattern', label: '정규식 패턴', type: 'text', placeholder: '[a-z]+'},
-      {key: 'text', label: '테스트 텍스트', type: 'textarea', placeholder: '검사할 텍스트 입력...'},
-    ],
-    sample: {pattern: '[a-z]+@[a-z]+\\.[a-z]{2,}', text: 'contact: alice@example.com, bob@test.org'},
-  },
-  'case-converter': {
-    params: [
-      {key: 'text', label: '텍스트', type: 'text', placeholder: 'myVariableName'},
-      {key: 'from', label: 'From', type: 'select', options: ['camel', 'pascal', 'snake', 'kebab'], default: 'camel'},
-      {key: 'to', label: 'To', type: 'select', options: ['camel', 'pascal', 'snake', 'kebab'], default: 'snake'},
-    ],
-    sample: {text: 'myVariableName'},
-  },
-
-  // 네트워크
-  'url-parser': {
-    params: [{key: 'url', label: 'URL', type: 'text', placeholder: 'https://example.com/path?q=1#hash'}],
-    sample: {url: 'https://user@example.com:8443/path/to/page?q=devtoolbox&lang=ko#section'},
-  },
-  'subnet-calc': {
-    params: [{key: 'cidr', label: 'CIDR 표기', type: 'text', placeholder: '192.168.1.0/24'}],
-    sample: {cidr: '192.168.1.0/24'},
-  },
-  'html-fetch': {
-    params: [{key: 'url', label: 'URL', type: 'text', placeholder: 'https://example.com'}],
-  },
-
-  // DevOps
-  'cron': {
-    params: [
-      {key: 'expression', label: 'Cron 표현식', type: 'text', placeholder: '0 0 * * *'},
-      {key: 'count', label: '다음 실행 횟수', type: 'text', placeholder: '5', default: '5'},
-    ],
-    sample: {expression: '*/15 9-18 * * 1-5'},
-  },
-  'docker-compose': {
-    params: [{key: 'command', label: 'docker run 명령어', type: 'textarea', placeholder: 'docker run -p 8080:8080 -e ENV=prod nginx'}],
-    sample: {command: 'docker run -d -p 8080:80 -e TZ=Asia/Seoul --name web nginx:alpine'},
-  },
-
-  // 유틸
-  'totp': {
-    params: [{key: 'secret', label: 'TOTP Secret (Base32)', type: 'text', placeholder: 'JBSWY3DPEHPK3PXP'}],
-    sample: {secret: 'JBSWY3DPEHPK3PXP'},
-  },
-  'multi-hash': {
-    params: [{key: 'text', label: '텍스트', type: 'textarea', placeholder: '해시를 생성할 텍스트'}],
-    sample: {text: 'hello world'},
-  },
-}
-
-// ── Heavy 모듈 CONFIGS ────────────────────────────────────────────────────
-
-const HEAVY_CONFIGS: Record<string, ModuleConfig> = {
-  'image-to-pdf': {
-    params: [],
-    fileAccept: '.jpg,.jpeg,.png',
-  },
-  'pdf-merge': {
-    params: [],
-    fileAccept: '.pdf',
-    reorderable: true,
-  },
-  'pdf-split': {
-    params: [],
-    fileAccept: '.pdf',
-  },
-  'markdown-to-pdf': {
-    params: [],
-    fileAccept: '.md',
-  },
-  'gif-create': {
-    params: [
-      {key: 'delay', label: '프레임 간격 (ms)', type: 'text', placeholder: '100', default: '100'},
-    ],
-  },
-  'image-resize': {
-    params: [
-      {key: 'width', label: '너비 (px)', type: 'text', placeholder: '800', default: '800'},
-      {key: 'height', label: '높이 (px)', type: 'text', placeholder: '600', default: '600'},
-    ],
-    // 다중 파일 → 파일당 별도 Job(배치) → ZIP. 배치 진행률 UI로 소비한다.
-  },
-  'image-format': {
-    params: [
-      {key: 'targetFormat', label: '출력 포맷', type: 'select', options: ['png', 'jpg'], default: 'png'},
-    ],
-  },
-  'json-schema-to-dto': {
-    params: [
-      {key: 'packageName', label: '패키지명', type: 'text', placeholder: 'com.example', default: 'com.generated'},
-    ],
-    textInput: {
-      label: 'JSON Schema 직접 입력',
-      placeholder: '{\n  "type": "object",\n  "properties": {\n    "id": { "type": "integer" },\n    "name": { "type": "string" }\n  }\n}',
-      filename: 'schema.json',
-    },
-  },
-  'openapi-to-code': {
-    params: [
-      {key: 'language', label: '출력 언어', type: 'select', options: ['java', 'kotlin', 'typescript'], default: 'java'},
-    ],
-    textInput: {
-      label: 'OpenAPI 스펙 직접 입력',
-      placeholder: 'openapi: "3.0.0"\ninfo:\n  title: My API\n  version: "1.0"',
-      filename: 'spec.yaml',
-    },
-  },
-  'vuln-scan': {
-    params: [],
-    fileAccept: '.gradle,.kts,.xml',
-  },
-}
 
 // ── 상태 ──────────────────────────────────────────────────────────────────
 
@@ -668,6 +473,8 @@ const moduleConfig = computed(() => mod.value ? MODULE_CONFIGS[mod.value.id] ?? 
 const heavyConfig = computed(() => mod.value ? HEAVY_CONFIGS[mod.value.id] ?? null : null)
 const batchResultUrl = computed(() => batchId.value ? `${API_BASE}/api/v1/batches/${batchId.value}/result` : '')
 
+const structuredResult = computed(() => parseStructuredResult(result.value?.text))
+
 const textareaCount = computed(() =>
     moduleConfig.value?.params.filter(p => p.type === 'textarea').length ?? 0,
 )
@@ -686,7 +493,10 @@ interface ToolStats {
 }
 
 const stats = ref<ToolStats | null>(null)
-const liked = ref(false)
+const likePending = ref(false)
+const {isLiked, markLiked, markUnliked} = useLikes()
+
+const liked = computed(() => mod.value ? isLiked(mod.value.id) : false)
 
 async function loadStats(moduleId: string) {
   try {
@@ -699,12 +509,22 @@ async function loadStats(moduleId: string) {
 
 async function toggleLike() {
   const moduleId = route.params.moduleId as string
+  if (likePending.value) return
+  likePending.value = true
   try {
-    const {data} = await apiClient.post<ToolStats>(`/api/v1/tools/${moduleId}/like`)
-    stats.value = data
-    liked.value = true
+    if (liked.value) {
+      const {data} = await apiClient.delete<ToolStats>(`/api/v1/tools/${moduleId}/like`)
+      stats.value = data
+      markUnliked(moduleId)
+    } else {
+      const {data} = await apiClient.post<ToolStats>(`/api/v1/tools/${moduleId}/like`)
+      stats.value = data
+      markLiked(moduleId)
+    }
   } catch {
-    // 무시
+    // 서버 오류 시 상태 변경하지 않음
+  } finally {
+    likePending.value = false
   }
 }
 
@@ -714,7 +534,6 @@ async function loadModule(moduleId: string) {
   loading.value = true
   mod.value = null
   stats.value = null
-  liked.value = false
   showComments.value = false
   commentCount.value = null
   resetAll()

@@ -1,6 +1,6 @@
 <template>
   <CommandDialog v-model:open="isOpen">
-    <CommandInput placeholder="도구 검색..."/>
+    <CommandInput placeholder="도구 검색..." @input="onSearchInput"/>
     <CommandList class="max-h-[360px]">
       <CommandEmpty>도구를 찾을 수 없습니다.</CommandEmpty>
       <CommandGroup
@@ -11,9 +11,9 @@
         <CommandItem
             v-for="mod in group"
             :key="mod.id"
-            :value="`${mod.name} ${mod.category} ${mod.description ?? ''} ${mod.keywords?.join(' ') ?? ''}`"
+            :value="`${mod.name} ${mod.category} ${mod.description ?? ''} ${keywordStrings(mod.keywords).join(' ')}`"
             class="flex items-center gap-2.5 py-2"
-            @select="navigate(mod.id)"
+            @select="navigate(mod)"
         >
           <div class="flex size-6 shrink-0 items-center justify-center rounded bg-secondary text-muted-foreground">
             <component
@@ -39,6 +39,7 @@ import {computed, ref} from 'vue'
 import {useRouter} from 'vue-router'
 import type {Module} from '../types'
 import {getCategoryConfig} from '../utils/categoryConfig'
+import {keywordStrings, resolveAliasQuery} from '../utils/keywordAlias'
 import {
   CommandDialog,
   CommandEmpty,
@@ -51,12 +52,18 @@ import {
 const props = defineProps<{ modules: Module[] }>()
 const router = useRouter()
 const isOpen = ref(false)
+const search = ref('')
 
 function open() {
+  search.value = ''
   isOpen.value = true
 }
 
 defineExpose({open})
+
+function onSearchInput(e: Event) {
+  search.value = (e.target as HTMLInputElement).value ?? ''
+}
 
 const grouped = computed(() =>
     props.modules.reduce<Record<string, Module[]>>((acc, mod) => {
@@ -65,8 +72,10 @@ const grouped = computed(() =>
     }, {}),
 )
 
-function navigate(moduleId: string) {
+function navigate(mod: Module) {
   isOpen.value = false
-  router.push(`/tools/${moduleId}`)
+  // 검색어가 딥링크 별칭과 일치하면 해당 모드/탭으로 바로 이동한다
+  const query = resolveAliasQuery(mod.keywords, search.value)
+  router.push(query ? `/tools/${mod.id}?${query}` : `/tools/${mod.id}`)
 }
 </script>

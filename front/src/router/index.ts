@@ -15,6 +15,8 @@ export const router = createRouter({
         {path: '/tools/json-toml', redirect: '/tools/data-convert?from=json&to=toml'},
         {path: '/tools/json-xml', redirect: '/tools/data-convert?from=json&to=xml'},
         {path: '/tools/csv-json', redirect: '/tools/data-convert?from=csv&to=json'},
+        {path: '/tools/qr-code', redirect: '/tools/code-gen?format=qr'},
+        {path: '/tools/barcode', redirect: '/tools/code-gen?format=code128'},
         {path: '/tools/case-converter', redirect: '/tools/text-utils?tab=case'},
         {path: '/tools/char-count', redirect: '/tools/text-utils?tab=count'},
         {path: '/tools/keyboard-convert', redirect: '/tools/text-utils?tab=keyboard'},

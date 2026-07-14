@@ -204,8 +204,46 @@ class ToolAndJobApiTest extends AbstractMySQLIntegrationTest {
             }
         }
         assertThat(entryContents).hasSize(2);
-        assertThat(entryContents.keySet()).allMatch(name -> name.contains("/"));
+        // 038: UUID 폴더 없이 평평하게, 원본 파일명 + 결과 확장자(echo는 .txt)로.
+        assertThat(entryContents.keySet()).noneMatch(name -> name.contains("/"));
+        assertThat(entryContents.keySet()).containsExactlyInAnyOrder("a.txt", "b.txt");
         assertThat(entryContents.values()).allMatch("file-content"::equals);
+    }
+
+    @Test
+    void getBatchResult_같은_원본명이면_순번으로_구분해_덮어쓰지_않는다() throws Exception {
+        MockMultipartFile f1 = new MockMultipartFile("files", "same.txt", "text/plain", "aaa".getBytes());
+        MockMultipartFile f2 = new MockMultipartFile("files", "same.txt", "text/plain", "bbb".getBytes());
+
+        String resp = mockMvc.perform(multipart("/api/v1/tools/file-heavy-echo/upload").file(f1).file(f2))
+                .andExpect(status().isAccepted())
+                .andReturn().getResponse().getContentAsString();
+        String batchId = JsonPath.read(resp, "$.batchId");
+
+        await().atMost(15, SECONDS).until(() -> {
+            String s = mockMvc.perform(get("/api/v1/batches/" + batchId))
+                    .andReturn().getResponse().getContentAsString();
+            int done = JsonPath.read(s, "$.doneCount");
+            int total = JsonPath.read(s, "$.totalCount");
+            return done == total && total == 2;
+        });
+
+        var asyncResult = mockMvc.perform(get("/api/v1/batches/" + batchId + "/result"))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+        byte[] zipBytes = mockMvc.perform(asyncDispatch(asyncResult))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+
+        var names = new java.util.ArrayList<String>();
+        try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zipBytes))) {
+            java.util.zip.ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                names.add(entry.getName());
+            }
+        }
+        // 같은 이름 두 개 → 하나로 덮이지 않고 둘 다 살아있어야(엔트리 2개, -2 접미사).
+        assertThat(names).containsExactlyInAnyOrder("same.txt", "same-2.txt");
     }
 
     // ── FileController ─────────────────────────────────────────────────────

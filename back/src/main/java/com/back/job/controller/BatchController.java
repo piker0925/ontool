@@ -8,6 +8,7 @@ import com.back.job.entity.Job;
 import com.back.job.entity.JobStatus;
 import com.back.job.repository.BatchStats;
 import com.back.job.service.JobService;
+import com.back.job.service.ZipEntryNamer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +19,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.InputStream;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -48,10 +48,11 @@ public class BatchController {
 
         StreamingResponseBody body = out -> {
             try (ZipOutputStream zip = new ZipOutputStream(out)) {
+                // 엔트리명: 원본 파일명 + 결과 확장자, 충돌 -N, 정화(Zip Slip 방지) — 038. UUID 폴더 제거.
+                ZipEntryNamer namer = new ZipEntryNamer();
                 for (Job job : doneJobs) {
                     String key = job.getResultKey();
-                    String filename = Path.of(key).getFileName().toString();
-                    zip.putNextEntry(new ZipEntry(job.getId() + "/" + filename));
+                    zip.putNextEntry(new ZipEntry(namer.nameFor(firstInputPath(job), key)));
                     try (InputStream in = fileStorage.openStream(key)) {
                         in.transferTo(zip);
                     }
@@ -64,5 +65,10 @@ public class BatchController {
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .header("Content-Disposition", "attachment; filename=batch-" + id + ".zip")
                 .body(body);
+    }
+
+    private static String firstInputPath(Job job) {
+        List<String> inputs = job.getInputPaths();
+        return (inputs == null || inputs.isEmpty()) ? "" : inputs.get(0);
     }
 }

@@ -5,6 +5,7 @@ import com.back.global.exception.ErrorCode;
 import com.back.job.dto.BatchCreateResponse;
 import com.back.job.dto.JobCreateResponse;
 import com.back.job.entity.Job;
+import com.back.job.service.AdmissionControl;
 import com.back.job.service.JobService;
 import com.back.tool.dto.ModuleResponse;
 import com.back.tool.dto.RunResponse;
@@ -36,14 +37,17 @@ public class ToolController {
     private final ToolService toolService;
     private final JobService jobService;
     private final ToolStatsService toolStatsService;
+    private final AdmissionControl admissionControl;
     private final Path uploadDir;
 
     public ToolController(ToolService toolService, JobService jobService,
                           ToolStatsService toolStatsService,
+                          AdmissionControl admissionControl,
                           @Value("${storage.upload-dir:uploads}") String uploadDir) {
         this.toolService = toolService;
         this.jobService = jobService;
         this.toolStatsService = toolStatsService;
+        this.admissionControl = admissionControl;
         this.uploadDir = Path.of(uploadDir);
     }
 
@@ -79,6 +83,9 @@ public class ToolController {
         // 익명 식별자: 프론트가 localStorage에서 관리해 헤더로 보낸다 (ADR-0019). 없으면 null → 쿼터 생략.
         String ownerToken = request.getHeader("X-Client-Id");
         Lane lane = module.getLane();
+
+        // 용량 기반 앞단 거부(036): 배치든 단건이든 루프 전에 한 번만 검사해 부분 생성을 막는다.
+        admissionControl.assertCapacityAvailable(lane);
 
         // 단일 파일이거나 모든 파일을 하나의 job으로 처리하는 모듈 (pdf-merge, gif-create)
         if (files.size() == 1 || module.acceptsMultipleFiles()) {

@@ -3,6 +3,7 @@ package com.back.job.repository;
 import com.back.AbstractMySQLIntegrationTest;
 import com.back.job.entity.Job;
 import com.back.job.entity.JobStatus;
+import com.back.tool.model.Lane;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -82,5 +83,25 @@ class JobRepositoryTest extends AbstractMySQLIntegrationTest {
         thread1.join();
 
         assertThat(thread2Result.get()).isEmpty();
+    }
+
+    @Test
+    void countByLaneAndStatus_지정한_레인과_상태의_작업만_센다() {
+        saveJob(Lane.HEAVY, JobStatus.PENDING);
+        saveJob(Lane.HEAVY, JobStatus.PENDING);
+        saveJob(Lane.VIDEO, JobStatus.PENDING);   // 다른 레인 — 세면 안 됨
+        saveJob(Lane.HEAVY, JobStatus.RUNNING);   // 같은 레인 다른 상태 — 세면 안 됨
+
+        // 레인·상태 둘 다 필터해야 2. 상태만 보면 3(HEAVY·VIDEO PENDING), 레인만 보면 3(PENDING·RUNNING).
+        assertThat(jobRepository.countByLaneAndStatus(Lane.HEAVY, JobStatus.PENDING)).isEqualTo(2);
+    }
+
+    private void saveJob(Lane lane, JobStatus status) {
+        Job job = new Job();
+        job.setModuleId("image-to-pdf");
+        job.setLane(lane);
+        job.setStatus(status);
+        job.setExpiresAt(LocalDateTime.now().plusHours(1));
+        jobRepository.save(job);
     }
 }

@@ -35,6 +35,9 @@ public interface JobRepository extends JpaRepository<Job, String> {
     /** 같은 레인에서 이 시각보다 먼저 생성된 PENDING 개수 — 큐 순번(대략치) 계산용. */
     int countByLaneAndStatusAndCreatedAtBefore(Lane lane, JobStatus status, LocalDateTime createdAt);
 
+    /** 레인별 상태 개수 — 큐 깊이 게이트(036) 판정용. */
+    int countByLaneAndStatus(Lane lane, JobStatus status);
+
     List<Job> findAllByExpiresAtBefore(LocalDateTime now);
 
     List<Job> findAllByBatchId(String batchId);

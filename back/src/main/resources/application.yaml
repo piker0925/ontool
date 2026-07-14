@@ -16,3 +16,15 @@ server:
     # 한도 초과로 multipart 읽기를 중단해도, Tomcat이 남은 바디를 끝까지 버려야(swallow) 413 응답 바디가
     # 클라이언트에 도달한다. 기본값(2MB)을 넘게 초과하면 연결이 리셋되며 빈 바디가 되므로 -1(무제한)로 둔다.
     max-swallow-size: -1
+
+# 용량 기반 앞단 거부 게이트 (036, AdmissionControl)
+storage:
+  # uploads+results 누적 사용량 상한. 초과 시 507 STORAGE_FULL로 거부.
+  # 기본 10GB — ⚠ prod 실제 블록 스토리지 용량(df -h) 확인 후 값 확정할 것.
+  disk-budget-bytes: 10737418240
+queue:
+  # 레인별 PENDING 대기 상한. 초과 시 503 QUEUE_FULL로 거부.
+  # VIDEO는 코어를 오래 점유해(ADR-0019) 소수만 쌓여도 대기가 길므로 좁게 둔다.
+  max-pending:
+    heavy: 200
+    video: 10

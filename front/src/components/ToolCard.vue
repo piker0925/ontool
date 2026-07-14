@@ -1,12 +1,12 @@
 <template>
   <div
       :title="mod.description ?? mod.name"
-      class="group relative flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-card px-4 py-3.5 shadow-sm transition-all duration-150 hover:-translate-y-px hover:border-primary/35 hover:shadow"
+      class="group relative flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-card px-4 py-3.5 shadow-sm transition-[transform,box-shadow,border-color] duration-150 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md"
       @click="router.push(`/tools/${mod.id}`)"
   >
     <!-- Category icon -->
     <div
-        class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary"
+        class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-muted-foreground transition-colors group-hover:bg-primary/15 group-hover:text-primary"
     >
       <component :is="config.icon" class="size-4"/>
     </div>

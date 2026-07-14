@@ -9,7 +9,7 @@
  * Workbench 팔레트
  * - 라이트: 웜 페이퍼 그레이 바탕 + 그래파이트 잉크, 액센트는 코발트 1색
  * - 다크: 미드나잇 그래파이트 (파랑 기미 살짝)
- * - 사이드바는 양 테마 공통 다크 (브랜드 앵커)
+ * - 사이드바도 본문과 함께 테마에 반응한다 (라이트/다크 전환이 한눈에 보이도록)
  */
 :root {
     color-scheme: light;
@@ -37,13 +37,13 @@
     --chart-3: oklch(0.439 0 0);
     --chart-4: oklch(0.371 0 0);
     --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.195 0.008 262);
-    --sidebar-foreground: oklch(0.72 0.008 262);
+    --sidebar: oklch(0.9 0.006 260);
+    --sidebar-foreground: oklch(0.35 0.014 262);
     --sidebar-primary: oklch(0.495 0.185 257);
     --sidebar-primary-foreground: oklch(0.985 0.002 85);
-    --sidebar-accent: oklch(1 0 0 / 8%);
-    --sidebar-accent-foreground: oklch(0.88 0.005 262);
-    --sidebar-border: oklch(1 0 0 / 8%);
+    --sidebar-accent: oklch(0.78 0.008 260);
+    --sidebar-accent-foreground: oklch(0.24 0.012 262);
+    --sidebar-border: oklch(0.8 0.008 260);
     --sidebar-ring: oklch(0.495 0.185 257);
 }
 
@@ -72,13 +72,13 @@
     --chart-3: oklch(0.439 0 0);
     --chart-4: oklch(0.371 0 0);
     --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.165 0.008 262);
+    --sidebar: oklch(0.11 0.005 262);
     --sidebar-foreground: oklch(0.72 0.008 262);
     --sidebar-primary: oklch(0.74 0.14 257);
     --sidebar-primary-foreground: oklch(0.185 0.008 262);
-    --sidebar-accent: oklch(1 0 0 / 8%);
-    --sidebar-accent-foreground: oklch(0.88 0.005 262);
-    --sidebar-border: oklch(1 0 0 / 8%);
+    --sidebar-accent: oklch(1 0 0 / 10%);
+    --sidebar-accent-foreground: oklch(0.92 0.005 262);
+    --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.74 0.14 257);
 }
 

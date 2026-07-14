@@ -146,6 +146,7 @@
                 :multiple="heavyConfig?.fileMultiple ?? true"
                 :params="heavyFormValues"
                 :reorderable="heavyConfig?.reorderable ?? false"
+                @error="onUploadError"
                 @uploaded="onUploaded"
             />
           </div>
@@ -191,6 +192,12 @@
               </template>
             </div>
 
+            <div v-else-if="runError && !jobId && !result" class="flex flex-col items-center gap-3 text-center">
+              <div class="flex size-12 items-center justify-center rounded-xl border-2 border-dashed border-destructive/40">
+                <AlertTriangle class="size-5 text-destructive/70"/>
+              </div>
+              <p class="max-w-xs text-[13px] font-medium text-destructive">{{ runError }}</p>
+            </div>
             <div v-else-if="!jobId && !result" class="flex flex-col items-center gap-3 text-center">
               <div class="flex size-12 items-center justify-center rounded-xl border-2 border-dashed border-border">
                 <ArrowRight class="size-5 text-muted-foreground/50"/>
@@ -426,6 +433,7 @@ import {computed, onUnmounted, ref, watch} from 'vue'
 import {useRoute} from 'vue-router'
 import {
   AlertCircle,
+  AlertTriangle,
   ArrowRight,
   BarChart2,
   Check,
@@ -442,6 +450,7 @@ import {apiClient} from '../api/client'
 import {MOCK_MODULES} from '../api/mock'
 import {normalizeApiModules} from '../api/modules'
 import {buildFallbackParams} from '../utils/lightParams'
+import {uploadErrorMessage} from '../utils/uploadError'
 import type {BatchProgress, Module, UploadResult} from '../types'
 import {isBatchResult} from '../types'
 import {Button} from '@/components/ui/button'
@@ -627,7 +636,12 @@ function initForm() {
 
 // ── Heavy ─────────────────────────────────────────────────────────────────
 
+function onUploadError(message: string) {
+  runError.value = message
+}
+
 function onUploaded(r: UploadResult) {
+  runError.value = ''
   jobProgress.value = null
   if (isBatchResult(r)) {
     // 배치: 단건 SSE를 시작하지 않도록 jobId는 null로 두고 배치 진행률로 진입한다.
@@ -661,8 +675,12 @@ async function uploadTextAsFile() {
   const form = new FormData()
   form.append('files', new File([blob], filename))
   Object.entries(heavyFormValues.value).forEach(([k, v]) => { if (v) form.append(k, v) })
-  const {data} = await apiClient.post<UploadResult>(`/api/v1/tools/${mod.value.id}/upload`, form)
-  onUploaded(data)
+  try {
+    const {data} = await apiClient.post<UploadResult>(`/api/v1/tools/${mod.value.id}/upload`, form)
+    onUploaded(data)
+  } catch (e) {
+    onUploadError(uploadErrorMessage(e))
+  }
 }
 
 async function onDone(id: string) {

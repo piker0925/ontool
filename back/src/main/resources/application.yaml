@@ -3,6 +3,16 @@ spring:
     name: back
   profiles:
     active: local
+  servlet:
+    multipart:
+      # 업로드 한도(모든 프로파일 공통). 값 근거: 결과는 아직 in-memory로 처리되므로(진짜 대용량 스트리밍은 036)
+      # 힙 안전선 기준으로 파일 단건 50MB, 요청 전체(배치 합산) 100MB로 둔다. 초과분은 앞단에서 413으로 거부.
+      max-file-size: 50MB
+      max-request-size: 100MB
 
 server:
   port: 8080
+  tomcat:
+    # 한도 초과로 multipart 읽기를 중단해도, Tomcat이 남은 바디를 끝까지 버려야(swallow) 413 응답 바디가
+    # 클라이언트에 도달한다. 기본값(2MB)을 넘게 초과하면 연결이 리셋되며 빈 바디가 되므로 -1(무제한)로 둔다.
+    max-swallow-size: -1

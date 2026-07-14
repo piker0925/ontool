@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -31,6 +32,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity
             .badRequest()
             .body(ErrorResponse.of(ErrorCode.VALIDATION_FAILED, fieldErrors));
+    }
+
+    // multipart 크기 초과는 컨트롤러에 닿기 전 발생한다. 빈 바디 대신 FILE_TOO_LARGE(413) JSON으로 응답한다.
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxUploadSize() {
+        return ResponseEntity
+            .status(ErrorCode.FILE_TOO_LARGE.getStatus())
+            .body(ErrorResponse.of(ErrorCode.FILE_TOO_LARGE));
     }
 
     @ExceptionHandler({NoResourceFoundException.class, NoHandlerFoundException.class})

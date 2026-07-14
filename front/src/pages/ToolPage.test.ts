@@ -12,6 +12,7 @@ vi.mock('../api/client', () => ({
 }))
 
 const mockGet = apiClient.get as ReturnType<typeof vi.fn>
+const mockPost = apiClient.post as ReturnType<typeof vi.fn>
 
 function mockModules(modules: Module[]) {
     mockGet.mockImplementation((url: string) => {
@@ -50,6 +51,43 @@ beforeEach(() => vi.clearAllMocks())
 
 afterEach(() => {
     mountedWrappers.splice(0).forEach(w => w.unmount())
+})
+
+describe('ToolPage 업로드 실패 표시 (032)', () => {
+    async function selectFile(wrapper: ReturnType<typeof mount>, name: string) {
+        const file = new File(['x'], name, {type: 'image/jpeg'})
+        const inputEl = wrapper.find('input[type="file"]').element as HTMLInputElement
+        Object.defineProperty(inputEl, 'files', {value: [file], configurable: true})
+        await wrapper.find('input[type="file"]').trigger('change')
+        await flushPromises()
+    }
+
+    it('업로드가 413으로 실패하면 결과 영역에 크기 초과 메시지를 렌더링한다', async () => {
+        const wrapper = await mountAt('img-heavy', [
+            {id: 'img-heavy', name: '이미지 도구', category: 'PDF', isHeavy: true},
+        ])
+        // 프록시가 자른 413(바디 없음)이라도 status만으로 크기 메시지를 보여줘야 한다.
+        mockPost.mockRejectedValueOnce({response: {status: 413, data: ''}})
+
+        await selectFile(wrapper, 'big.jpg')
+
+        expect(wrapper.text()).toContain('파일 크기가 제한을 초과')
+    })
+
+    it('업로드가 429로 실패하면 크기 메시지가 아닌 쿼터 메시지를 렌더링한다', async () => {
+        const wrapper = await mountAt('img-heavy', [
+            {id: 'img-heavy', name: '이미지 도구', category: 'PDF', isHeavy: true},
+        ])
+        mockPost.mockRejectedValueOnce({
+            response: {status: 429, data: {message: '동시에 처리 중인 작업이 너무 많습니다. 잠시 후 다시 시도해 주세요.'}},
+        })
+
+        await selectFile(wrapper, 'a.jpg')
+
+        const text = wrapper.text()
+        expect(text).toContain('처리 중인 작업')
+        expect(text).not.toContain('파일 크기가 제한을 초과')
+    })
 })
 
 describe('ToolPage 파라미터 필드 (024)', () => {

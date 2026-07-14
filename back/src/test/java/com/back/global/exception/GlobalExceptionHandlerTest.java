@@ -8,6 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -37,6 +38,11 @@ class GlobalExceptionHandlerTest {
             return "ok";
         }
 
+        @PostMapping("/test/too-large")
+        String tooLarge() {
+            throw new MaxUploadSizeExceededException(1_048_576L);
+        }
+
         record ValidRequest(@NotBlank String name) {}
     }
 
@@ -58,6 +64,15 @@ class GlobalExceptionHandlerTest {
             .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
             .andExpect(jsonPath("$.errors[0].field").value("name"))
             .andExpect(jsonPath("$.errors[0].message").exists());
+    }
+
+    @Test
+    void maxUploadSizeExceeded_returns413WithJsonBody() throws Exception {
+        mockMvc.perform(post("/test/too-large"))
+            .andExpect(status().isPayloadTooLarge())
+            .andExpect(jsonPath("$.code").value("FILE_TOO_LARGE"))
+            .andExpect(jsonPath("$.message").value("파일 크기가 제한을 초과합니다."))
+            .andExpect(jsonPath("$.errors").isEmpty());
     }
 
     @Test

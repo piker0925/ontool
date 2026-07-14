@@ -53,6 +53,7 @@ import {ref} from 'vue'
 import {apiClient} from '../api/client'
 import type {UploadResult} from '../types'
 import {moveItem} from '../utils/fileOrder'
+import {uploadErrorMessage} from '../utils/uploadError'
 import {Button} from '@/components/ui/button'
 
 const props = withDefaults(defineProps<{
@@ -67,6 +68,7 @@ const props = withDefaults(defineProps<{
 })
 const emit = defineEmits<{
   uploaded: [result: UploadResult]
+  error: [message: string]
 }>()
 
 const dragging = ref(false)
@@ -81,9 +83,14 @@ async function upload(files: File[]) {
       if (v !== '' && v !== undefined) form.append(k, v)
     })
   }
-  const {data} = await apiClient.post<UploadResult>(`/api/v1/tools/${props.moduleId}/upload`, form)
-  staged.value = []
-  emit('uploaded', data)
+  try {
+    const {data} = await apiClient.post<UploadResult>(`/api/v1/tools/${props.moduleId}/upload`, form)
+    staged.value = []
+    emit('uploaded', data)
+  } catch (e) {
+    // 실패 시 staged를 비우지 않아 사용자가 그대로 재시도할 수 있게 둔다.
+    emit('error', uploadErrorMessage(e))
+  }
 }
 
 function handleFiles(files: File[]) {

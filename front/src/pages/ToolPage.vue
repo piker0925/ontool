@@ -13,11 +13,10 @@
       <nav class="flex min-w-0 items-center gap-1.5 text-[13px] text-muted-foreground">
         <router-link class="shrink-0 transition-colors hover:text-foreground" to="/">홈</router-link>
         <ChevronRight class="size-3.5 shrink-0"/>
-        <button
-            type="button"
+        <router-link
             class="shrink-0 transition-colors hover:text-foreground"
-            @click="goToCategory(mod.category)"
-        >{{ mod.category }}</button>
+            :to="{path: '/', query: {category: mod.category}}"
+        >{{ mod.category }}</router-link>
         <ChevronRight class="size-3.5 shrink-0"/>
         <span class="truncate font-medium text-foreground">{{ mod.name }}</span>
       </nav>
@@ -407,7 +406,7 @@
 
 <script lang="ts" setup>
 import {computed, onUnmounted, ref, watch} from 'vue'
-import {useRoute, useRouter} from 'vue-router'
+import {useRoute} from 'vue-router'
 import {
   AlertCircle,
   ArrowRight,
@@ -432,7 +431,6 @@ import {Button} from '@/components/ui/button'
 import {HEAVY_CONFIGS, MODULE_CONFIGS} from '../config/toolConfigs'
 import {useRecentTools} from '../composables/useRecentTools'
 import {useLikes} from '../composables/useLikes'
-import {useToolFilter} from '../composables/useToolFilter'
 import {parseStructuredResult} from '../utils/structuredResult'
 import StructuredResultView from '../components/StructuredResultView.vue'
 import FrontendToolPage from '../components/FrontendToolPage.vue'
@@ -455,8 +453,6 @@ interface RunResult {
 }
 
 const route = useRoute()
-const router = useRouter()
-const {setCategory} = useToolFilter()
 const mod = ref<Module | null>(null)
 const loading = ref(true)
 const jobId = ref<string | null>(null)
@@ -588,11 +584,6 @@ function startSse(id: string) {
 function stopSse() {
   eventSource?.close()
   eventSource = null
-}
-
-function goToCategory(category: string) {
-  setCategory(category)
-  router.push('/')
 }
 
 function initForm() {

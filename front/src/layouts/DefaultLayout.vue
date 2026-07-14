@@ -6,15 +6,15 @@
     >
 
       <!-- Logo -->
-      <button
+      <router-link
           class="flex items-center gap-2.5 px-4 py-4 transition-opacity hover:opacity-80"
-          @click="handleCategoryClick(null)"
+          to="/"
       >
         <div class="flex size-7 items-center justify-center rounded-lg bg-sidebar-primary">
           <Zap class="size-4 text-sidebar-primary-foreground"/>
         </div>
         <span class="text-[15px] font-semibold text-sidebar-foreground">DevToolbox</span>
-      </button>
+      </router-link>
 
       <!-- Search -->
       <div class="px-3 pb-3">
@@ -37,47 +37,47 @@
             <span
                 class="font-mono text-[11px] font-medium uppercase tracking-wider text-sidebar-foreground/75">즐겨찾기</span>
           </div>
-          <button
+          <router-link
               v-for="mod in favoriteModules"
               :key="mod.id"
               class="flex w-full min-w-0 items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              @click="router.push(`/tools/${mod.id}`)"
+              :to="`/tools/${mod.id}`"
           >
             <Star class="size-[13px] shrink-0 fill-amber-400/80 text-amber-400/80"/>
             <span class="flex-1 truncate text-[13px]">{{ mod.name }}</span>
-          </button>
+          </router-link>
           <div class="mx-1 my-2 border-t border-sidebar-border"/>
         </template>
 
         <!-- 전체 -->
-        <button
+        <router-link
             :class="isAllActive
             ? 'bg-primary/10 text-primary'
             : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'"
             class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left transition-colors"
-            @click="handleCategoryClick(null)"
+            to="/"
         >
           <LayoutGrid class="size-[16px] shrink-0"/>
           <span class="flex-1 text-[14px] font-medium">전체 도구</span>
           <span class="shrink-0 font-mono text-[11px] opacity-70">{{ modules.length }}</span>
-        </button>
+        </router-link>
 
         <div class="mx-1 my-2 border-t border-sidebar-border"/>
 
         <!-- Categories -->
-        <button
+        <router-link
             v-for="cat in CATEGORIES"
             :key="cat.name"
             :class="isCategoryActive(cat.name)
             ? 'bg-primary/10 text-primary'
             : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'"
             class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left transition-colors"
-            @click="handleCategoryClick(cat.name)"
+            :to="{path: '/', query: {category: cat.name}}"
         >
           <component :is="cat.icon" class="size-[16px] shrink-0"/>
           <span class="flex-1 text-[14px]">{{ cat.name }}</span>
           <span class="shrink-0 font-mono text-[11px] opacity-70">{{ categoryCounts[cat.name] }}</span>
-        </button>
+        </router-link>
       </nav>
 
       <!-- 하단: 테마 · 건의하기 -->
@@ -134,7 +134,7 @@
 
 <script lang="ts" setup>
 import {computed, onMounted, onUnmounted, ref} from 'vue'
-import {useRoute, useRouter} from 'vue-router'
+import {useRoute} from 'vue-router'
 import {LayoutGrid, MessageSquarePlus, MonitorSmartphone, Moon, Search, Star, Sun, Zap} from 'lucide-vue-next'
 import {apiClient} from '../api/client'
 import {MOCK_MODULES} from '../api/mock'
@@ -154,11 +154,10 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 const route = useRoute()
-const router = useRouter()
 const modules = ref<Module[]>([])
 const paletteRef = ref<InstanceType<typeof CommandPalette> | null>(null)
 
-const {activeCategory, setCategory} = useToolFilter()
+const {activeCategory} = useToolFilter()
 const {favoriteIds} = useFavorites()
 const {preference, setTheme} = useTheme()
 
@@ -199,11 +198,6 @@ function isCategoryActive(catName: string) {
   const moduleId = route.params.moduleId as string | undefined
   if (!moduleId) return false
   return modules.value.find(m => m.id === moduleId)?.category === catName
-}
-
-function handleCategoryClick(catName: string | null) {
-  setCategory(catName)
-  if (route.path !== '/') router.push('/')
 }
 
 function handleKeydown(e: KeyboardEvent) {

@@ -1,7 +1,7 @@
 # ADR-0008 모듈별 라이브러리 선택
 
 ## 상태
-업데이트 (2026-07-05: 모듈 30+로 확장에 따른 라이브러리 추가)
+업데이트 (2026-07-05: 모듈 30+로 확장에 따른 라이브러리 추가 / 2026-07-14: 마크다운→PDF 한글 폰트 리소스 추가)
 
 ## 결정
 
@@ -12,6 +12,7 @@
 | 이미지→PDF, PDF 병합·분할 | Apache PDFBox 3.x | Apache 2.0 |
 | 이미지 리사이즈·포맷 변환 | Thumbnailator | MIT |
 | 마크다운→PDF | flexmark-all + openhtmltopdf | BSD / LGPL 2.1 |
+| 마크다운→PDF 한글 렌더링 | `Pretendard-Regular.ttf`(`back/src/main/resources/fonts/`, 프론트 npm 패키지에서 복사) — openhtmltopdf는 시스템 폰트를 쓰지 않아 `PdfRendererBuilder.useFont(...)`로 명시 등록 필요 | OFL-1.1 |
 | GIF 생성 (조건부) | 구현 시 JDK 25 호환 확인 후 결정 | — |
 | ZIP·TAR 아카이브 | java.util.zip (내장) / Apache Commons Compress | — / Apache 2.0 |
 

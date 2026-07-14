@@ -1,13 +1,20 @@
 # DevToolbox
 
-> 백엔드 데브코스 10기 12회차 — 데브코스 프로덕트 챌린지 프로젝트
-
 **개발자가 자주 쓰는 도구를 한 곳에 모은 허브.**  
 공통 인터페이스 하나로 30개 이상의 도구를 관리한다. 새 도구는 클래스 하나만 추가하면 자동 등록된다.
+
+> 백엔드 데브코스 10기 12회차 — 데브코스 프로덕트 챌린지 프로젝트
+
+![DevToolbox 미리보기](docs/preview.png)
 
 ---
 
 ## 동작 방식
+
+도구는 두 종류로 나뉜다.
+
+- **Heavy** — 이미지→PDF, PDF 병합, 마크다운→PDF 같은 파일 처리형 도구. 파일을 업로드하면 처리가 끝날 때까지 시간이 걸리므로, 요청은 즉시 작업 ID만 돌려받고 완료되면 알림(SSE)으로 통보받아 결과를 다운로드한다.
+- **Light** — JSON 포맷터, Base64 인코딩처럼 텍스트를 입력하면 그 자리에서 바로 결과가 나오는 도구. 업로드나 대기 없이 버튼을 누르는 즉시 결과가 뜬다.
 
 PDF 변환처럼 수 초가 걸리는 작업과 JSON 포맷터처럼 즉석에서 끝나는 작업이 같은 인터페이스 아래 공존한다. 이를 가능하게 하는 건 `ToolModule` 인터페이스다.
 
@@ -33,20 +40,57 @@ isHeavy() = false → 즉시 처리 → 바로 응답
 
 ---
 
-## 제공 도구 (10개 카테고리, 30개+)
+## 제공 도구 (8개 카테고리, 34개)
 
-| 카테고리 | 주요 도구 | 처리 방식 |
-|----------|-----------|-----------|
-| **PDF** | 이미지→PDF, PDF 병합·분할, 마크다운→PDF | Heavy |
-| **이미지** | 리사이즈, 포맷 변환, GIF 생성 | Heavy |
-| **코드 생성** | JSON Schema→DTO, OpenAPI→클라이언트 코드 | Heavy |
-| **보안** | RSA/EC 키쌍, BCrypt·AES·HMAC, TOTP, 멀티해시, 취약점 스캔 | Heavy / Light |
-| **생성기** | QR코드, 바코드, UUID | Heavy / Light |
-| **포맷터** | JSON·SQL·XML 포맷터, HTML Entity 인코딩 | Light |
-| **변환기** | JSON↔YAML·TOML·XML, CSV↔JSON | Light |
-| **텍스트** | 케이스 변환, Diff, Regex 테스터, 글자수 세기, 공백 정규화 | Light |
-| **네트워크** | 서브넷 계산기, URL 파서, HTML 소스보기 | Light |
-| **DevOps** | Cron 파서·빌더, docker run→compose 변환 | Light |
+### PDF (4, Heavy)
+- **이미지 → PDF** — 이미지를 하나의 PDF로 묶기
+- **마크다운 → PDF** — Markdown 문서를 PDF로 변환
+- **PDF 병합** — 여러 PDF를 하나로 병합
+- **PDF 분할** — PDF를 페이지 단위로 분할
+
+### 이미지 (3, Heavy)
+- **이미지 리사이즈** — 이미지 크기 및 해상도 조정 (업스케일 시 품질 저하 경고 포함)
+- **이미지 포맷 변환** — PNG, JPG, WebP 등 포맷 변환
+- **GIF 생성** — 이미지 시퀀스를 GIF로 변환
+
+### 생성기 (4, Heavy/Light)
+- **JSON Schema → DTO** — JSON Schema로 Java DTO 클래스 생성 (Heavy)
+- **OpenAPI → 코드 생성** — OpenAPI 스펙으로 클라이언트 코드 생성 (Heavy)
+- **UUID 생성기** — UUID v4 무작위 생성 (Light)
+- **코드 생성기** — QR·바코드 생성 (Light)
+
+### 보안·암호화 (7, Heavy/Light)
+- **Bcrypt 해시** — 비밀번호 Bcrypt 해시 생성 및 검증
+- **RSA/EC 키쌍 생성** — RSA 공개키/개인키 쌍 생성
+- **의존성 취약점 스캔** — 의존성 파일(Gradle/Maven) CVE 취약점 검사 (Heavy)
+- **AES 암호화/복호화** — AES-256 CBC 암호화/복호화
+- **HMAC 서명** — HMAC-SHA256/SHA512 서명 생성
+- **다중 해시** — MD5·SHA-1·SHA-256·SHA-512 동시 생성
+- **TOTP 생성** — TOTP 일회용 코드 생성 (RFC 6238)
+
+### 포맷터 (8, Light)
+- **SQL 포맷터** — SQL 쿼리 정렬 및 포맷
+- **XML 포맷터** — XML 문서 들여쓰기 정렬
+- **JSON 포맷터** — JSON 정렬 및 미니파이
+- **JWT 디코더** — JWT 토큰 Header·Payload 파싱
+- **타임스탬프** — Unix timestamp ↔ 날짜/시간 변환
+- **색상 코드** — HEX ↔ RGB ↔ HSL 변환
+- **인코더/디코더** — Base64·URL·HTML Entity 인코딩/디코딩
+- **데이터 포맷 변환** — JSON·YAML·TOML·XML·CSV 상호 변환
+
+### 텍스트 (3, Light)
+- **Diff 비교** — 두 텍스트 차이 시각화
+- **Regex 테스터** — 정규표현식 실시간 테스트
+- **텍스트 유틸** — 케이스 변환·글자 수·한영 변환·공백 정규화
+
+### 네트워크 (3, Light)
+- **HTML 소스 가져오기** — URL에서 HTML 소스 가져오기
+- **서브넷 계산기** — IP 서브넷 마스크 계산
+- **URL 파서** — URL 구성 요소 분해 및 파싱
+
+### DevOps (2, Light)
+- **Cron 표현식 파서** — Cron 표현식 파싱 및 다음 실행 시각
+- **docker run → Compose 변환** — docker run 명령어 → docker-compose.yml 변환
 
 ---
 

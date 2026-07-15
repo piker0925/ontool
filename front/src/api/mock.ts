@@ -28,8 +28,8 @@ export const MOCK_MODULES: Module[] = [
         description: 'MD5 · SHA-1 · SHA-256 · SHA-512 동시 생성',
         keywords: ['sha256', 'sha-256', 'md5', 'sha512', 'hash', '해시']
     },
-    {id: 'hmac', name: 'HMAC 서명', category: '보안·암호화', isHeavy: false, description: 'HMAC-SHA256/SHA512 서명 생성'},
-    {id: 'aes', name: 'AES 암호화', category: '보안·암호화', isHeavy: false, description: 'AES-256 CBC 암호화/복호화'},
+    {id: 'hmac', name: 'HMAC 서명', category: '보안·암호화', isHeavy: false, isFrontendOnly: true, description: 'HMAC-SHA1/256/512·MD5 서명 생성'},
+    {id: 'aes', name: 'AES 암호화', category: '보안·암호화', isHeavy: false, isFrontendOnly: true, description: 'AES CBC/GCM/CTR 암호화/복호화'},
     {
         id: 'totp', name: 'TOTP 생성', category: '보안·암호화', isHeavy: false, isFrontendOnly: true,
         description: 'TOTP 일회용 코드 생성 (RFC 6238)',
@@ -51,12 +51,12 @@ export const MOCK_MODULES: Module[] = [
     },
 
     // 네트워크
-    {id: 'url-parser', name: 'URL 파서', category: '네트워크', isHeavy: false, description: 'URL 구성 요소 분해 및 파싱'},
-    {id: 'subnet-calc', name: '서브넷 계산기', category: '네트워크', isHeavy: false, description: 'IP 서브넷 마스크 계산'},
+    {id: 'url-parser', name: 'URL 파서', category: '네트워크', isHeavy: false, isFrontendOnly: true, description: 'URL 구성 요소 분해 및 파싱'},
+    {id: 'subnet-calc', name: '서브넷 계산기', category: '네트워크', isHeavy: false, isFrontendOnly: true, description: 'IP 서브넷 마스크 계산'},
     {id: 'html-fetch', name: 'HTML 가져오기', category: '네트워크', isHeavy: false, description: 'URL에서 HTML 소스 가져오기'},
 
     // DevOps
-    {id: 'cron', name: 'Cron 표현식', category: 'DevOps', isHeavy: false, description: 'Cron 표현식 파싱 및 다음 실행 시각'},
+    {id: 'cron', name: 'Cron 표현식', category: 'DevOps', isHeavy: false, isFrontendOnly: true, description: 'Cron 표현식 파싱 및 다음 실행 시각'},
     {id: 'docker-compose', name: 'Docker Compose 변환', category: 'DevOps', isHeavy: false, description: 'docker run 명령어 → docker-compose.yml 변환'},
 
     // 프론트엔드 전용 도구 (브라우저에서 직접 처리)

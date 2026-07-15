@@ -91,7 +91,6 @@
           <span
               class="flex items-center gap-2 font-mono text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
             결과
-            <Loader2 v-if="running" class="size-3 animate-spin"/>
           </span>
           <button
               v-if="output && tab !== 'count'"
@@ -121,11 +120,6 @@
             </div>
           </div>
 
-          <div v-else-if="error" class="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
-            <AlertCircle class="size-5 text-destructive/70"/>
-            <p class="text-[13px] text-foreground">{{ error }}</p>
-          </div>
-
           <pre
               v-else-if="output"
               class="h-full whitespace-pre-wrap break-all p-4 font-mono text-[13px] text-foreground"
@@ -148,11 +142,11 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, onUnmounted, ref, watch} from 'vue'
+import {computed, ref, watch} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
-import {AlertCircle, ArrowRight, Check, Copy, Eraser, Loader2, Wand2} from 'lucide-vue-next'
-import {apiClient} from '../api/client'
+import {ArrowRight, Check, Copy, Eraser, Wand2} from 'lucide-vue-next'
 import {convertKeyboard, countChars, normalizeWhitespace} from '../utils/frontendTools'
+import {type CaseFormat, convertCase} from '../utils/caseConvert'
 import {Button} from '@/components/ui/button'
 
 type TabId = 'case' | 'count' | 'keyboard' | 'whitespace'
@@ -196,11 +190,9 @@ const input = computed({
   },
 })
 const output = ref('')
-const error = ref('')
-const running = ref(false)
 const copied = ref(false)
-const caseFrom = ref('camel')
-const caseTo = ref('snake')
+const caseFrom = ref<CaseFormat>('camel')
+const caseTo = ref<CaseFormat>('snake')
 const keyboardDirection = ref<'en-ko' | 'ko-en'>('en-ko')
 
 const currentTab = computed(() => TABS.find(t => t.id === tab.value) ?? TABS[0])
@@ -216,15 +208,7 @@ watch(() => route.query.tab, q => {
   if (typeof q === 'string' && q !== tab.value && TABS.some(t => t.id === q)) tab.value = q as TabId
 })
 
-let debounceTimer: ReturnType<typeof setTimeout> | null = null
-let runToken = 0
-
 function recompute() {
-  // 진행 중인 이전 탭/입력의 요청·디바운스는 무효화한다
-  runToken++
-  running.value = false
-  if (debounceTimer) clearTimeout(debounceTimer)
-  error.value = ''
   if (!input.value) {
     output.value = ''
     return
@@ -241,39 +225,12 @@ function recompute() {
       output.value = normalizeWhitespace(input.value)
       return
     case 'case':
-      debounceTimer = setTimeout(runCaseConvert, 500)
+      output.value = convertCase(input.value, caseFrom.value, caseTo.value)
   }
 }
 
 // 탭 전환 시에도 초기화하지 않고 보존된 입력으로 결과를 다시 계산한다
 watch([tab, input, caseFrom, caseTo, keyboardDirection], recompute)
-
-onUnmounted(() => {
-  if (debounceTimer) clearTimeout(debounceTimer)
-})
-
-async function runCaseConvert() {
-  if (!input.value.trim()) return
-  const token = ++runToken
-  running.value = true
-  try {
-    const {data} = await apiClient.post('/api/v1/tools/case-converter/run', {
-      text: input.value,
-      from: caseFrom.value,
-      to: caseTo.value,
-    })
-    if (token !== runToken) return
-    output.value = data.result ?? ''
-    error.value = ''
-  } catch (e: unknown) {
-    if (token !== runToken) return
-    const err = e as { response?: { data?: { message?: string } } }
-    error.value = err.response?.data?.message ?? '서버에 연결할 수 없습니다'
-    output.value = ''
-  } finally {
-    if (token === runToken) running.value = false
-  }
-}
 
 function applySample() {
   input.value = currentTab.value.sample

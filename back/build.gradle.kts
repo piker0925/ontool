@@ -57,7 +57,6 @@ dependencies {
 
 	// Formatter
 	implementation("com.github.jsqlparser:jsqlparser:4.9")
-	implementation("org.apache.commons:commons-text:1.11.0")
 
 	// Converter
 	implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
@@ -67,13 +66,6 @@ dependencies {
 
 	// Text
 	implementation("com.google.guava:guava")
-	implementation("io.github.java-diff-utils:java-diff-utils:4.12")
-
-	// Security util
-	implementation("com.eatthepath:java-otp:0.4.0")
-
-	// DevOps
-	implementation("com.cronutils:cron-utils:9.2.1")
 
 	// Monitoring
 	implementation("org.springframework.boot:spring-boot-starter-actuator")

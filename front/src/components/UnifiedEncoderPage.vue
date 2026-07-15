@@ -42,7 +42,6 @@
         <span
             class="flex items-center gap-2 font-mono text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
           결과
-          <Loader2 v-if="running" class="size-3 animate-spin"/>
         </span>
         <button
             v-if="output"
@@ -81,10 +80,10 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, onUnmounted, ref, watch} from 'vue'
+import {computed, ref, watch} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
-import {AlertCircle, ArrowRight, Check, Copy, Loader2, Wand2} from 'lucide-vue-next'
-import {apiClient} from '../api/client'
+import {AlertCircle, ArrowRight, Check, Copy, Wand2} from 'lucide-vue-next'
+import {decodeHtmlEntities, encodeHtmlEntities} from '../utils/htmlEntity'
 import {
   decodeBase64,
   decodeBase64Url,
@@ -108,9 +107,8 @@ interface EncoderMode {
   id: string
   label: string
   sample: string
-  /** 로컬 변환 함수. 없으면 백엔드 html-entity 모듈을 호출한다 */
-  fn?: (input: string) => string
-  backendMode?: 'encode' | 'decode'
+  /** 로컬 변환 함수 */
+  fn: (input: string) => string
 }
 
 const MODES: EncoderMode[] = [
@@ -140,13 +138,13 @@ const MODES: EncoderMode[] = [
   {
     id: 'html-encode',
     label: 'HTML Entity 인코드',
-    backendMode: 'encode',
+    fn: encodeHtmlEntities,
     sample: '<div class="greeting">hello & world</div>'
   },
   {
     id: 'html-decode',
     label: 'HTML Entity 디코드',
-    backendMode: 'decode',
+    fn: decodeHtmlEntities,
     sample: '&lt;div&gt;hello &amp; world&lt;/div&gt;'
   },
 ]
@@ -172,13 +170,9 @@ watch(() => route.query.mode, q => {
 const input = ref('')
 const output = ref('')
 const error = ref('')
-const running = ref(false)
 const copied = ref(false)
 
 const mode = computed(() => MODES.find(m => m.id === modeId.value) ?? MODES[0])
-
-let debounceTimer: ReturnType<typeof setTimeout> | null = null
-let runToken = 0
 
 watch([input, modeId], () => {
   if (!input.value) {
@@ -186,46 +180,14 @@ watch([input, modeId], () => {
     error.value = ''
     return
   }
-  if (mode.value.fn) {
-    // 로컬 변환은 즉시 실행
-    try {
-      output.value = mode.value.fn(input.value)
-      error.value = ''
-    } catch (e) {
-      output.value = ''
-      error.value = e instanceof Error && e.message ? e.message : '변환할 수 없는 입력입니다'
-    }
-    return
-  }
-  if (debounceTimer) clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(runBackend, 500)
-})
-
-onUnmounted(() => {
-  if (debounceTimer) clearTimeout(debounceTimer)
-})
-
-async function runBackend() {
-  if (!mode.value.backendMode || !input.value) return
-  const token = ++runToken
-  running.value = true
   try {
-    const {data} = await apiClient.post('/api/v1/tools/html-entity/run', {
-      text: input.value,
-      mode: mode.value.backendMode,
-    })
-    if (token !== runToken) return
-    output.value = data.result ?? ''
+    output.value = mode.value.fn(input.value)
     error.value = ''
-  } catch (e: unknown) {
-    if (token !== runToken) return
-    const err = e as { response?: { data?: { message?: string } } }
-    error.value = err.response?.data?.message ?? '서버에 연결할 수 없습니다'
+  } catch (e) {
     output.value = ''
-  } finally {
-    if (token === runToken) running.value = false
+    error.value = e instanceof Error && e.message ? e.message : '변환할 수 없는 입력입니다'
   }
-}
+})
 
 function applySample() {
   input.value = mode.value.sample

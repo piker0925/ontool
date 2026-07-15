@@ -17,15 +17,13 @@ const CATEGORY_MAP: Record<string, string> = {
 
 const META_BY_ID = new Map(MOCK_MODULES.map(m => [m.id, m]))
 
-// 백엔드 목록에서 숨기는 모듈.
-// - 통합 도구(인코더/데이터 변환/텍스트 유틸/다중 해시/코드 생성기)로 흡수된 모듈:
-//   백엔드에 남아 있으며 통합 페이지가 내부적으로 호출한다 (qr-code, barcode 포함).
-// - 프론트엔드 전용으로 전환된 모듈(text-diff, regex-tester, totp):
-//   백엔드 항목 대신 MOCK_MODULES의 frontendOnly 메타로 대체된다.
+// 백엔드 목록에서 숨기는 모듈: 통합 도구(인코더/데이터 변환/텍스트 유틸/다중 해시/코드 생성기)로
+// 흡수된 모듈. 백엔드에 남아 있으며 통합 페이지가 내부적으로 호출한다 (qr-code, barcode 포함).
+// 프론트 전용으로 이전한 모듈(subnet-calc·url-parser·cron·hmac·aes·text-diff·regex-tester·totp)은
+// 백엔드 모듈 자체를 제거했으므로 여기서 숨길 필요가 없다(API가 반환하지 않음).
 const HIDDEN_MODULE_IDS = new Set([
-    'sha256', 'html-entity', 'json-yaml', 'json-toml', 'json-xml', 'csv-json', 'case-converter',
+    'sha256', 'json-yaml', 'json-toml', 'json-xml', 'csv-json',
     'qr-code', 'barcode',
-    'text-diff', 'regex-tester', 'totp',
 ])
 
 export function normalizeApiModules(data: Module[]): Module[] {

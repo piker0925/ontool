@@ -94,14 +94,14 @@ describe('ToolPage 업로드 실패 표시 (032)', () => {
 })
 
 describe('ToolPage 파라미터 필드 (024)', () => {
-    it('cron 모듈에 count 입력 필드가 기본값 5와 함께 렌더링된다', async () => {
-        const wrapper = await mountAt('cron', [
-            {id: 'cron', name: 'Cron 표현식', category: 'DevOps', isHeavy: false},
+    it('bcrypt 모듈에 rounds 입력 필드가 기본값 10과 함께 렌더링된다', async () => {
+        const wrapper = await mountAt('bcrypt', [
+            {id: 'bcrypt', name: 'Bcrypt 해시', category: '보안·암호화', isHeavy: false},
         ])
 
-        const count = inputForLabel(wrapper, '다음 실행 횟수')
+        const rounds = inputForLabel(wrapper, 'Rounds (강도)')
 
-        expect(count?.value).toBe('5')
+        expect(rounds?.value).toBe('10')
     })
 
     it('gif-create 모듈에 delay 입력 필드가 기본값 100과 함께 렌더링된다', async () => {

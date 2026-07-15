@@ -33,11 +33,4 @@ export const FORMATTER_CONFIGS: Record<string, ModuleConfig> = {
         ],
         sample: {xml: '<root><item id="1"><name>foo</name></item><item id="2"><name>bar</name></item></root>'},
     },
-    'html-entity': {
-        params: [
-            {key: 'text', label: '텍스트', type: 'textarea', placeholder: '<div>hello & world</div>'},
-            {key: 'mode', label: '모드', type: 'select', options: ['encode', 'decode'], default: 'encode'},
-        ],
-        sample: {text: '<div class="greeting">hello & world</div>'},
-    },
 }

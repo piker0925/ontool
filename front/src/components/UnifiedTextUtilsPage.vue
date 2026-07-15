@@ -145,7 +145,7 @@
 import {computed, ref, watch} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {ArrowRight, Check, Copy, Eraser, Wand2} from 'lucide-vue-next'
-import {convertKeyboard, countChars, normalizeWhitespace} from '../utils/frontendTools'
+import {convertKeyboard, countChars, normalizeWhitespace} from '../utils/textUtils'
 import {type CaseFormat, convertCase} from '../utils/caseConvert'
 import {Button} from '@/components/ui/button'
 

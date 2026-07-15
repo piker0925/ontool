@@ -91,7 +91,7 @@ import {
   encodeBase64,
   encodeBase64Url,
   encodeUrl,
-} from '../utils/frontendTools'
+} from '../utils/encoding'
 import {
   decodeCharCodes,
   decodeHex,

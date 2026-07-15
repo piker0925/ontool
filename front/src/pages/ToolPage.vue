@@ -50,14 +50,10 @@
         </div>
       </div>
 
-      <!-- 통합 도구 -->
-      <UnifiedConvertPage v-if="mod.id === 'data-convert'"/>
-      <UnifiedEncoderPage v-else-if="mod.id === 'encoder'"/>
-      <UnifiedTextUtilsPage v-else-if="mod.id === 'text-utils'"/>
-      <UnifiedCodeGenPage v-else-if="mod.id === 'code-gen'"/>
-
-      <!-- Frontend-only -->
-      <FrontendToolPage v-else-if="mod.isFrontendOnly" :moduleId="mod.id"/>
+      <!-- Frontend-only (단일 컴포넌트 도구 / 통합 페이지 도구 모두 registry에서 조회) -->
+      <div v-if="mod.isFrontendOnly" :class="frontendToolLayoutClass">
+        <component :is="frontendToolComponent" v-if="frontendToolComponent"/>
+      </div>
 
       <!-- Heavy -->
       <div
@@ -437,7 +433,7 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, onUnmounted, ref, watch} from 'vue'
+import {computed, defineAsyncComponent, onUnmounted, ref, watch} from 'vue'
 import {useRoute} from 'vue-router'
 import {
   AlertCircle,
@@ -464,15 +460,11 @@ import type {BatchProgress, Module, UploadResult} from '../types'
 import {isBatchResult} from '../types'
 import {Button} from '@/components/ui/button'
 import {HEAVY_CONFIGS, MODULE_CONFIGS} from '../config/toolConfigs'
+import {FRONTEND_TOOL_COMPONENTS} from '../config/frontendToolRegistry'
 import {useRecentTools} from '../composables/useRecentTools'
 import {useLikes} from '../composables/useLikes'
 import {parseStructuredResult} from '../utils/structuredResult'
 import StructuredResultView from '../components/StructuredResultView.vue'
-import FrontendToolPage from '../components/FrontendToolPage.vue'
-import UnifiedConvertPage from '../components/UnifiedConvertPage.vue'
-import UnifiedEncoderPage from '../components/UnifiedEncoderPage.vue'
-import UnifiedTextUtilsPage from '../components/UnifiedTextUtilsPage.vue'
-import UnifiedCodeGenPage from '../components/UnifiedCodeGenPage.vue'
 import FileUploader from '../components/FileUploader.vue'
 import BatchPoller from '../components/BatchPoller.vue'
 import ResultViewer from '../components/ResultViewer.vue'
@@ -507,6 +499,13 @@ const {record: recordRecent} = useRecentTools()
 
 const moduleConfig = computed(() => mod.value ? MODULE_CONFIGS[mod.value.id] ?? null : null)
 const heavyConfig = computed(() => mod.value ? HEAVY_CONFIGS[mod.value.id] ?? null : null)
+const frontendToolEntry = computed(() => mod.value ? FRONTEND_TOOL_COMPONENTS[mod.value.id] ?? null : null)
+const frontendToolComponent = computed(() =>
+    frontendToolEntry.value ? defineAsyncComponent(frontendToolEntry.value.load) : null,
+)
+const frontendToolLayoutClass = computed(() =>
+    frontendToolEntry.value?.layout === 'narrow' ? 'px-6 py-8 max-w-5xl mx-auto' : '',
+)
 const batchResultUrl = computed(() => batchId.value ? `${API_BASE}/api/v1/batches/${batchId.value}/result` : '')
 
 const structuredResult = computed(() => parseStructuredResult(result.value?.text))

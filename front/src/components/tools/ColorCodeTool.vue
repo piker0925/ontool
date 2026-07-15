@@ -84,7 +84,7 @@ import {
   rgbToHsl,
   rgbToHsv,
   wcagLevels,
-} from '../../utils/frontendTools'
+} from '../../utils/colorCode'
 
 const colorInput = ref('')
 const colorError = ref('')

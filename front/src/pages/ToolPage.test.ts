@@ -118,6 +118,9 @@ describe('ToolPage 파라미터 필드 (024)', () => {
 describe('ToolPage 통합 코드 생성기 (code-gen)', () => {
     it('code-gen 모듈은 QR/Code128 형식 선택이 있는 통합 페이지를 렌더링한다', async () => {
         const wrapper = await mountAt('code-gen', [])
+        // UnifiedCodeGenPage는 defineAsyncComponent로 지연 로딩되어 실제 동적 import(파일시스템 접근)를
+        // 기다려야 하므로 flushPromises 고정 횟수 대신 시간 기반 폴링으로 대기한다.
+        await vi.waitFor(() => expect(wrapper.findAll('select').length).toBeGreaterThan(0))
 
         const formatSelect = wrapper.findAll('select').at(0)
         expect(formatSelect).toBeTruthy()
@@ -140,6 +143,7 @@ describe('ToolPage 통합 코드 생성기 (code-gen)', () => {
 
     it('바코드 형식으로 바꾸면 너비/높이 입력이 기본값과 함께 렌더링된다', async () => {
         const wrapper = await mountAt('code-gen', [])
+        await vi.waitFor(() => expect(wrapper.findAll('select').length).toBeGreaterThan(0))
 
         const formatSelect = wrapper.findAll('select').at(0)!
         await formatSelect.setValue('code128')

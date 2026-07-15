@@ -86,7 +86,7 @@ import {
   formatRelativeTime,
   formatUnixPattern,
   type TimestampUnit,
-} from '../../utils/frontendTools'
+} from '../../utils/timestamp'
 
 const unitOptions = [
   {value: 's' as TimestampUnit, label: '초'},

@@ -130,7 +130,7 @@
 <script lang="ts" setup>
 import {computed, defineComponent, h, onUnmounted, reactive, ref} from 'vue'
 import {ArrowRight, Check, Copy, X} from 'lucide-vue-next'
-import {decodeJwt} from '../../utils/frontendTools'
+import {decodeJwt} from '../../utils/jwtDecode'
 import {
   claimCopyText,
   formatDuration,

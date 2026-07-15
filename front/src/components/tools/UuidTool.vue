@@ -65,7 +65,7 @@
 <script lang="ts" setup>
 import {computed, ref} from 'vue'
 import {Copy} from 'lucide-vue-next'
-import {formatUuidExport, generateUuid, generateUuidV7, type UuidExportFormat} from '../../utils/frontendTools'
+import {formatUuidExport, generateUuid, generateUuidV7, type UuidExportFormat} from '../../utils/uuid'
 
 const uuidRawList = ref<string[]>([])
 const uuidCount = ref(1)

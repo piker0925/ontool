@@ -2,7 +2,7 @@
 // cronstrue(사람이 읽는 설명, 한국어) + cron-parser(다음 실행 계산).
 import cronstrue from 'cronstrue/i18n'
 import {CronExpressionParser} from 'cron-parser'
-import {formatInTimezone} from './frontendTools'
+import {formatInTimezone} from './timestamp'
 
 /** 표현식을 사람이 읽는 문장으로. 잘못되면 예외. */
 export function describeCron(expression: string, locale = 'ko'): string {

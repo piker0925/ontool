@@ -121,7 +121,7 @@
 <script lang="ts" setup>
 import {computed, ref} from 'vue'
 import {AlertCircle, ArrowRight, Check, Copy, X} from 'lucide-vue-next'
-import {formatJson, minifyJson} from '../../utils/frontendTools'
+import {formatJson, minifyJson} from '../../utils/jsonFormat'
 import {
   computeJsonStats,
   extractLineValue,

@@ -10,11 +10,11 @@
 
 ## 검토한 선택지
 
-| 안 | 방식 |
-|----|------|
+| 안 | 방식                                                                       |
+|---|--------------------------------------------------------------------------|
 | A | null 허용 record — `ToolResult(Path outputFile, Map<String, String> data)` |
-| B | sealed interface — `ToolResult.File` / `ToolResult.Data` |
-| C | 정적 팩토리 + 헬퍼 메서드 |
+| B | sealed interface — `ToolResult.File` / `ToolResult.Data`                 |
+| C | 정적 팩토리 + 헬퍼 메서드                                                          |
 
 ## 결정
 **C — 정적 팩토리 패턴**

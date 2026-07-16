@@ -181,12 +181,12 @@ permit은 **poll 스레드에서 `tryAcquire`**, **워커 스레드의 `processJ
 
 ## 데이터 모델 변경 (`job` 테이블)
 
-| 컬럼 | 타입 | 의미 |
-|------|------|------|
-| `owner_token` | varchar(36) | 익명 소유자(=`X-Client-Id`). 공정성·쿼터 기준. null 허용(헤더 없으면) |
-| `lane` | varchar(10) enum | `HEAVY`/`VIDEO`. 생성 시 `module.getLane()`으로 확정. not null(기본 HEAVY) |
-| `started_at` | datetime | RUNNING 전환(실제 처리 시작) 시각. ETA 계산 기준. null 허용 |
-| `progress` | int | 0~100. DONE 시 100. not null(기본 0) |
+| 컬럼            | 타입               | 의미                                                                |
+|---------------|------------------|-------------------------------------------------------------------|
+| `owner_token` | varchar(36)      | 익명 소유자(=`X-Client-Id`). 공정성·쿼터 기준. null 허용(헤더 없으면)                |
+| `lane`        | varchar(10) enum | `HEAVY`/`VIDEO`. 생성 시 `module.getLane()`으로 확정. not null(기본 HEAVY) |
+| `started_at`  | datetime         | RUNNING 전환(실제 처리 시작) 시각. ETA 계산 기준. null 허용                       |
+| `progress`    | int              | 0~100. DONE 시 100. not null(기본 0)                                 |
 
 `ddl-auto`(local=create-drop, prod=update)로 스키마 반영.
 
@@ -201,12 +201,12 @@ permit은 **poll 스레드에서 `tryAcquire`**, **워커 스레드의 `processJ
 
 **설정 노브** (프로파일 yaml):
 
-| 키 | 기본 | 의미 |
-|----|------|------|
-| `scheduling.worker.delay` | 3000 | 폴링 주기(ms) |
-| `scheduling.worker.lane.heavy` | 2 | HEAVY 동시 실행 상한 |
-| `scheduling.worker.lane.video` | 1 | VIDEO 동시 실행 상한 |
-| `identity.quota.max-in-flight` | 200 | 사용자별 PENDING+RUNNING 상한 |
+| 키                              | 기본   | 의미                      |
+|--------------------------------|------|-------------------------|
+| `scheduling.worker.delay`      | 3000 | 폴링 주기(ms)               |
+| `scheduling.worker.lane.heavy` | 2    | HEAVY 동시 실행 상한          |
+| `scheduling.worker.lane.video` | 1    | VIDEO 동시 실행 상한          |
+| `identity.quota.max-in-flight` | 200  | 사용자별 PENDING+RUNNING 상한 |
 
 ---
 

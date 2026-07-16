@@ -126,32 +126,32 @@ isHeavy() = false → 즉시 처리 → 바로 응답
 
 Heavy 도구의 처리 단위인 `Job` 테이블이 큐의 핵심이다.
 
-| 컬럼 | 타입 | 설명 |
-|------|------|------|
-| `id` | VARCHAR(36) | 작업 ID (UUID) |
-| `module_id` | VARCHAR(50) | 도구 식별자 (예: `"image-to-pdf"`) |
-| `batch_id` | VARCHAR(36) | 배치 그룹 키. 단건이면 null |
-| `status` | VARCHAR(10) | `PENDING` → `RUNNING` → `DONE` / `FAILED` |
-| `input_paths` | JSON | 입력 파일 경로 배열. 순서 보존 |
-| `params` | JSON | 모듈 옵션. 예: `{"width":"800","height":"600"}` |
-| `result_key` | VARCHAR(255) | 파일 결과 식별자. `FileStorage.getUrl(key)`로 URL 생성 |
-| `result_text` | TEXT | 텍스트 결과 (해시값, CVE 목록 등). `result_key`와 둘 중 하나만 사용 |
-| `created_at` | DATETIME | 생성 시각 |
-| `expires_at` | DATETIME | TTL 만료 시각. 만료 시 파일 자동 삭제 |
+| 컬럼            | 타입           | 설명                                               |
+|---------------|--------------|--------------------------------------------------|
+| `id`          | VARCHAR(36)  | 작업 ID (UUID)                                     |
+| `module_id`   | VARCHAR(50)  | 도구 식별자 (예: `"image-to-pdf"`)                     |
+| `batch_id`    | VARCHAR(36)  | 배치 그룹 키. 단건이면 null                               |
+| `status`      | VARCHAR(10)  | `PENDING` → `RUNNING` → `DONE` / `FAILED`        |
+| `input_paths` | JSON         | 입력 파일 경로 배열. 순서 보존                               |
+| `params`      | JSON         | 모듈 옵션. 예: `{"width":"800","height":"600"}`       |
+| `result_key`  | VARCHAR(255) | 파일 결과 식별자. `FileStorage.getUrl(key)`로 URL 생성     |
+| `result_text` | TEXT         | 텍스트 결과 (해시값, CVE 목록 등). `result_key`와 둘 중 하나만 사용 |
+| `created_at`  | DATETIME     | 생성 시각                                            |
+| `expires_at`  | DATETIME     | TTL 만료 시각. 만료 시 파일 자동 삭제                         |
 
 ---
 
 ## 기술 스택
 
-| 영역 | 기술 |
-|------|------|
-| 백엔드 | Spring Boot 4.1.0, JDK 25, Gradle Kotlin DSL, Spring Security |
-| 데이터 | MySQL 8, JPA |
+| 영역       | 기술                                                                           |
+|----------|------------------------------------------------------------------------------|
+| 백엔드      | Spring Boot 4.1.0, JDK 25, Gradle Kotlin DSL, Spring Security                |
+| 데이터      | MySQL 8, JPA                                                                 |
 | 주요 라이브러리 | PDFBox, Thumbnailator, flexmark+openhtmltopdf, ZXing, Bouncy Castle, Jackson |
-| 테스트 | JUnit 5, Testcontainers, Awaitility |
-| 프론트엔드 | Vue 3, Vite |
-| 인프라 | Docker Compose, Oracle Cloud Always Free, Vercel, nginx (리버스 프록시 + TLS) |
-| API 문서 | Swagger UI (springdoc-openapi) |
+| 테스트      | JUnit 5, Testcontainers, Awaitility                                          |
+| 프론트엔드    | Vue 3, Vite                                                                  |
+| 인프라      | Docker Compose, Oracle Cloud Always Free, Vercel, nginx (리버스 프록시 + TLS)      |
+| API 문서   | Swagger UI (springdoc-openapi)                                               |
 
 ---
 
@@ -199,10 +199,10 @@ cd front
 pnpm install && pnpm dev
 ```
 
-| 서비스 | URL |
-|---|---|
-| 백엔드 | `http://localhost:8080` |
-| 프론트엔드 | `http://localhost:5173` |
+| 서비스    | URL                                     |
+|--------|-----------------------------------------|
+| 백엔드    | `http://localhost:8080`                 |
+| 프론트엔드  | `http://localhost:5173`                 |
 | API 문서 | `http://localhost:8080/swagger-ui.html` |
 
 ---
@@ -227,15 +227,15 @@ spring:
 
 리포지토리 Settings → Secrets and variables → Actions 에 등록:
 
-| Secret | 설명 |
-|--------|------|
-| `OCI_HOST` | 배포 대상 VM 호스트/IP |
-| `OCI_SSH_KEY` | VM 접속용 SSH 개인키 |
-| `GHCR_TOKEN` | GHCR 이미지 pull용 토큰 |
-| `DB_USERNAME` | MySQL 사용자명 |
-| `DB_PASSWORD` | MySQL 사용자 비밀번호 |
-| `DB_ROOT_PASSWORD` | MySQL root 비밀번호 |
-| `ADMIN_USERNAME` | 관리자 HTTP Basic Auth 사용자명 |
-| `ADMIN_PASSWORD` | 관리자 HTTP Basic Auth 비밀번호 |
-| `CORS_ORIGIN` | 허용할 프론트엔드 도메인 (Vercel URL) |
-| `STORAGE_BASE_URL` | 파일 다운로드 링크 생성용 백엔드 공개 URL |
+| Secret             | 설명                         |
+|--------------------|----------------------------|
+| `OCI_HOST`         | 배포 대상 VM 호스트/IP            |
+| `OCI_SSH_KEY`      | VM 접속용 SSH 개인키             |
+| `GHCR_TOKEN`       | GHCR 이미지 pull용 토큰          |
+| `DB_USERNAME`      | MySQL 사용자명                 |
+| `DB_PASSWORD`      | MySQL 사용자 비밀번호             |
+| `DB_ROOT_PASSWORD` | MySQL root 비밀번호            |
+| `ADMIN_USERNAME`   | 관리자 HTTP Basic Auth 사용자명   |
+| `ADMIN_PASSWORD`   | 관리자 HTTP Basic Auth 비밀번호   |
+| `CORS_ORIGIN`      | 허용할 프론트엔드 도메인 (Vercel URL) |
+| `STORAGE_BASE_URL` | 파일 다운로드 링크 생성용 백엔드 공개 URL  |

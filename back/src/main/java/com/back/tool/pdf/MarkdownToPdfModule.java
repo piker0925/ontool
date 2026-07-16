@@ -6,6 +6,8 @@ import com.back.tool.model.ToolParams;
 import com.back.tool.model.ToolProcessingException;
 import com.back.tool.model.ToolResult;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
+import com.vladsch.flexmark.ext.autolink.AutolinkExtension;
+import com.vladsch.flexmark.ext.gfm.strikethrough.StrikethroughExtension;
 import com.vladsch.flexmark.ext.tables.TablesExtension;
 import com.vladsch.flexmark.html.HtmlRenderer;
 import com.vladsch.flexmark.parser.Parser;
@@ -36,7 +38,8 @@ public class MarkdownToPdfModule implements ToolModule {
 
     static {
         MutableDataSet options = new MutableDataSet();
-        options.set(Parser.EXTENSIONS, List.of(TablesExtension.create()));
+        options.set(Parser.EXTENSIONS, List.of(
+                TablesExtension.create(), StrikethroughExtension.create(), AutolinkExtension.create()));
         PARSER = Parser.builder(options).build();
         RENDERER = HtmlRenderer.builder(options).build();
     }
@@ -63,7 +66,9 @@ public class MarkdownToPdfModule implements ToolModule {
         try {
             String markdown = Files.readString(input.files().get(0));
             Node document = PARSER.parse(markdown);
-            String body = RENDERER.render(document);
+            // 사용자가 붙여넣은 raw HTML에 &nbsp; 같은 미선언 엔티티가 섞여 있으면 openhtmltopdf의
+            // 엄격한 XML 파서가 변환 자체를 실패시키므로 실제 공백 문자로 미리 치환해 둔다.
+            String body = RENDERER.render(document).replace("&nbsp;", " ");
             if (toc) {
                 body = injectToc(body);
             }
@@ -75,6 +80,8 @@ public class MarkdownToPdfModule implements ToolModule {
                     + "table{border-collapse:collapse;width:100%}"
                     + "th,td{border:1px solid #d0d0d0;padding:6px 10px;text-align:left}"
                     + "th{background:#f4f4f4}"
+                    + "blockquote{margin:0 0 1em 0;padding:8px 14px;border-left:4px solid #6b7280;"
+                    + "background:#f4f4f5;color:#3f3f46;font-style:italic}"
                     + "ul.toc{list-style:none;padding:0;page-break-after:always}"
                     + "ul.toc a{color:#1a56db;text-decoration:none}</style></head><body>"
                     + body + "</body></html>";

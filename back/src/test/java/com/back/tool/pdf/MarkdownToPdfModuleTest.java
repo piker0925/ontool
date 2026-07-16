@@ -113,6 +113,41 @@ class MarkdownToPdfModuleTest {
     }
 
     @Test
+    void blockquoteIsIndentedRelativeToPlainParagraph() throws Exception {
+        // 인용문(>)이 스타일 없이 일반 문단과 똑같이 보이던 회귀를 막는다: 테두리·패딩으로 더 들여써져야 한다.
+        // createMd()는 파일명이 고정("test.md")이라 같은 테스트에서 두 번 쓰면 먼저 쓴 파일이 덮어써지므로
+        // 파일명을 분리해서 직접 작성한다.
+        Path plainMd = tempDir.resolve("plain.md");
+        Files.writeString(plainMd, "plain text\n");
+        Path quoteMd = tempDir.resolve("quote.md");
+        Files.writeString(quoteMd, "> plain text\n");
+
+        ToolResult plain = module.process(new ToolInput(List.of(plainMd), Map.of("margin", "0")));
+        ToolResult quote = module.process(new ToolInput(List.of(quoteMd), Map.of("margin", "0")));
+
+        try (PDDocument plainDoc = PDDocument.load(plain.outputFile().toFile());
+             PDDocument quoteDoc = PDDocument.load(quote.outputFile().toFile())) {
+            float plainX = firstTextX(plainDoc);
+            float quoteX = firstTextX(quoteDoc);
+            assertThat(quoteX).isGreaterThan(plainX + 5f);
+        }
+    }
+
+    @Test
+    void gfmStrikethroughExtensionRendersWithoutTildeMarkers() throws Exception {
+        // 확장이 꺼져 있으면 ~~ 가 그대로 텍스트에 남는다(핵심 CommonMark 파서는 GFM 취소선을 모름).
+        Path md = createMd("~~struck~~ normal\n");
+
+        ToolResult result = module.process(new ToolInput(List.of(md), Map.of()));
+
+        try (PDDocument doc = PDDocument.load(result.outputFile().toFile())) {
+            String text = new PDFTextStripper().getText(doc);
+            assertThat(text).contains("struck", "normal");
+            assertThat(text).doesNotContain("~~");
+        }
+    }
+
+    @Test
     void tocInsertsLinkedTableOfContentsOnFirstPage() throws Exception {
         // 패턴 B: toc=true 는 목차 페이지가 추가되고, toc=false 는 그대로여야 한다.
         Path md = createMd("# Alpha\n\nbody-a\n\n## Beta\n\nbody-b\n");

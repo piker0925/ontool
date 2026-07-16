@@ -15,7 +15,7 @@ export interface ModuleConfig {
     params: ParamDef[]
     resultType?: 'image'
     sample?: Record<string, string>
-    textInput?: { label: string; placeholder: string; filename: string }
+    textInput?: { label: string; placeholder: string; filename: string; help?: string }
     fileAccept?: string
     fileMultiple?: boolean
     reorderable?: boolean

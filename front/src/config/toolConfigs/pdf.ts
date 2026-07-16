@@ -85,6 +85,7 @@ export const PDF_HEAVY_CONFIGS: Record<string, ModuleConfig> = {
             label: 'Markdown 직접 입력',
             placeholder: '# 제목\n\n마크다운 내용을 입력하세요...\n\n- 목록 항목\n- **굵게**, *기울임*',
             filename: 'document.md',
+            help: '이미지는 외부 URL만 지원됩니다 (로컬 상대경로 이미지는 표시되지 않습니다)',
         },
         fileAccept: '.md',
     },

@@ -122,6 +122,9 @@
                   heavyConfig.textInput.label
                 }}</span>
             </div>
+            <p v-if="heavyConfig.textInput.help" class="px-4 pt-2 text-[11px] text-muted-foreground/60">
+              — {{ heavyConfig.textInput.help }}
+            </p>
             <textarea
                 v-model="heavyTextContent"
                 :placeholder="heavyConfig.textInput.placeholder"

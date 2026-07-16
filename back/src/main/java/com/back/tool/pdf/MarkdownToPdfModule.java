@@ -82,7 +82,7 @@ public class MarkdownToPdfModule implements ToolModule {
             Path output = Files.createTempFile("md2pdf-", ".pdf");
             try (OutputStream os = Files.newOutputStream(output)) {
                 PdfRendererBuilder builder = new PdfRendererBuilder();
-                builder.useFont(() -> fontStream(), FONT_FAMILY);
+                builder.useFont(MarkdownToPdfModule::fontStream, FONT_FAMILY);
                 builder.withHtmlContent(html, null);
                 builder.toStream(os);
                 builder.run();

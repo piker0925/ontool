@@ -54,9 +54,7 @@ public class BarcodeModule implements ToolModule {
                         .encode(content, BarcodeFormat.EAN_13, width, height, Map.of());
             };
             return ToolResult.ofText(CodeImageSupport.toBase64Png(matrix, foreground, background));
-        } catch (IllegalArgumentException e) {
-            throw new ToolProcessingException("바코드 생성 실패: " + e.getMessage(), e);
-        } catch (IOException e) {
+        } catch (IllegalArgumentException | IOException e) {
             throw new ToolProcessingException("바코드 생성 실패: " + e.getMessage(), e);
         }
     }

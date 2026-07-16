@@ -32,7 +32,7 @@ public record ToolParams(Map<String, String> raw) {
         int parsed;
         try {
             parsed = Integer.parseInt(v.trim());
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException _) {
             throw new ToolProcessingException(
                     "파라미터 '" + key + "'는 정수여야 합니다. (입력값: " + v + ")");
         }
@@ -54,7 +54,7 @@ public record ToolParams(Map<String, String> raw) {
         if (v == null || v.isBlank()) return defaultValue;
         try {
             return Enum.valueOf(type, v.trim().toUpperCase());
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException _) {
             throw new ToolProcessingException(
                     "파라미터 '" + key + "'에 허용되지 않는 값입니다. (입력값: " + v + ")");
         }

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -110,7 +111,7 @@ public class VulnScanModule implements ToolModule {
     }
 
     /** OSV /v1/query 응답의 vulns 배열에서 CVE ID·심각도·수정 버전을 추출한다. */
-    private List<VulnRow> parseVulns(String pkg, String version, String responseBody) throws Exception {
+    private List<VulnRow> parseVulns(String pkg, String version, String responseBody) throws IOException {
         JsonNode root = JSON.readTree(responseBody);
         JsonNode vulns = root.path("vulns");
         if (!vulns.isArray() || vulns.isEmpty()) return List.of();

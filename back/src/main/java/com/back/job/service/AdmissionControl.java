@@ -66,7 +66,7 @@ public class AdmissionControl {
         }
         try (Stream<Path> walk = Files.walk(uploadDir)) {
             return walk.filter(Files::isRegularFile).mapToLong(AdmissionControl::sizeOrZero).sum();
-        } catch (IOException e) {
+        } catch (IOException _) {
             return 0L;
         }
     }
@@ -74,7 +74,7 @@ public class AdmissionControl {
     private static long sizeOrZero(Path p) {
         try {
             return Files.size(p);
-        } catch (IOException e) {
+        } catch (IOException _) {
             return 0L;
         }
     }

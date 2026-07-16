@@ -191,7 +191,7 @@ public class HtmlFetchModule implements ToolModule {
         String name = contentType.substring(idx + "charset=".length()).split("[;\\s]")[0].trim();
         try {
             return Charset.forName(name);
-        } catch (Exception e) {
+        } catch (Exception _) {
             return StandardCharsets.UTF_8;
         }
     }

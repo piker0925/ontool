@@ -9,6 +9,7 @@ import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.io.StringWriter;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -66,7 +67,7 @@ public class RsaKeyModule implements ToolModule {
         }
     }
 
-    private String toPem(String type, byte[] data) throws Exception {
+    private String toPem(String type, byte[] data) throws IOException {
         StringWriter sw = new StringWriter();
         try (PemWriter pw = new PemWriter(sw)) {
             pw.writeObject(new PemObject(type, data));

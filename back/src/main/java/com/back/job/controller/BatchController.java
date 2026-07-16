@@ -10,6 +10,7 @@ import com.back.job.repository.BatchStats;
 import com.back.job.service.JobService;
 import com.back.job.service.ZipEntryNamer;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -63,7 +64,7 @@ public class BatchController {
 
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header("Content-Disposition", "attachment; filename=batch-" + id + ".zip")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=batch-" + id + ".zip")
                 .body(body);
     }
 

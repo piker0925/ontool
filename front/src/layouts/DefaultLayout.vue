@@ -1,8 +1,16 @@
 <template>
   <div class="flex h-screen overflow-hidden">
 
+    <!-- 모바일 드로어 백드롭 -->
+    <div
+        v-if="drawerOpen"
+        class="fixed inset-0 z-30 bg-black/50 lg:hidden"
+        @click="drawerOpen = false"
+    />
+
     <aside
-        class="flex w-[280px] shrink-0 flex-col border-r border-sidebar-border bg-sidebar"
+        :class="drawerOpen ? 'translate-x-0' : '-translate-x-full'"
+        class="fixed inset-y-0 left-0 z-40 flex w-[280px] shrink-0 flex-col border-r border-sidebar-border bg-sidebar transition-transform duration-200 lg:static lg:translate-x-0"
     >
 
       <!-- Logo -->
@@ -123,6 +131,30 @@
 
     <!-- Main -->
     <div class="flex min-w-0 flex-1 flex-col">
+      <!-- 모바일 톱바 -->
+      <header class="flex h-12 shrink-0 items-center gap-1 border-b border-border bg-background px-2 lg:hidden">
+        <button
+            class="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            title="메뉴 열기"
+            @click="drawerOpen = true"
+        >
+          <Menu class="size-[18px]"/>
+        </button>
+        <router-link class="flex items-center gap-2 px-1" to="/">
+          <div class="flex size-6 items-center justify-center rounded-md bg-primary">
+            <Zap class="size-3.5 text-primary-foreground"/>
+          </div>
+          <span class="text-[14px] font-semibold text-foreground">DevToolbox</span>
+        </router-link>
+        <button
+            class="ml-auto flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            title="검색"
+            @click="paletteRef?.open()"
+        >
+          <Search class="size-[16px]"/>
+        </button>
+      </header>
+
       <main class="flex-1 overflow-y-auto bg-background">
         <router-view/>
       </main>
@@ -133,9 +165,9 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, onMounted, onUnmounted, ref} from 'vue'
+import {computed, onMounted, onUnmounted, ref, watch} from 'vue'
 import {useRoute} from 'vue-router'
-import {LayoutGrid, MessageSquarePlus, MonitorSmartphone, Moon, Search, Star, Sun, Zap} from 'lucide-vue-next'
+import {LayoutGrid, Menu, MessageSquarePlus, MonitorSmartphone, Moon, Search, Star, Sun, Zap} from 'lucide-vue-next'
 import {apiClient} from '../api/client'
 import {MOCK_MODULES} from '../api/mock'
 import {normalizeApiModules} from '../api/modules'
@@ -156,6 +188,7 @@ import {
 const route = useRoute()
 const modules = ref<Module[]>([])
 const paletteRef = ref<InstanceType<typeof CommandPalette> | null>(null)
+const drawerOpen = ref(false)
 
 const {activeCategory} = useToolFilter()
 const {favoriteIds} = useFavorites()
@@ -200,10 +233,18 @@ function isCategoryActive(catName: string) {
   return modules.value.find(m => m.id === moduleId)?.category === catName
 }
 
+// 모바일 드로어는 페이지 이동 시 닫는다
+watch(() => route.fullPath, () => {
+  drawerOpen.value = false
+})
+
 function handleKeydown(e: KeyboardEvent) {
   if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
     e.preventDefault()
     paletteRef.value?.open()
+  }
+  if (e.key === 'Escape' && drawerOpen.value) {
+    drawerOpen.value = false
   }
 }
 

@@ -22,15 +22,11 @@ import org.jsonschema2pojo.SourceType;
 import org.jsonschema2pojo.rules.RuleFactory;
 import org.springframework.stereotype.Component;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 @Component
 public class JsonSchemaToDtoModule implements ToolModule {
@@ -84,8 +80,8 @@ public class JsonSchemaToDtoModule implements ToolModule {
             generateDto(schemaFile, outputDir, packageName, className, inputType, dtoStyle);
 
             Path zipPath = Files.createTempFile("j2p-", ".zip");
-            zipDirectory(outputDir, zipPath);
-            deleteDir(outputDir.toFile());
+            CodegenZipSupport.zipDirectory(outputDir, zipPath);
+            CodegenZipSupport.deleteDir(outputDir.toFile());
             return ToolResult.ofFile(zipPath);
         } catch (ToolProcessingException e) {
             throw e;
@@ -200,31 +196,5 @@ public class JsonSchemaToDtoModule implements ToolModule {
             super.propertyField(field, clazz, propertyName, propertyNode);
             field.mods().setPrivate();
         }
-    }
-
-    private void zipDirectory(Path dir, Path zipPath) throws IOException {
-        try (OutputStream fos = Files.newOutputStream(zipPath);
-             ZipOutputStream zip = new ZipOutputStream(fos)) {
-            Files.walk(dir)
-                    .filter(p -> !Files.isDirectory(p))
-                    .forEach(p -> {
-                        try {
-                            zip.putNextEntry(new ZipEntry(dir.relativize(p).toString()));
-                            Files.copy(p, zip);
-                            zip.closeEntry();
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-        }
-    }
-
-    private void deleteDir(File dir) {
-        File[] files = dir.listFiles();
-        if (files != null) for (File f : files) {
-            if (f.isDirectory()) deleteDir(f);
-            else f.delete();
-        }
-        dir.delete();
     }
 }

@@ -3,6 +3,8 @@ package com.back.tool.model;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
 
 public record ToolResult(Path outputFile, String textResult) {
 
@@ -28,6 +30,11 @@ public record ToolResult(Path outputFile, String textResult) {
         } catch (Exception e) {
             throw new ToolProcessingException("결과 직렬화에 실패했습니다: " + e.getMessage(), e);
         }
+    }
+
+    /** {@code {"type":"keyvalue","items":[{"key":..,"value":..}]}} 컨벤션을 강제하는 헬퍼. */
+    public static ToolResult ofKeyValue(List<Map<String, String>> items) {
+        return ofJson(Map.of("type", "keyvalue", "items", items));
     }
 
     public boolean isFile() {

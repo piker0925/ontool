@@ -68,13 +68,10 @@ public class BcryptModule implements ToolModule {
         }
         long elapsedMs = (System.nanoTime() - start) / 1_000_000;
 
-        return ToolResult.ofJson(Map.of(
-                "type", "keyvalue",
-                "items", List.of(
-                        Map.of("key", "해시", "value", hash),
-                        Map.of("key", "강도 (rounds)", "value", rounds + " — " + strengthLabel(rounds)),
-                        Map.of("key", "처리 시간", "value", elapsedMs + "ms")
-                )
+        return ToolResult.ofKeyValue(List.of(
+                Map.of("key", "해시", "value", hash),
+                Map.of("key", "강도 (rounds)", "value", rounds + " — " + strengthLabel(rounds)),
+                Map.of("key", "처리 시간", "value", elapsedMs + "ms")
         ));
     }
 
@@ -96,13 +93,10 @@ public class BcryptModule implements ToolModule {
         }
         long elapsedMs = (System.nanoTime() - start) / 1_000_000;
 
-        return ToolResult.ofJson(Map.of(
-                "type", "keyvalue",
-                "items", List.of(
-                        Map.of("key", "검증 결과", "value", matches ? "✓ 일치" : "✗ 불일치"),
-                        Map.of("key", "해시 강도 (rounds)", "value", rounds + " — " + strengthLabel(rounds)),
-                        Map.of("key", "처리 시간", "value", elapsedMs + "ms")
-                )
+        return ToolResult.ofKeyValue(List.of(
+                Map.of("key", "검증 결과", "value", matches ? "✓ 일치" : "✗ 불일치"),
+                Map.of("key", "해시 강도 (rounds)", "value", rounds + " — " + strengthLabel(rounds)),
+                Map.of("key", "처리 시간", "value", elapsedMs + "ms")
         ));
     }
 

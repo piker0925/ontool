@@ -2,6 +2,7 @@ package com.back.tool.converter;
 
 import com.back.tool.model.ToolInput;
 import com.back.tool.model.ToolModule;
+import com.back.tool.model.ToolParams;
 import com.back.tool.model.ToolProcessingException;
 import com.back.tool.model.ToolResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,8 +32,9 @@ public class JsonTomlModule implements ToolModule {
     @Override
     @SuppressWarnings("unchecked")
     public ToolResult process(ToolInput input) {
-        String text = input.params().getOrDefault("input", "");
-        String direction = input.params().getOrDefault("direction", "json-to-toml");
+        ToolParams params = ToolParams.of(input);
+        String text = params.getString("input", "");
+        String direction = params.getString("direction", "json-to-toml");
         try {
             if ("toml-to-json".equals(direction)) {
                 Map<String, Object> map = new Toml().read(text).toMap();

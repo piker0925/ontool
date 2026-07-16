@@ -2,6 +2,7 @@ package com.back.tool.converter;
 
 import com.back.tool.model.ToolInput;
 import com.back.tool.model.ToolModule;
+import com.back.tool.model.ToolParams;
 import com.back.tool.model.ToolProcessingException;
 import com.back.tool.model.ToolResult;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -38,8 +39,9 @@ public class CsvJsonModule implements ToolModule {
 
     @Override
     public ToolResult process(ToolInput input) {
-        String text = input.params().getOrDefault("input", "");
-        String direction = input.params().getOrDefault("direction", "csv-to-json");
+        ToolParams params = ToolParams.of(input);
+        String text = params.getString("input", "");
+        String direction = params.getString("direction", "csv-to-json");
         try {
             if ("json-to-csv".equals(direction)) {
                 return ToolResult.ofText(jsonToCsv(text));

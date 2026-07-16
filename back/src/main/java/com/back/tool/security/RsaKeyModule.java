@@ -51,14 +51,11 @@ public class RsaKeyModule implements ToolModule {
             String pub = toPem("PUBLIC KEY", pair.getPublic().getEncoded());
             String priv = toPem("PRIVATE KEY", pair.getPrivate().getEncoded());
 
-            return ToolResult.ofJson(Map.of(
-                    "type", "keyvalue",
-                    "items", List.of(
-                            Map.of("key", "키 정보", "value",
-                                    keyType + " " + keySize + "비트 · 공개키 X.509(SPKI) / 개인키 PKCS#8"),
-                            Map.of("key", "공개키 (PEM)", "value", pub),
-                            Map.of("key", "개인키 (PEM)", "value", priv)
-                    )
+            return ToolResult.ofKeyValue(List.of(
+                    Map.of("key", "키 정보", "value",
+                            keyType + " " + keySize + "비트 · 공개키 X.509(SPKI) / 개인키 PKCS#8"),
+                    Map.of("key", "공개키 (PEM)", "value", pub),
+                    Map.of("key", "개인키 (PEM)", "value", priv)
             ));
         } catch (ToolProcessingException e) {
             throw e;

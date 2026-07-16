@@ -50,7 +50,7 @@ public class MultiHashModule implements ToolModule {
         } catch (Exception e) {
             throw new ToolProcessingException("해시 생성 실패: " + e.getMessage(), e);
         }
-        return ToolResult.ofJson(Map.of("type", "keyvalue", "items", items));
+        return ToolResult.ofKeyValue(items);
     }
 
     private byte[] blake2b256(byte[] bytes) {

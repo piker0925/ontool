@@ -13,9 +13,16 @@ spring:
       name: admin
       password: 1234
 
+# 로컬 개발 중 폰 등 같은 와이파이의 다른 기기에서 LAN IP로 접속해 테스트할 수 있도록 사설망 대역을 패턴으로 허용한다.
+# (프로덕션은 application-prod.yaml에서 CORS_ORIGIN 환경변수로 별도 관리되므로 영향 없음)
+cors:
+  origin: http://localhost:5173,http://127.0.0.1:5173,http://192.168.*.*:5173,http://10.*.*.*:5173
+
 storage:
   upload-dir: uploads
-  base-url: http://localhost:8080
+  # 상대경로로 비워둔다: 절대주소(http://localhost:8080)를 박으면 LAN의 다른 기기(폰 등)에서
+  # 접속했을 때 다운로드/미리보기 URL이 그 기기 자신의 localhost를 가리켜 실패한다.
+  base-url: ""
   # 로컬은 짧게 두어 청소 동작을 빠르게 확인할 수 있게 한다.
   result-ttl: PT2M
 

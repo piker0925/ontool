@@ -16,8 +16,10 @@ export default defineConfig({
         globals: true,
     },
     server: {
+        host: true,
         proxy: {
             '/api': 'http://localhost:8080',
+            '/admin': 'http://localhost:8080',
         },
     },
 })

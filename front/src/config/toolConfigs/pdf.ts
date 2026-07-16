@@ -29,6 +29,7 @@ export const PDF_HEAVY_CONFIGS: Record<string, ModuleConfig> = {
             },
         ],
         fileAccept: '.jpg,.jpeg,.png',
+        reorderable: true,
     },
     'pdf-merge': {
         params: [],

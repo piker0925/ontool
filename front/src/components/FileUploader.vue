@@ -25,22 +25,25 @@
         <button
             v-if="reorderable"
             :data-testid="`move-up-${i}`" :disabled="i === 0"
-            class="rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground"
+            class="rounded p-1 text-foreground/70 transition-colors hover:bg-accent hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-foreground/70"
+            title="위로 이동"
             type="button" @click="staged = moveItem(staged, i, -1)"
-        >↑
+        ><ChevronUp class="size-3.5"/>
         </button>
         <button
             v-if="reorderable"
             :data-testid="`move-down-${i}`" :disabled="i === staged.length - 1"
-            class="rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground"
+            class="rounded p-1 text-foreground/70 transition-colors hover:bg-accent hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-foreground/70"
+            title="아래로 이동"
             type="button" @click="staged = moveItem(staged, i, 1)"
-        >↓
+        ><ChevronDown class="size-3.5"/>
         </button>
         <button
             :data-testid="`remove-${i}`"
-            class="rounded p-0.5 text-muted-foreground transition-colors hover:text-destructive"
+            class="rounded p-1 text-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
+            title="제거"
             type="button" @click="staged.splice(i, 1)"
-        >✕
+        ><X class="size-3.5"/>
         </button>
       </li>
     </ul>
@@ -52,6 +55,7 @@
 
 <script lang="ts" setup>
 import {ref} from 'vue'
+import {ChevronDown, ChevronUp, X} from 'lucide-vue-next'
 import {apiClient} from '../api/client'
 import type {UploadResult} from '../types'
 import {moveItem} from '../utils/fileOrder'

@@ -123,12 +123,18 @@ jobs:
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
           CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
           STORAGE_BASE_URL: ${{ secrets.STORAGE_BASE_URL }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          KAKAO_CLIENT_ID: ${{ secrets.KAKAO_CLIENT_ID }}
+          KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
           GH_ACTOR: ${{ github.actor }}
         with:
           host: ${{ secrets.OCI_HOST }}
           username: opc
           key: ${{ secrets.OCI_SSH_KEY }}
-          envs: GHCR_TOKEN,DB_USERNAME,DB_PASSWORD,DB_ROOT_PASSWORD,ADMIN_USERNAME,ADMIN_PASSWORD,CORS_ORIGIN,STORAGE_BASE_URL,GH_ACTOR
+          envs: GHCR_TOKEN,DB_USERNAME,DB_PASSWORD,DB_ROOT_PASSWORD,ADMIN_USERNAME,ADMIN_PASSWORD,CORS_ORIGIN,STORAGE_BASE_URL,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,KAKAO_CLIENT_ID,KAKAO_CLIENT_SECRET,JWT_SECRET,FRONTEND_URL,GH_ACTOR
           script: |
             set -e
             mkdir -p ~/DevToolbox
@@ -142,6 +148,12 @@ jobs:
               printf "ADMIN_PASSWORD=%s\n"    "${ADMIN_PASSWORD}"
               printf "CORS_ORIGIN=%s\n"       "${CORS_ORIGIN}"
               printf "STORAGE_BASE_URL=%s\n"  "${STORAGE_BASE_URL}"
+              printf "GOOGLE_CLIENT_ID=%s\n"  "${GOOGLE_CLIENT_ID}"
+              printf "GOOGLE_CLIENT_SECRET=%s\n" "${GOOGLE_CLIENT_SECRET}"
+              printf "KAKAO_CLIENT_ID=%s\n"   "${KAKAO_CLIENT_ID}"
+              printf "KAKAO_CLIENT_SECRET=%s\n" "${KAKAO_CLIENT_SECRET}"
+              printf "JWT_SECRET=%s\n"        "${JWT_SECRET}"
+              printf "FRONTEND_URL=%s\n"      "${FRONTEND_URL}"
             } > .env
 
             echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GH_ACTOR}" --password-stdin

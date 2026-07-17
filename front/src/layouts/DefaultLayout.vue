@@ -102,6 +102,11 @@
             side="top"
         />
       </div>
+      <div class="px-4 pb-3 pt-1 flex justify-center">
+        <router-link to="/privacy" class="text-[11px] text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors underline underline-offset-2">
+          개인정보처리방침
+        </router-link>
+      </div>
     </aside>
 
     <!-- Main -->

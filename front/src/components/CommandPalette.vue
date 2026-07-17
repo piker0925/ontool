@@ -1,8 +1,8 @@
 <template>
   <CommandDialog v-model:open="isOpen">
-    <CommandInput placeholder="도구 검색..." @input="onSearchInput"/>
-    <CommandList class="max-h-[360px]">
-      <CommandEmpty>도구를 찾을 수 없습니다.</CommandEmpty>
+    <CommandInput placeholder="어떤 도구가 필요하신가요? (예: json)" @input="onSearchInput"/>
+    <CommandList class="max-h-[400px]">
+      <CommandEmpty class="py-12 text-center text-sm text-muted-foreground">도구를 찾을 수 없습니다.</CommandEmpty>
       <CommandGroup
           v-for="(group, groupLabel) in grouped"
           :key="groupLabel"
@@ -12,21 +12,21 @@
             v-for="mod in group"
             :key="mod.id"
             :value="`${mod.name} ${mod.category} ${mod.description ?? ''} ${keywordStrings(mod.keywords).join(' ')}`"
-            class="flex items-center gap-2.5 py-2"
+            class="flex items-center gap-3 py-2.5 cursor-pointer"
             @select="navigate(mod)"
         >
-          <div class="flex size-6 shrink-0 items-center justify-center rounded bg-secondary text-muted-foreground">
+          <div class="flex size-7 shrink-0 items-center justify-center rounded-md bg-secondary text-muted-foreground shadow-sm">
             <component
                 :is="getCategoryConfig(mod.category).icon"
-                class="size-3.5"
+                class="size-4"
             />
           </div>
-          <span class="flex-1 truncate text-[13px]">{{ mod.name }}</span>
-          <span class="shrink-0 font-mono text-[11px] text-muted-foreground">{{ mod.category }}</span>
+          <span class="flex-1 truncate text-[14px] font-medium">{{ mod.name }}</span>
+          <span class="shrink-0 rounded-md bg-secondary/60 px-2 py-0.5 font-mono text-[10px] font-medium text-muted-foreground">{{ mod.category }}</span>
         </CommandItem>
       </CommandGroup>
     </CommandList>
-    <div class="flex items-center gap-5 border-t border-border px-4 py-2.5 font-mono text-[11px] text-muted-foreground">
+    <div class="flex items-center gap-5 border-t border-border/50 px-4 py-3 font-mono text-[11px] text-muted-foreground bg-muted/20">
       <span>↑↓ 이동</span>
       <span>↵ 선택</span>
       <span>Esc 닫기</span>
@@ -68,8 +68,8 @@ function onSearchInput(e: Event) {
 
 const grouped = computed(() =>
     props.modules.reduce<Record<string, Module[]>>((acc, mod) => {
-      // zones[0]이 기본 구역 (ADR-0023) — 검색은 구역 무관 전체지만, 그룹 헤딩은 기본 구역으로 표시
-      const groupLabel = `${zoneOf(mod.zones[0]).name} > ${mod.category}`
+      // zones[0]이 기본 구역 (ADR-0023) — 카테고리까지 묶지 않고 큼직한 구역으로만 그룹핑하여 스캐닝 극대화
+      const groupLabel = zoneOf(mod.zones[0]).name
       ;(acc[groupLabel] ??= []).push(mod)
       return acc
     }, {}),

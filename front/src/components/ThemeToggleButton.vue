@@ -5,11 +5,13 @@
           :aria-label="themeLabel"
           :class="buttonClass"
           :title="themeLabel"
-          class="flex shrink-0 items-center justify-center rounded-lg transition-colors"
+          class="flex shrink-0 items-center justify-center rounded-lg transition-colors overflow-hidden"
       >
-        <Sun v-if="preference === 'light'" class="size-[15px]"/>
-        <Moon v-else-if="preference === 'dark'" class="size-[15px]"/>
-        <MonitorSmartphone v-else class="size-[15px]"/>
+        <div class="relative flex items-center justify-center size-[15px]">
+          <Sun :class="preference === 'light' ? 'scale-100 rotate-0' : 'scale-0 -rotate-90'" class="absolute transition-all duration-300 size-[15px]"/>
+          <Moon :class="preference === 'dark' ? 'scale-100 rotate-0' : 'scale-0 rotate-90'" class="absolute transition-all duration-300 size-[15px]"/>
+          <MonitorSmartphone :class="preference === 'system' ? 'scale-100 rotate-0' : 'scale-0 rotate-90'" class="absolute transition-all duration-300 size-[15px]"/>
+        </div>
       </button>
     </DropdownMenuTrigger>
     <DropdownMenuContent :align="align" :side="side">

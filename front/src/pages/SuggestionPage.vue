@@ -15,7 +15,10 @@
           placeholder="건의사항을 입력해주세요..."
       />
       <div class="mt-3 flex items-center justify-between">
-        <p class="text-xs text-muted-foreground">익명 · 로그인 없이 제출</p>
+        <p class="text-xs text-muted-foreground">
+          <span v-if="user" class="text-primary font-medium">{{ user.nickname }}</span>
+          <span v-else>익명 · 로그인 없이 제출</span>
+        </p>
         <Button :disabled="submitting || !content.trim()" class="text-xs" size="sm" @click="submit">
           {{ submitting ? '제출 중...' : '제출' }}
         </Button>
@@ -29,7 +32,9 @@ import {ref} from 'vue'
 import {Button} from '@/components/ui/button'
 import {Textarea} from '@/components/ui/textarea'
 import {apiClient} from '../api/client'
+import {useAuth} from '../composables/useAuth'
 
+const {user} = useAuth()
 const content = ref('')
 const submitting = ref(false)
 const submitted = ref(false)

@@ -15,12 +15,10 @@
 
       <!-- Logo -->
       <router-link
-          class="flex items-center gap-2.5 px-4 py-4 transition-opacity hover:opacity-80"
+          class="flex items-center px-4 py-4 transition-opacity hover:opacity-80"
           to="/"
       >
-        <span class="font-mono text-[16px] font-semibold tracking-tight">
-          <span class="text-sidebar-primary">{{ WORDMARK_PREFIX }}</span><span class="text-sidebar-foreground">{{ WORDMARK_REST }}</span>
-        </span>
+        <BrandLogo class="scale-90 origin-left" />
       </router-link>
 
       <!-- Search -->
@@ -87,7 +85,10 @@
         </router-link>
       </nav>
 
-      <!-- 하단: 테마 · 건의하기 -->
+      <!-- 하단: 유저 프로필 + 테마 · 건의하기 -->
+      <div class="flex flex-col gap-2 border-t border-sidebar-border p-3">
+        <UserProfileButton />
+      </div>
       <div class="flex items-center gap-1 border-t border-sidebar-border p-2">
         <router-link
             class="flex flex-1 items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
@@ -133,18 +134,19 @@
         >
           <Menu class="size-[18px]"/>
         </button>
-        <router-link class="flex items-center gap-2 px-1" to="/">
-          <span class="font-mono text-[15px] font-semibold tracking-tight">
-            <span class="text-primary">{{ WORDMARK_PREFIX }}</span><span class="text-foreground">{{ WORDMARK_REST }}</span>
-          </span>
+        <router-link class="flex items-center px-1" to="/">
+          <BrandLogo class="scale-[0.8] origin-left" />
         </router-link>
-        <button
-            class="ml-auto flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-            title="검색"
-            @click="paletteRef?.open()"
-        >
-          <Search class="size-[16px]"/>
-        </button>
+        <div class="ml-auto flex items-center gap-2">
+          <UserProfileButton class="lg:hidden" />
+          <button
+              class="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              title="검색"
+              @click="paletteRef?.open()"
+          >
+            <Search class="size-[16px]"/>
+          </button>
+        </div>
       </header>
 
       <main class="flex-1 overflow-y-auto bg-background">
@@ -169,8 +171,10 @@ import type {Module} from '../types'
 import {CATEGORY_CONFIG, CATEGORY_ORDER} from '../utils/categoryConfig'
 import {useToolFilter} from '../composables/useToolFilter'
 import {useFavorites} from '../composables/useFavorites'
+import BrandLogo from '../components/BrandLogo.vue'
 import CommandPalette from '../components/CommandPalette.vue'
 import ThemeToggleButton from '../components/ThemeToggleButton.vue'
+import UserProfileButton from '../components/UserProfileButton.vue'
 
 const route = useRoute()
 const modules = ref<Module[]>([])

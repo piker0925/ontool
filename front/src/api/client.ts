@@ -42,3 +42,64 @@ export const apiClient = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080',
     headers: {'X-Client-Id': clientId()},
 })
+
+// 인플라이트 리프레시 프로미스 공유 (동시 요청 방지)
+let refreshPromise: Promise<string | null> | null = null
+
+apiClient.interceptors.request.use((config) => {
+    // vueuse/core useStorage 기본값이 로컬스토리지에 저장됨
+    const token = localStorage.getItem('dtk_access')
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+})
+
+apiClient.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        const originalRequest = error.config
+        
+        // 401이면서 이미 재시도한 요청이 아니고, refresh URL 자체가 아닌 경우
+        if (
+            error.response?.status === 401 && 
+            !originalRequest._retry && 
+            originalRequest.url !== '/api/v1/auth/refresh'
+        ) {
+            originalRequest._retry = true
+
+            try {
+                if (!refreshPromise) {
+                    refreshPromise = (async () => {
+                        const refreshToken = localStorage.getItem('dtk_refresh')
+                        if (!refreshToken) throw new Error('No refresh token')
+                        
+                        // NOTE: axios 말고 fetch를 쓰거나 별도의 axios 인스턴스를 써도 되지만, 
+                        // interceptor 루프를 막기 위해 originalRequest.url 체크를 위에서 했음
+                        const { data } = await apiClient.post('/api/v1/auth/refresh', { refreshToken })
+                        
+                        localStorage.setItem('dtk_access', data.accessToken)
+                        localStorage.setItem('dtk_refresh', data.refreshToken)
+                        return data.accessToken
+                    })()
+                }
+
+                const newAccessToken = await refreshPromise
+                
+                if (newAccessToken) {
+                    originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
+                    return apiClient(originalRequest)
+                }
+            } catch (refreshError) {
+                // 리프레시 실패 시 로그아웃 처리
+                localStorage.removeItem('dtk_access')
+                localStorage.removeItem('dtk_refresh')
+                window.location.href = '/' // 완전히 초기화하기 위해 하드 리로드
+                return Promise.reject(refreshError)
+            } finally {
+                refreshPromise = null
+            }
+        }
+        return Promise.reject(error)
+    }
+)

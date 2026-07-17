@@ -8,6 +8,7 @@ export const router = createRouter({
     history: createWebHistory(),
     routes: [
         {path: '/', component: () => import('../pages/LandingPage.vue'), meta: {layout: 'bare'}},
+        {path: '/auth/callback', component: () => import('../pages/AuthCallback.vue'), meta: {layout: 'bare'}},
         {path: '/dev', component: () => import('../pages/ZoneHomePage.vue'), props: {zoneId: 'dev'}},
         {path: '/files', component: () => import('../pages/ZoneHomePage.vue'), props: {zoneId: 'files'}},
         {path: '/life', component: () => import('../pages/ZoneHomePage.vue'), props: {zoneId: 'life'}},

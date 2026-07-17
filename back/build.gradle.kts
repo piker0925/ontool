@@ -125,3 +125,20 @@ tasks.jacocoTestCoverageVerification {
 tasks.check {
 	dependsOn(tasks.jacocoTestCoverageVerification)
 }
+
+// 로컬 실행 시 back/.env(gitignore 대상)를 읽어 환경변수로 주입한다 — 소셜 로그인(구글·카카오) 실테스트용.
+// 파일이 없어도 무시하고 그냥 기동한다(더미 client-id/secret은 application.yaml 기본값으로 이미 채워져 있음).
+tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+	doFirst {
+		val envFile = project.file(".env")
+		if (envFile.exists()) {
+			envFile.readLines()
+				.map { it.trim() }
+				.filter { it.isNotEmpty() && !it.startsWith("#") && it.contains("=") }
+				.forEach { line ->
+					val (key, value) = line.split("=", limit = 2)
+					environment(key.trim(), value.trim())
+				}
+		}
+	}
+}

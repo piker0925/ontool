@@ -1,8 +1,14 @@
 import {describe, expect, it, vi} from 'vitest'
+import {ref} from 'vue'
 import {router} from './index'
 import {trackPageView} from '../config/analytics'
 
 vi.mock('../config/analytics', () => ({trackPageView: vi.fn()}))
+// '/' 라우트는 LandingPage를 동적 임포트하는데, 그 모듈이 useTheme을 임포트 시점에 실행한다.
+// 이 프로젝트의 jsdom 테스트 환경에서 localStorage가 불완전하게 동작하는 기존 문제(다른 테스트 파일과 동일)를 피하기 위해 모킹한다.
+vi.mock('../composables/useTheme', () => ({
+    useTheme: () => ({preference: ref('system'), isDark: ref(false), setTheme: vi.fn()}),
+}))
 
 describe('router', () => {
     it('/ 라우트가 존재한다', () => {
@@ -30,9 +36,14 @@ describe('router', () => {
         expect(routes.some(r => r.path === zonePath)).toBe(true)
     })
 
-    it('/ 는 /dev로 리다이렉트한다', () => {
+    it('/ 는 사이드바 없는 bare 레이아웃으로 렌더된다', () => {
         const resolved = router.resolve('/')
-        expect(resolved.matched[0]?.redirect).toBe('/dev')
+        expect(resolved.meta.layout).toBe('bare')
+    })
+
+    it('/ 로 이동하면 title이 사이트명이 된다', async () => {
+        await router.push('/')
+        expect(document.title).toBe('OnTool')
     })
 
     it('구역 홈으로 이동하면 title이 구역명 + 사이트명이 되고 meta description이 구역 설명으로 바뀐다', async () => {

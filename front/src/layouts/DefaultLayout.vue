@@ -19,7 +19,7 @@
           to="/"
       >
         <span class="font-mono text-[16px] font-semibold tracking-tight">
-          <span class="text-sidebar-primary">{{ wordmarkPrefix }}</span><span class="text-sidebar-foreground">{{ wordmarkRest }}</span>
+          <span class="text-sidebar-primary">{{ WORDMARK_PREFIX }}</span><span class="text-sidebar-foreground">{{ WORDMARK_REST }}</span>
         </span>
       </router-link>
 
@@ -112,35 +112,10 @@
           <MessageSquarePlus class="size-[15px] shrink-0"/>
           <span>건의하기</span>
         </router-link>
-        <DropdownMenu>
-          <DropdownMenuTrigger as-child>
-            <button
-                :title="themeLabel"
-                :aria-label="themeLabel"
-                class="flex size-9 shrink-0 items-center justify-center rounded-lg text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-            >
-              <Sun v-if="preference === 'light'" class="size-[15px]"/>
-              <Moon v-else-if="preference === 'dark'" class="size-[15px]"/>
-              <MonitorSmartphone v-else class="size-[15px]"/>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" side="top">
-            <DropdownMenuRadioGroup :model-value="preference" @update:model-value="onThemeSelect">
-              <DropdownMenuRadioItem value="light">
-                <Sun class="size-[14px]"/>
-                <span>라이트</span>
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="dark">
-                <Moon class="size-[14px]"/>
-                <span>다크</span>
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="system">
-                <MonitorSmartphone class="size-[14px]"/>
-                <span>시스템</span>
-              </DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <ThemeToggleButton
+            button-class="size-9 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            side="top"
+        />
       </div>
     </aside>
 
@@ -157,7 +132,7 @@
         </button>
         <router-link class="flex items-center gap-2 px-1" to="/">
           <span class="font-mono text-[15px] font-semibold tracking-tight">
-            <span class="text-primary">{{ wordmarkPrefix }}</span><span class="text-foreground">{{ wordmarkRest }}</span>
+            <span class="text-primary">{{ WORDMARK_PREFIX }}</span><span class="text-foreground">{{ WORDMARK_REST }}</span>
           </span>
         </router-link>
         <button
@@ -181,37 +156,26 @@
 <script lang="ts" setup>
 import {computed, onMounted, onUnmounted, ref, watch} from 'vue'
 import {useRoute} from 'vue-router'
-import {LayoutGrid, Menu, MessageSquarePlus, MonitorSmartphone, Moon, Search, Star, Sun} from 'lucide-vue-next'
+import {LayoutGrid, Menu, MessageSquarePlus, Search, Star} from 'lucide-vue-next'
 import {apiClient} from '../api/client'
 import {MOCK_MODULES} from '../api/mock'
 import {normalizeApiModules} from '../api/modules'
-import {BRAND} from '../config/brand'
+import {WORDMARK_PREFIX, WORDMARK_REST} from '../config/brand'
 import {ZONES, zoneOf, type ZoneId} from '../config/zones'
 import type {Module} from '../types'
 import {CATEGORY_CONFIG, CATEGORY_ORDER} from '../utils/categoryConfig'
 import {useToolFilter} from '../composables/useToolFilter'
 import {useFavorites} from '../composables/useFavorites'
-import {useTheme, type ThemePreference} from '../composables/useTheme'
 import CommandPalette from '../components/CommandPalette.vue'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import ThemeToggleButton from '../components/ThemeToggleButton.vue'
 
 const route = useRoute()
-// DESIGN.md §0: "on"은 primary, "tool"은 foreground — 두 톤으로 나눠 렌더링하기 위한 분리
-const wordmarkPrefix = computed(() => BRAND.wordmark.slice(0, 2))
-const wordmarkRest = computed(() => BRAND.wordmark.slice(2))
 const modules = ref<Module[]>([])
 const paletteRef = ref<InstanceType<typeof CommandPalette> | null>(null)
 const drawerOpen = ref(false)
 
 const {activeCategory} = useToolFilter()
 const {favoriteIds} = useFavorites()
-const {preference, setTheme} = useTheme()
 
 // Tailwind Oxide는 소스에 리터럴로 등장하는 클래스만 스캔한다 — 동적 템플릿 문자열 금지
 const ZONE_BG_CLASS: Record<ZoneId, string> = {
@@ -256,14 +220,6 @@ watch(currentZoneId, zoneId => {
 }, {immediate: true})
 
 const shortcutKey = navigator.userAgent.includes('Mac') ? '⌘K' : 'Ctrl K'
-
-const THEME_LABEL = {light: '라이트 테마', dark: '다크 테마', system: '시스템 테마'} as const
-
-const themeLabel = computed(() => `테마: ${THEME_LABEL[preference.value]} (변경하려면 열기)`)
-
-function onThemeSelect(next: unknown) {
-  setTheme(next as ThemePreference)
-}
 
 const favoriteModules = computed(() =>
     favoriteIds.value

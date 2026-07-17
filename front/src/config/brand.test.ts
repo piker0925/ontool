@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest'
-import {BRAND} from './brand'
+import {BRAND, WORDMARK_PREFIX, WORDMARK_REST} from './brand'
 
 describe('BRAND', () => {
     it('사이트명은 OnTool이다', () => {
@@ -16,5 +16,11 @@ describe('BRAND', () => {
 
     it('슬로건은 "모든 도구, 한 곳에"이다', () => {
         expect(BRAND.slogan).toBe('모든 도구, 한 곳에')
+    })
+
+    it('WORDMARK_PREFIX+WORDMARK_REST를 합치면 워드마크 전체와 같다 (DESIGN.md §0: on은 primary, tool은 foreground)', () => {
+        expect(WORDMARK_PREFIX).toBe('on')
+        expect(WORDMARK_REST).toBe('tool')
+        expect(WORDMARK_PREFIX + WORDMARK_REST).toBe(BRAND.wordmark)
     })
 })

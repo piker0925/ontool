@@ -7,8 +7,7 @@ import {trackPageView} from '../config/analytics'
 export const router = createRouter({
     history: createWebHistory(),
     routes: [
-        // 랜딩(045)이 아직 없어 임시로 기본 구역(dev)으로 리다이렉트 — 045에서 랜딩 페이지로 교체
-        {path: '/', redirect: '/dev'},
+        {path: '/', component: () => import('../pages/LandingPage.vue'), meta: {layout: 'bare'}},
         {path: '/dev', component: () => import('../pages/ZoneHomePage.vue'), props: {zoneId: 'dev'}},
         {path: '/files', component: () => import('../pages/ZoneHomePage.vue'), props: {zoneId: 'files'}},
         {path: '/life', component: () => import('../pages/ZoneHomePage.vue'), props: {zoneId: 'life'}},

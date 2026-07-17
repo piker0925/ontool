@@ -296,3 +296,9 @@ cp .env.example .env
 | `VITE_API_BASE_URL` | 백엔드 API 공개 URL                                                 |
 | `VITE_GA_ID`        | GA4 측정 ID (`G-XXXX`). Production만 설정 — 미설정 빌드는 gtag 요청 자체가 없음   |
 | `VITE_SITE_URL`     | sitemap.xml/robots.txt에 쓸 사이트 공개 URL. 미설정 시 임시 플레이스홀더로 생성       |
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE) - see the LICENSE file for details.

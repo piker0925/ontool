@@ -9,6 +9,30 @@ spring:
       # 힙 안전선 기준으로 파일 단건 50MB, 요청 전체(배치 합산) 100MB로 둔다. 초과분은 앞단에서 413으로 거부.
       max-file-size: 50MB
       max-request-size: 100MB
+  # 소셜 로그인(구글·카카오, ADR-0024). client-id/secret 미설정 시에도(더미 기본값) 앱은 정상 기동한다 —
+  # 실제 로그인 시도만 실패한다. 로컬에서 실로그인을 테스트하려면 GOOGLE_CLIENT_ID 등을 환경변수로 export할 것.
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:dummy-google-client-id}
+            client-secret: ${GOOGLE_CLIENT_SECRET:dummy-google-client-secret}
+            scope: openid, email, profile
+          kakao:
+            client-id: ${KAKAO_CLIENT_ID:dummy-kakao-client-id}
+            client-secret: ${KAKAO_CLIENT_SECRET:dummy-kakao-client-secret}
+            client-authentication-method: client_secret_post
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope: profile_nickname, account_email
+            client-name: Kakao
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
 
 server:
   port: 8080
@@ -28,3 +52,14 @@ queue:
   max-pending:
     heavy: 200
     video: 10
+
+# 소셜 로그인 JWT (ADR-0024). access 30분 — 값 자체는 고정이라 프로파일 분기 없이 여기 둔다.
+# secret은 prod에서 JWT_SECRET 환경변수로 반드시 교체할 것 — 아래 기본값은 로컬 전용.
+jwt:
+  secret: ${JWT_SECRET:local-dev-only-jwt-secret-please-change-0123456789abcdef}
+  access-token-expiration-seconds: 1800
+  refresh-token-expiration-days: 14
+
+# 로그인 성공/실패 콜백 리다이렉트 대상 (ADR-0024). prod는 FRONTEND_URL(Vercel 도메인)로 교체.
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}

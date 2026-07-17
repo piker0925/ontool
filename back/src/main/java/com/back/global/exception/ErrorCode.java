@@ -17,7 +17,9 @@ public enum ErrorCode {
     QUEUE_FULL(HttpStatus.SERVICE_UNAVAILABLE, "처리 대기열이 가득 찼습니다. 잠시 후 다시 시도해 주세요."),
     RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS, "요청이 너무 많습니다. 1분 후 다시 시도해 주세요."),
     VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "입력값이 올바르지 않습니다."),
-    NOT_FOUND(HttpStatus.NOT_FOUND, "요청한 리소스를 찾을 수 없습니다.");
+    NOT_FOUND(HttpStatus.NOT_FOUND, "요청한 리소스를 찾을 수 없습니다."),
+    INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "로그인이 만료되었습니다. 다시 로그인해 주세요."),
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
 
     private final HttpStatus status;
     private final String message;

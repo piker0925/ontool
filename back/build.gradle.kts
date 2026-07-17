@@ -25,6 +25,12 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-security")
+	implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+
+	// JWT (access 토큰 발급/검증 — refresh 토큰은 opaque 랜덤 문자열로 별도 관리, ADR-0024)
+	implementation("io.jsonwebtoken:jjwt-api:0.12.6")
+	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
+	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
 
 	// DB
 	runtimeOnly("com.mysql:mysql-connector-j")

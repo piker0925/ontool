@@ -1,10 +1,12 @@
 import type {ModuleConfig} from './types'
 
-// 주의: ToolPage의 Heavy 파라미터 렌더러는 현재 text/select 타입만 지원한다 (number/checkbox/help 미지원).
-// 불리언 옵션은 markdown-to-pdf의 toc처럼 select ['true','false']로 표현한다.
+// 불리언 옵션은 markdown-to-pdf의 toc처럼 select ['true','false']로 표현하거나,
+// checkbox 타입(예: image-resize의 preventUpscale)으로도 표현할 수 있다.
 export const IMAGE_HEAVY_CONFIGS: Record<string, ModuleConfig> = {
     'image-resize': {
         params: [
+            // unit/width/height/keepAspectRatio는 ToolPage.vue의 image-resize 전용 블록이
+            // 직접 렌더링한다(락 아이콘·프리셋·실시간 미리보기) — 여기서는 기본값 시딩·제출용으로만 남긴다.
             {
                 key: 'unit',
                 label: '크기 단위 (%는 원본 크기 기준 비율)',
@@ -34,6 +36,12 @@ export const IMAGE_HEAVY_CONFIGS: Record<string, ModuleConfig> = {
                 default: 'true',
             },
             {
+                key: 'preventUpscale',
+                label: '원본보다 크게 확대 금지',
+                type: 'checkbox',
+                default: 'true',
+            },
+            {
                 key: 'quality',
                 label: 'JPEG 품질 1~100 (JPEG 출력에만 적용, 낮을수록 파일 작음)',
                 type: 'text',
@@ -43,7 +51,7 @@ export const IMAGE_HEAVY_CONFIGS: Record<string, ModuleConfig> = {
         ],
         fileAccept: '.jpg,.jpeg,.png,.gif,.bmp',
         // 다중 파일 → 파일당 별도 Job(배치) → ZIP. 배치 진행률 UI로 소비한다.
-        // 원본보다 크게 확대하면 백엔드가 결과에 경고 advisory를 함께 반환한다.
+        // preventUpscale=false로 확대를 허용하면 백엔드가 결과에 경고 advisory를 함께 반환한다.
     },
     'image-format': {
         params: [

@@ -169,6 +169,155 @@ describe('ToolPage 파라미터 필드 (024)', () => {
     })
 })
 
+describe('ToolPage 이미지 리사이즈 크기 입력 UI', () => {
+    const imageResize: Module = {id: 'image-resize', name: '이미지 리사이즈', category: '이미지', isHeavy: true}
+
+    async function setFileDimensions(wrapper: ReturnType<typeof mount>, width: number, height: number) {
+        await wrapper.findComponent(FileUploader).vm.$emit('dimensions', {width, height})
+        await flushPromises()
+    }
+
+    it('프리셋 선택 후 너비를 직접 수정하면 프리셋 선택이 "직접 입력"으로 되돌아간다', async () => {
+        const wrapper = await mountAt('image-resize', [imageResize])
+
+        const preset = wrapper.find('[data-testid="resize-preset"]')
+        await preset.setValue('1920 x 1080 (FHD)')
+        expect((preset.element as HTMLSelectElement).value).toBe('1920 x 1080 (FHD)')
+
+        const width = wrapper.find('[data-testid="resize-width-px"]')
+        await width.setValue('500')
+        await width.trigger('input')
+
+        expect((preset.element as HTMLSelectElement).value).toBe('')
+    })
+
+    it('확대 방지가 켜진 채 원본보다 큰 너비를 입력하면 즉시 원본 크기로 되돌아간다', async () => {
+        const wrapper = await mountAt('image-resize', [imageResize])
+        await setFileDimensions(wrapper, 400, 300)
+
+        const width = wrapper.find('[data-testid="resize-width-px"]')
+        await width.setValue('1920')
+        await width.trigger('input')
+
+        expect((width.element as HTMLInputElement).value).toBe('400')
+        // 종횡비 유지 기본값(true)이라 높이도 원본 비율로 같이 맞춰져야 한다
+        const height = wrapper.find('[data-testid="resize-height-px"]')
+        expect((height.element as HTMLInputElement).value).toBe('300')
+    })
+
+    it('확대 방지를 끄면 원본보다 큰 값을 그대로 유지한다', async () => {
+        const wrapper = await mountAt('image-resize', [imageResize])
+        await setFileDimensions(wrapper, 400, 300)
+
+        const preventUpscale = wrapper.find('input[type="checkbox"]')
+        await preventUpscale.setValue(false)
+        await flushPromises()
+
+        const width = wrapper.find('[data-testid="resize-width-px"]')
+        await width.setValue('1920')
+        await width.trigger('input')
+
+        expect((width.element as HTMLInputElement).value).toBe('1920')
+    })
+
+    it('% 모드 + 종횡비 잠금에서 확대 방지가 켜져 있으면 100 초과 입력이 100으로 즉시 조정된다', async () => {
+        const wrapper = await mountAt('image-resize', [imageResize])
+        await wrapper.find('[data-testid="resize-unit"]').setValue('%')
+
+        const percent = wrapper.find('[data-testid="resize-percent-linked"]')
+        await percent.setValue('250')
+
+        expect((percent.element as HTMLInputElement).value).toBe('100')
+    })
+
+    it('% 모드 + 종횡비 해제에서도 확대 방지가 각 칸을 독립적으로 100까지 제한한다', async () => {
+        const wrapper = await mountAt('image-resize', [imageResize])
+        await wrapper.find('[data-testid="resize-unit"]').setValue('%')
+        await wrapper.find('[data-testid="resize-aspect-lock"]').trigger('click')
+
+        const width = wrapper.find('[data-testid="resize-width-percent"]')
+        await width.setValue('300')
+        await width.trigger('input')
+        const height = wrapper.find('[data-testid="resize-height-percent"]')
+        await height.setValue('50')
+        await height.trigger('input')
+
+        expect((width.element as HTMLInputElement).value).toBe('100')
+        expect((height.element as HTMLInputElement).value).toBe('50') // 축소 값은 그대로 유지
+    })
+
+    it('단위를 px에서 %로 바꾸면 값이 100/100 기본값으로 초기화된다', async () => {
+        const wrapper = await mountAt('image-resize', [imageResize])
+        const width = wrapper.find('[data-testid="resize-width-px"]')
+        await width.setValue('1920')
+        await width.trigger('input')
+
+        await wrapper.find('[data-testid="resize-unit"]').setValue('%')
+        await flushPromises()
+
+        const percent = wrapper.find('[data-testid="resize-percent-linked"]')
+        expect((percent.element as HTMLInputElement).value).toBe('100')
+    })
+
+    it('프리셋을 먼저 고른 뒤 그보다 작은 이미지를 올리면 확대 방지로 조정되면서 프리셋 선택이 "직접 입력"으로 되돌아간다', async () => {
+        // 파일이 아직 없을 때는 모든 프리셋이 선택 가능하다(비활성화는 원본 크기를 알 때만 계산됨).
+        const wrapper = await mountAt('image-resize', [imageResize])
+        const preset = wrapper.find('[data-testid="resize-preset"]')
+        await preset.setValue('1920 x 1080 (FHD)')
+        await flushPromises()
+        expect((preset.element as HTMLSelectElement).value).toBe('1920 x 1080 (FHD)')
+
+        // 이후 그보다 작은 이미지가 올라오면 필드가 원본 크기로 조정되고 프리셋 선택은 해제돼야 한다.
+        await setFileDimensions(wrapper, 400, 300)
+
+        expect((wrapper.find('[data-testid="resize-width-px"]').element as HTMLInputElement).value).toBe('400')
+        expect((wrapper.find('[data-testid="resize-height-px"]').element as HTMLInputElement).value).toBe('300')
+        expect((preset.element as HTMLSelectElement).value).toBe('')
+    })
+
+    it('원본 크기를 알고 확대 방지가 켜져 있으면 원본보다 큰 프리셋만 드롭다운에서 비활성화된다', async () => {
+        // 1500x1000 기준: 1920x1080(폭 초과)·1080x1080(높이 초과)은 비활성, 1280x720·800x600은 활성
+        const wrapper = await mountAt('image-resize', [imageResize])
+        await setFileDimensions(wrapper, 1500, 1000)
+
+        const options = wrapper.findAll('[data-testid="resize-preset"] option')
+        const tooWide = options.find(o => o.text().startsWith('1920 x 1080'))!
+        const tooTall = options.find(o => o.text().startsWith('1080 x 1080'))!
+        const fitsHd = options.find(o => o.text().startsWith('1280 x 720'))!
+        const fitsSmall = options.find(o => o.text().startsWith('800 x 600'))!
+
+        expect(tooWide.attributes('disabled')).toBeDefined()
+        expect(tooTall.attributes('disabled')).toBeDefined()
+        expect(fitsHd.attributes('disabled')).toBeUndefined()
+        expect(fitsSmall.attributes('disabled')).toBeUndefined()
+    })
+
+    it('필드 값을 바꾸면 결과 크기 미리보기 숫자가 그 값 기준으로 즉시 갱신된다', async () => {
+        const wrapper = await mountAt('image-resize', [imageResize])
+        await setFileDimensions(wrapper, 400, 300)
+
+        const width = wrapper.find('[data-testid="resize-width-px"]')
+        await width.setValue('200')
+        await width.trigger('input')
+
+        // 종횡비 잠금 상태이므로 높이도 비율(200/400*300=150)에 맞춰 자동 계산된 결과가 보여야 한다.
+        expect(wrapper.find('[data-testid="resize-preview"]').text()).toContain('200 x 150')
+    })
+
+    it('여러 장 업로드(배치, dimensions=null)일 때도 확대 방지 동작을 설명하는 안내 문구가 항상 보인다', async () => {
+        const wrapper = await mountAt('image-resize', [imageResize])
+        await wrapper.findComponent(FileUploader).vm.$emit('dimensions', null)
+        await flushPromises()
+
+        // 종횡비 잠금 해제 상태에서도 (예전엔 빈 문자열이었음) 안내가 보여야 한다.
+        await wrapper.find('[data-testid="resize-aspect-lock"]').trigger('click')
+
+        const preview = wrapper.find('[data-testid="resize-preview"]')
+        expect(preview.exists()).toBe(true)
+        expect(preview.text()).toContain('원본보다 커지지 않도록')
+    })
+})
+
 describe('ToolPage 통합 코드 생성기 (code-gen)', () => {
     it('code-gen 모듈은 QR/Code128 형식 선택이 있는 통합 페이지를 렌더링한다', async () => {
         const wrapper = await mountAt('code-gen', [])

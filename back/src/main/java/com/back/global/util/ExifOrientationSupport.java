@@ -1,4 +1,4 @@
-package com.back.tool.pdf;
+package com.back.global.util;
 
 import com.drew.imaging.ImageMetadataReader;
 import com.drew.metadata.Metadata;
@@ -9,13 +9,13 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.nio.file.Path;
 
-/** 카메라 EXIF Orientation 태그를 읽어 픽셀을 실제 보이는 방향으로 맞춘다. PDFBox는 이 태그를 무시하므로 직접 보정 필요. */
-final class ExifOrientationSupport {
+/** 카메라 EXIF Orientation 태그를 읽어 픽셀을 실제 보이는 방향으로 맞춘다. 대부분의 디코더는 이 태그를 무시하므로 직접 보정 필요. */
+public final class ExifOrientationSupport {
 
     private ExifOrientationSupport() {}
 
     /** @return EXIF Orientation 값 (1=정상). 태그가 없거나 읽기 실패 시 1 */
-    static int readOrientation(Path imagePath) {
+    public static int readOrientation(Path imagePath) {
         try {
             Metadata metadata = ImageMetadataReader.readMetadata(imagePath.toFile());
             ExifIFD0Directory dir = metadata.getFirstDirectoryOfType(ExifIFD0Directory.class);
@@ -29,7 +29,7 @@ final class ExifOrientationSupport {
     }
 
     /** 3(180도), 6(90도), 8(270도)만 보정. 좌우반전 태그(2,4,5,7)는 카메라 촬영본에서 사실상 나오지 않아 그대로 둔다. */
-    static BufferedImage applyOrientation(BufferedImage src, int orientation) {
+    public static BufferedImage applyOrientation(BufferedImage src, int orientation) {
         return switch (orientation) {
             case 3 -> rotate(src, 180);
             case 6 -> rotate(src, 90);

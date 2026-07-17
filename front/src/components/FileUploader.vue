@@ -62,13 +62,14 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, ref} from 'vue'
+import {computed, ref, watch} from 'vue'
 import {ChevronDown, ChevronUp, X} from 'lucide-vue-next'
 import {apiClient} from '../api/client'
 import type {UploadResult} from '../types'
 import {moveItem} from '../utils/fileOrder'
 import {uploadErrorMessage} from '../utils/uploadError'
 import {previewSplitFileNames} from '../utils/pdfSplitPreview'
+import {readImageDimensions, type PixelSize} from '../utils/imageDimensions'
 import {Button} from '@/components/ui/button'
 
 const props = withDefaults(defineProps<{
@@ -84,12 +85,26 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   uploaded: [result: UploadResult]
   error: [message: string]
+  dimensions: [dims: PixelSize | null]
 }>()
 
 const dragging = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 const staged = ref<File[]>([])
 const pageCounts = ref(new Map<File, number>())
+const imageDims = ref(new Map<File, PixelSize>())
+
+// 파일이 정확히 1장일 때만 "이 파일의 실제 크기"가 의미 있다 — 여러 장이면 어느 걸 기준으로
+// 삼을지 애매해서 null로 둔다(소비 측에서 배치용 안내 문구로 대체).
+const singleFileDims = computed<PixelSize | null>(() =>
+    staged.value.length === 1 ? imageDims.value.get(staged.value[0]) ?? null : null)
+
+watch(singleFileDims, dims => emit('dimensions', dims), {immediate: true})
+
+async function loadImageDimensions(file: File) {
+  const dims = await readImageDimensions(file)
+  if (dims) imageDims.value.set(file, dims)
+}
 
 // 총 페이지 수를 알아야 "몇 페이지부터 몇 페이지까지" 같은 범위 입력이 가능하므로
 // PDF가 스테이징되는 즉시 pdf.js로 페이지 수를 읽어 표시한다. 실패해도 핵심 기능은
@@ -144,6 +159,7 @@ function handleFiles(files: File[]) {
   // multiple이면 여러 번 나눠 담을 수 있게 누적, 단일 모듈이면 새 선택으로 교체한다.
   staged.value = props.multiple ? [...staged.value, ...selected] : selected
   selected.forEach(loadPageCount)
+  selected.forEach(loadImageDimensions)
 }
 
 function onDrop(e: DragEvent) {

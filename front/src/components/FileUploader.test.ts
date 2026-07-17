@@ -2,12 +2,20 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {flushPromises, mount} from '@vue/test-utils'
 import FileUploader from './FileUploader.vue'
 import {apiClient} from '../api/client'
+import {readImageDimensions} from '../utils/imageDimensions'
 
 vi.mock('../api/client', () => ({
     apiClient: {post: vi.fn()},
 }))
 
+// jsdom은 실제 이미지를 디코딩하지 못해 Image.onload가 안 뜨므로, 크기를 읽는
+// 유틸 자체를 모킹한다 — FileUploader가 그 결과를 올바르게 emit하는지만 검증한다.
+vi.mock('../utils/imageDimensions', () => ({
+    readImageDimensions: vi.fn(),
+}))
+
 const mockPost = apiClient.post as ReturnType<typeof vi.fn>
+const mockReadImageDimensions = readImageDimensions as ReturnType<typeof vi.fn>
 
 beforeEach(() => vi.clearAllMocks())
 
@@ -221,5 +229,62 @@ describe('FileUploader', () => {
         const names = form.getAll('files').map(f => (f as File).name)
         expect(names).toEqual(['b.pdf', 'a.pdf'])
         expect(wrapper.emitted('uploaded')![0]).toEqual([{jobId: 'job-abc'}])
+    })
+
+    it('이미지 1장만 스테이징하면 실제 픽셀 크기를 dimensions 이벤트로 emit한다', async () => {
+        mockReadImageDimensions.mockResolvedValueOnce({width: 800, height: 600})
+
+        const wrapper = mount(FileUploader, {
+            props: {moduleId: 'image-resize'},
+        })
+
+        await selectFiles(wrapper, [new File(['a'], 'photo.png', {type: 'image/png'})])
+
+        const emitted = wrapper.emitted('dimensions')!
+        expect(emitted[emitted.length - 1]).toEqual([{width: 800, height: 600}])
+    })
+
+    it('이미지가 2장 이상이면 어느 파일 기준인지 애매하므로 dimensions로 null을 emit한다', async () => {
+        mockReadImageDimensions.mockResolvedValue({width: 800, height: 600})
+
+        const wrapper = mount(FileUploader, {
+            props: {moduleId: 'image-resize'},
+        })
+
+        await selectFiles(wrapper, [
+            new File(['a'], 'a.png', {type: 'image/png'}),
+            new File(['b'], 'b.png', {type: 'image/png'}),
+        ])
+
+        const emitted = wrapper.emitted('dimensions')!
+        expect(emitted[emitted.length - 1]).toEqual([null])
+    })
+
+    it('1장이던 파일을 제거해 0장이 되면 dimensions로 null을 emit한다', async () => {
+        mockReadImageDimensions.mockResolvedValueOnce({width: 800, height: 600})
+
+        const wrapper = mount(FileUploader, {
+            props: {moduleId: 'image-resize'},
+        })
+
+        await selectFiles(wrapper, [new File(['a'], 'photo.png', {type: 'image/png'})])
+        expect(wrapper.emitted('dimensions')!.at(-1)).toEqual([{width: 800, height: 600}])
+
+        await wrapper.find('[data-testid="remove-0"]').trigger('click')
+        await flushPromises()
+
+        expect(wrapper.emitted('dimensions')!.at(-1)).toEqual([null])
+    })
+
+    it('이미지가 아닌 파일(PDF)은 크기를 읽지 못해도 dimensions는 null로 유지된다', async () => {
+        mockReadImageDimensions.mockResolvedValueOnce(null)
+
+        const wrapper = mount(FileUploader, {
+            props: {moduleId: 'pdf-split'},
+        })
+
+        await selectFiles(wrapper, [new File(['a'], 'doc.pdf', {type: 'application/pdf'})])
+
+        expect(wrapper.emitted('dimensions')?.at(-1)).toEqual([null])
     })
 })

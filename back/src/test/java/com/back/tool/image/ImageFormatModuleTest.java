@@ -17,6 +17,8 @@ import javax.imageio.stream.FileImageOutputStream;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -88,6 +90,71 @@ class ImageFormatModuleTest {
         return p;
     }
 
+    // 좌상단 사분면만 빨강, 나머지는 파랑 — 회전 방향이 실제로 맞는지 확인하기 위한 비대칭 이미지
+    private BufferedImage asymmetricImage(int w, int h) {
+        BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = img.createGraphics();
+        g.setColor(Color.BLUE);
+        g.fillRect(0, 0, w, h);
+        g.setColor(Color.RED);
+        g.fillRect(0, 0, w / 2, h / 2);
+        g.dispose();
+        return img;
+    }
+
+    private static boolean isRed(int rgb) {
+        Color c = new Color(rgb);
+        return c.getRed() > 200 && c.getGreen() < 100 && c.getBlue() < 100;
+    }
+
+    /** EXIF Orientation 태그 하나만 담은 최소 APP1 세그먼트 (TIFF 빅엔디안, IFD0에 엔트리 1개). */
+    private byte[] buildExifOrientationApp1(int orientation) throws Exception {
+        ByteArrayOutputStream tiff = new ByteArrayOutputStream();
+        tiff.write(new byte[]{'M', 'M', 0, 42, 0, 0, 0, 8}); // 빅엔디안, IFD0 오프셋=8
+        tiff.write(new byte[]{0, 1});                        // 엔트리 1개
+        tiff.write(new byte[]{0x01, 0x12});                  // tag=Orientation
+        tiff.write(new byte[]{0x00, 0x03});                  // type=SHORT
+        tiff.write(new byte[]{0x00, 0x00, 0x00, 0x01});      // count=1
+        tiff.write(new byte[]{0x00, (byte) orientation, 0x00, 0x00}); // value + 패딩
+        tiff.write(new byte[]{0x00, 0x00, 0x00, 0x00});      // next IFD offset=0
+        byte[] tiffBytes = tiff.toByteArray();
+
+        byte[] exifHeader = "Exif\0\0".getBytes(StandardCharsets.US_ASCII);
+        int segLen = 2 + exifHeader.length + tiffBytes.length; // length 필드 자신 포함
+        ByteArrayOutputStream app1 = new ByteArrayOutputStream();
+        app1.write(0xFF);
+        app1.write(0xE1);
+        app1.write((segLen >> 8) & 0xFF);
+        app1.write(segLen & 0xFF);
+        app1.write(exifHeader);
+        app1.write(tiffBytes);
+        return app1.toByteArray();
+    }
+
+    /** SOI 바로 뒤에 EXIF APP1을 끼워 넣어, 실제 카메라 촬영본과 같은 구조의 JPEG을 만든다. */
+    private Path createJpegWithOrientation(String name, BufferedImage image, int orientation) throws Exception {
+        ByteArrayOutputStream baseline = new ByteArrayOutputStream();
+        ImageIO.write(image, "jpg", baseline);
+        byte[] src = baseline.toByteArray();
+        byte[] app1 = buildExifOrientationApp1(orientation);
+
+        // JFIF 스펙상 APP0(JFIF)은 SOI 바로 다음에 와야 한다 — Java 기본 JPEG 라이터가 항상 써주는
+        // 그 APP0 세그먼트 뒤에 EXIF APP1을 끼워 넣는다. (SOI 바로 뒤에 넣으면 순서 위반으로 리더가 거부한다)
+        if ((src[2] & 0xFF) != 0xFF || (src[3] & 0xFF) != 0xE0) {
+            throw new IllegalStateException("baseline JPEG에 APP0(JFIF) 세그먼트가 없습니다");
+        }
+        int app0Length = ((src[4] & 0xFF) << 8) | (src[5] & 0xFF);
+        int insertAt = 4 + app0Length;
+
+        Path out = tempDir.resolve(name);
+        try (OutputStream os = Files.newOutputStream(out)) {
+            os.write(src, 0, insertAt);
+            os.write(app1);
+            os.write(src, insertAt, src.length - insertAt);
+        }
+        return out;
+    }
+
     private boolean containsBytes(Path file, byte[] needle) throws Exception {
         byte[] haystack = Files.readAllBytes(file);
         outer:
@@ -126,6 +193,51 @@ class ImageFormatModuleTest {
 
         assertThat(result.outputFile().toString()).endsWith(".png");
         assertThat(detectFormat(result.outputFile())).containsIgnoringCase("png");
+    }
+
+    @Test
+    void correctsExifOrientationOnConversion() throws Exception {
+        // 실사용 버그 재현: 폰으로 세로로 찍은 사진(픽셀은 가로로 저장, EXIF에 90도 회전 태그)을
+        // 변환하면 예전엔 태그를 무시하고 그대로 옆으로 누운 채 나왔다.
+        Path src = createJpegWithOrientation("rotated.jpg", asymmetricImage(40, 20), 6);
+
+        ToolResult result = module.process(new ToolInput(List.of(src), Map.of("targetFormat", "png")));
+
+        BufferedImage out = ImageIO.read(result.outputFile().toFile());
+        assertThat(out.getWidth()).isEqualTo(20);
+        assertThat(out.getHeight()).isEqualTo(40);
+        // 90도 회전 후 빨강 사분면은 우상단으로 이동해야 한다 (ExifOrientationSupportTest와 동일 기준)
+        assertThat(isRed(out.getRGB(out.getWidth() - 2, 2))).isTrue();
+        assertThat(isRed(out.getRGB(2, 2))).isFalse();
+    }
+
+    @Test
+    void noExifOrientationLeavesImageUnchanged() throws Exception {
+        Path src = tempDir.resolve("normal.jpg");
+        ImageIO.write(asymmetricImage(40, 20), "jpg", src.toFile());
+
+        ToolResult result = module.process(new ToolInput(List.of(src), Map.of("targetFormat", "png")));
+
+        BufferedImage out = ImageIO.read(result.outputFile().toFile());
+        assertThat(out.getWidth()).isEqualTo(40);
+        assertThat(out.getHeight()).isEqualTo(20);
+        assertThat(isRed(out.getRGB(2, 2))).isTrue(); // 좌상단 그대로
+    }
+
+    @Test
+    void orientationCorrectedJpegDropsMetadataEvenWhenKeepMetadataRequested() throws Exception {
+        // 회전 보정 후에도 원본 메타데이터를 그대로 들고 가면 EXIF Orientation 태그가 남아있어
+        // 뷰어가 이미 바로잡힌 픽셀을 또 돌려버릴 수 있다(이중 회전) — 이 조합에서는 버려야 한다.
+        Path src = createJpegWithOrientation("rotated-meta.jpg", asymmetricImage(40, 20), 6);
+
+        ToolResult result = module.process(new ToolInput(List.of(src),
+                Map.of("targetFormat", "jpg", "keepMetadata", "true")));
+
+        byte[] exifSignature = "Exif\0\0".getBytes(StandardCharsets.US_ASCII);
+        assertThat(containsBytes(result.outputFile(), exifSignature)).isFalse();
+        BufferedImage out = ImageIO.read(result.outputFile().toFile());
+        assertThat(out.getWidth()).isEqualTo(20);
+        assertThat(out.getHeight()).isEqualTo(40);
     }
 
     @Test

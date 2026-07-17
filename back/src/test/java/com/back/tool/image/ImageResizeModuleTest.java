@@ -94,11 +94,27 @@ class ImageResizeModuleTest {
     }
 
     @Test
-    void upscaleReturnsWarningAdvisoryAlongsideFile() throws Exception {
+    void preventUpscaleDefaultClampsToOriginalSizeInsteadOfEnlarging() throws Exception {
+        // preventUpscale 기본값(true)이라 200% 요청해도 원본보다 커지지 않고, 경고도 필요 없다.
         Path src = createPng("upscale.png", 200, 150);
 
         ToolResult result = module.process(new ToolInput(
                 List.of(src), Map.of("unit", "%", "width", "200", "height", "200")));
+
+        assertThat(result.isFile()).isTrue();
+        BufferedImage out = ImageIO.read(result.outputFile().toFile());
+        assertThat(out.getWidth()).isEqualTo(200);
+        assertThat(out.getHeight()).isEqualTo(150);
+        assertThat(result.textResult()).isNull();
+    }
+
+    @Test
+    void preventUpscaleFalseAllowsEnlargementWithWarningAdvisory() throws Exception {
+        // preventUpscale=false로 명시하면 예전처럼 확대를 허용하고 경고 advisory를 붙인다.
+        Path src = createPng("upscale-opt-out.png", 200, 150);
+
+        ToolResult result = module.process(new ToolInput(List.of(src),
+                Map.of("unit", "%", "width", "200", "height", "200", "preventUpscale", "false")));
 
         assertThat(result.isFile()).isTrue();
         BufferedImage out = ImageIO.read(result.outputFile().toFile());
@@ -108,6 +124,32 @@ class ImageResizeModuleTest {
                 .contains("경고")
                 .contains("200x150")
                 .contains("400x300");
+    }
+
+    @Test
+    void preventUpscaleClampsOnlyTheAxisThatWouldEnlarge() throws Exception {
+        // 가로만 확대(200%), 세로는 축소(50%) 요청 — preventUpscale은 확대되는 축(너비)만 원본으로 묶어야 한다.
+        Path src = createPng("mixed-upscale.png", 200, 150);
+
+        ToolResult result = module.process(new ToolInput(List.of(src),
+                Map.of("unit", "%", "width", "200", "height", "50")));
+
+        BufferedImage out = ImageIO.read(result.outputFile().toFile());
+        // 박스(200x75)에 종횡비 유지로 맞추면 폭 기준(200/200=1.0) vs 높이 기준(75/150=0.5) 중 작은 배율 적용 → 100x75
+        assertThat(out.getWidth()).isEqualTo(100);
+        assertThat(out.getHeight()).isEqualTo(75);
+    }
+
+    @Test
+    void preventUpscaleClampsInPxModeToo() throws Exception {
+        Path src = createPng("px-upscale.png", 100, 80);
+
+        ToolResult result = module.process(new ToolInput(List.of(src),
+                Map.of("width", "500", "height", "400")));
+
+        BufferedImage out = ImageIO.read(result.outputFile().toFile());
+        assertThat(out.getWidth()).isEqualTo(100);
+        assertThat(out.getHeight()).isEqualTo(80);
     }
 
     @Test

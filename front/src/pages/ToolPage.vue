@@ -76,7 +76,112 @@
           <!-- Heavy params (있을 때만) -->
           <div v-if="heavyConfig?.params.length" class="flex shrink-0 flex-col gap-3 border-b border-border p-4">
             <span class="font-mono text-[11px] font-medium uppercase tracking-wider text-muted-foreground">파라미터</span>
-            <div v-for="p in heavyConfig.params" :key="p.key" class="flex flex-col gap-1">
+
+            <!-- image-resize 전용: 크기 단위/입력/락 아이콘/프리셋/실시간 미리보기 -->
+            <div v-if="mod?.id === 'image-resize'" class="flex flex-col gap-2" data-testid="resize-size-block">
+              <label class="text-[11px] text-muted-foreground">크기 단위</label>
+              <select
+                  v-model="heavyFormValues.unit"
+                  class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+                  data-testid="resize-unit"
+              >
+                <option value="px">px</option>
+                <option value="%">%</option>
+              </select>
+
+              <div v-if="heavyFormValues.unit === '%'" class="flex items-center gap-2">
+                <input
+                    v-if="heavyFormValues.keepAspectRatio === 'true'"
+                    v-model="heavyFormValues.width"
+                    class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+                    data-testid="resize-percent-linked"
+                    placeholder="100"
+                    type="number"
+                    @input="onResizePercentLinkedInput"
+                />
+                <template v-else>
+                  <input
+                      v-model="heavyFormValues.width"
+                      class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+                      data-testid="resize-width-percent"
+                      placeholder="100"
+                      type="number"
+                      @input="onResizePercentInput"
+                  />
+                  <span class="shrink-0 font-mono text-[11px] text-muted-foreground">%</span>
+                  <input
+                      v-model="heavyFormValues.height"
+                      class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+                      data-testid="resize-height-percent"
+                      placeholder="100"
+                      type="number"
+                      @input="onResizePercentInput"
+                  />
+                  <span class="shrink-0 font-mono text-[11px] text-muted-foreground">%</span>
+                </template>
+                <button
+                    class="shrink-0 rounded p-1.5 text-foreground/70 transition-colors hover:bg-accent hover:text-foreground"
+                    data-testid="resize-aspect-lock"
+                    :title="heavyFormValues.keepAspectRatio === 'true' ? '종횡비 고정됨 (클릭하면 해제)' : '종횡비 자유 (클릭하면 고정)'"
+                    type="button"
+                    @click="toggleAspectLock"
+                >
+                  <Lock v-if="heavyFormValues.keepAspectRatio === 'true'" class="size-4"/>
+                  <LockOpen v-else class="size-4"/>
+                </button>
+              </div>
+
+              <template v-else>
+                <select
+                    v-model="selectedResizePreset"
+                    class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+                    data-testid="resize-preset"
+                    @change="applyResizePreset"
+                >
+                  <option value="">프리셋 (직접 입력)</option>
+                  <option v-for="preset in resizePresetOptions" :key="preset.label" :disabled="preset.disabled" :value="preset.label">
+                    {{ preset.label }}{{ preset.disabled ? ' — 원본보다 커서 비활성화' : '' }}
+                  </option>
+                </select>
+                <div class="flex items-center gap-2">
+                  <input
+                      v-model="heavyFormValues.width"
+                      class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+                      data-testid="resize-width-px"
+                      placeholder="800"
+                      type="number"
+                      @input="onResizeWidthInput"
+                  />
+                  <span class="shrink-0 font-mono text-[11px] text-muted-foreground">x</span>
+                  <input
+                      v-model="heavyFormValues.height"
+                      class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+                      data-testid="resize-height-px"
+                      placeholder="600"
+                      type="number"
+                      @input="onResizeHeightInput"
+                  />
+                  <button
+                      class="shrink-0 rounded p-1.5 text-foreground/70 transition-colors hover:bg-accent hover:text-foreground"
+                      data-testid="resize-aspect-lock"
+                      :title="heavyFormValues.keepAspectRatio === 'true' ? '종횡비 고정됨 (클릭하면 해제)' : '종횡비 자유 (클릭하면 고정)'"
+                      type="button"
+                      @click="toggleAspectLock"
+                  >
+                    <Lock v-if="heavyFormValues.keepAspectRatio === 'true'" class="size-4"/>
+                    <LockOpen v-else class="size-4"/>
+                  </button>
+                </div>
+              </template>
+
+              <p
+                  v-if="resizePreviewInfo"
+                  class="rounded-md bg-muted/50 px-2.5 py-1.5 text-[12px] font-medium text-foreground/80"
+                  data-testid="resize-preview"
+              >{{ resizePreviewInfo.text }}</p>
+            </div>
+
+            <div v-for="p in visibleHeavyParams" :key="p.key" class="flex flex-col gap-1">
               <label v-if="p.type !== 'checkbox'" class="text-[11px] text-muted-foreground">{{ p.label }}</label>
               <span v-if="p.type !== 'checkbox' && p.help" class="-mt-1 text-[11px] font-normal text-muted-foreground/60">— {{ p.help }}</span>
               <input
@@ -145,6 +250,7 @@
                 :multiple="heavyConfig?.fileMultiple ?? true"
                 :params="heavyFormValues"
                 :reorderable="heavyConfig?.reorderable ?? false"
+                @dimensions="onFileDimensions"
                 @error="onUploadError"
                 @uploaded="onUploaded"
             />
@@ -469,6 +575,8 @@ import {
   Copy,
   Heart,
   Loader2,
+  Lock,
+  LockOpen,
   MessageSquare,
   Wand2,
   X,
@@ -479,6 +587,8 @@ import {normalizeApiModules} from '../api/modules'
 import {buildFallbackParams} from '../utils/lightParams'
 import {uploadErrorMessage} from '../utils/uploadError'
 import {clearPreviousRun, type RunResult} from '../utils/runState'
+import {predictResizeOutput} from '../utils/imageResizePreview'
+import type {PixelSize} from '../utils/imageDimensions'
 import type {BatchProgress, Module, UploadResult} from '../types'
 import {isBatchResult} from '../types'
 import {Button} from '@/components/ui/button'
@@ -527,6 +637,166 @@ const {record: recordRecent} = useRecentTools()
 const moduleConfig = computed(() => mod.value ? MODULE_CONFIGS[mod.value.id] ?? null : null)
 const heavyConfig = computed(() => mod.value ? HEAVY_CONFIGS[mod.value.id] ?? null : null)
 const frontendToolEntry = computed(() => mod.value ? FRONTEND_TOOL_COMPONENTS[mod.value.id] ?? null : null)
+
+// ── image-resize 전용: 크기 입력 UI (락 아이콘 + 프리셋 + 실시간 미리보기) ──────
+// 이 4개 키는 파라미터 폼에 자동 렌더링하지 않고 아래 전용 블록이 직접 그린다
+// (기본값 시딩·제출은 heavyConfig.params에 남겨둔 채로 그대로 재사용한다).
+const RESIZE_CUSTOM_KEYS = new Set(['unit', 'width', 'height', 'keepAspectRatio'])
+const visibleHeavyParams = computed(() => {
+  if (!heavyConfig.value) return []
+  if (mod.value?.id !== 'image-resize') return heavyConfig.value.params
+  return heavyConfig.value.params.filter(p => !RESIZE_CUSTOM_KEYS.has(p.key))
+})
+
+const RESIZE_PRESETS = [
+  {label: '1920 x 1080 (FHD)', width: 1920, height: 1080},
+  {label: '1280 x 720 (HD)', width: 1280, height: 720},
+  {label: '1080 x 1080 (정사각형)', width: 1080, height: 1080},
+  {label: '800 x 600', width: 800, height: 600},
+]
+const selectedResizePreset = ref('')
+const stagedImageDims = ref<PixelSize | null>(null)
+let resizeSyncing = false
+
+// 확대 방지가 켜져 있으면 입력칸 자체가 원본보다 큰 값을 들고 있지 않도록 즉시 되돌린다
+// — "미리보기 숫자만 다르고 입력칸은 그대로"인 혼란을 없앤다.
+// %는 원본이 몇 픽셀이든 100%가 상한이라 실제 크기를 몰라도 바로 판단할 수 있지만,
+// px는 원본 픽셀 수를 알아야 상한을 계산할 수 있어 stagedImageDims가 있을 때만 clamp한다.
+// 실제로 값을 조정했다면 지금 필드가 더 이상 선택된 프리셋과 일치하지 않으므로 선택을 해제한다
+// — 안 그러면 드롭다운은 "1920x1080"인데 실제 필드는 조정된 다른 숫자인 모순된 상태가 남는다.
+function clampResizeFieldsToSource() {
+  if (heavyFormValues.value.preventUpscale === 'false') return
+  let changed = false
+  if (heavyFormValues.value.unit === '%') {
+    if (Number(heavyFormValues.value.width) > 100) { heavyFormValues.value.width = '100'; changed = true }
+    if (Number(heavyFormValues.value.height) > 100) { heavyFormValues.value.height = '100'; changed = true }
+  } else if (stagedImageDims.value) {
+    const w = Number(heavyFormValues.value.width)
+    const h = Number(heavyFormValues.value.height)
+    if (Number.isFinite(w) && w > stagedImageDims.value.width) {
+      heavyFormValues.value.width = String(stagedImageDims.value.width)
+      changed = true
+    }
+    if (Number.isFinite(h) && h > stagedImageDims.value.height) {
+      heavyFormValues.value.height = String(stagedImageDims.value.height)
+      changed = true
+    }
+  }
+  if (changed) selectedResizePreset.value = ''
+}
+
+// 확대 방지가 켜져 있고 원본 크기를 알면, 원본보다 큰 프리셋은 골라봤자 바로 조정될 뿐이므로
+// 드롭다운에서 미리 비활성화해 "선택했는데 왜 다른 숫자가 됐지"를 애초에 겪지 않게 한다.
+const resizePresetOptions = computed(() => {
+  const blockUpscale = heavyFormValues.value.preventUpscale !== 'false'
+  const dims = stagedImageDims.value
+  return RESIZE_PRESETS.map(preset => ({
+    ...preset,
+    disabled: !!(blockUpscale && dims && (preset.width > dims.width || preset.height > dims.height)),
+  }))
+})
+
+function onFileDimensions(dims: PixelSize | null) {
+  stagedImageDims.value = dims
+  clampResizeFieldsToSource()
+}
+
+function toggleAspectLock() {
+  heavyFormValues.value.keepAspectRatio = heavyFormValues.value.keepAspectRatio === 'true' ? 'false' : 'true'
+}
+
+function applyResizePreset() {
+  const preset = RESIZE_PRESETS.find(p => p.label === selectedResizePreset.value)
+  if (!preset) return
+  heavyFormValues.value.width = String(preset.width)
+  heavyFormValues.value.height = String(preset.height)
+  clampResizeFieldsToSource()
+}
+
+// px + 종횡비 잠금 + 실제 이미지 크기를 알 때만 반대 칸을 자동 계산한다.
+// 배치(파일 여러 장)에서는 기준 이미지가 모호해 자동 계산을 하지 않고 그대로 둔다.
+// 직접 타이핑하면 프리셋 선택과 어긋나므로 "직접 입력"으로 되돌린다.
+function onResizeWidthInput() {
+  if (resizeSyncing) return
+  selectedResizePreset.value = ''
+  resizeSyncing = true
+  clampResizeFieldsToSource()
+  const w = Number(heavyFormValues.value.width)
+  if (heavyFormValues.value.keepAspectRatio === 'true' && stagedImageDims.value && Number.isFinite(w) && w > 0) {
+    heavyFormValues.value.height = String(Math.max(1, Math.round(w * stagedImageDims.value.height / stagedImageDims.value.width)))
+  }
+  resizeSyncing = false
+}
+
+function onResizeHeightInput() {
+  if (resizeSyncing) return
+  selectedResizePreset.value = ''
+  resizeSyncing = true
+  clampResizeFieldsToSource()
+  const h = Number(heavyFormValues.value.height)
+  if (heavyFormValues.value.keepAspectRatio === 'true' && stagedImageDims.value && Number.isFinite(h) && h > 0) {
+    heavyFormValues.value.width = String(Math.max(1, Math.round(h * stagedImageDims.value.width / stagedImageDims.value.height)))
+  }
+  resizeSyncing = false
+}
+
+function onResizePercentInput() {
+  if (resizeSyncing) return
+  resizeSyncing = true
+  clampResizeFieldsToSource()
+  resizeSyncing = false
+}
+
+// % + 종횡비 잠금이면 가로/세로 퍼센트가 항상 같은 값이어야 의미가 있으므로 입력칸 하나로 합쳐
+// width를 대표값으로 편집하고 height를 그대로 따라가게 한다.
+function onResizePercentLinkedInput() {
+  if (resizeSyncing) return
+  resizeSyncing = true
+  heavyFormValues.value.height = heavyFormValues.value.width
+  clampResizeFieldsToSource()
+  resizeSyncing = false
+}
+
+// 확대 방지를 켜는 순간 이미 입력된 값이 원본보다 크면 즉시 되돌린다.
+watch(() => heavyFormValues.value.preventUpscale, () => clampResizeFieldsToSource())
+
+// px↔% 전환 시 이전 단위의 값(예: px 800)이 그대로 남아있으면 의미가 달라지므로
+// 단위에 맞는 기본값으로 되돌린다.
+watch(() => heavyFormValues.value.unit, unit => {
+  if (mod.value?.id !== 'image-resize') return
+  selectedResizePreset.value = ''
+  if (unit === '%') {
+    heavyFormValues.value.width = '100'
+    heavyFormValues.value.height = '100'
+  } else {
+    heavyFormValues.value.width = '800'
+    heavyFormValues.value.height = '600'
+  }
+  clampResizeFieldsToSource()
+})
+
+// 입력 필드 자체가 clampResizeFieldsToSource()로 항상 유효 범위로 즉시 보정되므로,
+// 이 미리보기는 "지금 필드 값 그대로" 계산한 결과만 보여주면 된다(별도 강조 상태 불필요).
+const resizePreviewInfo = computed(() => {
+  if (mod.value?.id !== 'image-resize') return null
+  const locked = heavyFormValues.value.keepAspectRatio === 'true'
+  const preventUpscale = heavyFormValues.value.preventUpscale !== 'false'
+  if (!stagedImageDims.value) {
+    // 파일 여러 장(배치)이거나 아직 크기를 못 읽었을 때는 정확한 숫자 대신 동작 방식을 안내한다.
+    // 배치는 각 파일이 자기 자신의 원본 크기를 기준으로 개별 처리되므로 그 점을 명시한다.
+    const behavior = locked
+        ? '각 이미지가 비율을 유지한 채 이 크기 안에 맞춰집니다.'
+        : '각 이미지가 이 크기로 강제 변형됩니다.'
+    const note = preventUpscale ? ' 파일마다 자기 원본보다 커지지 않도록 각각 확인합니다.' : ''
+    return {text: behavior + note}
+  }
+  const width = Number(heavyFormValues.value.width)
+  const height = Number(heavyFormValues.value.height)
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return null
+  const base = {unit: (heavyFormValues.value.unit === '%' ? '%' : 'px') as 'px' | '%', width, height, keepAspectRatio: locked}
+  const predicted = predictResizeOutput(stagedImageDims.value, {...base, preventUpscale})
+  return {text: `결과 크기: ${predicted.width} x ${predicted.height}px`}
+})
 const frontendToolComponent = computed(() =>
     frontendToolEntry.value ? defineAsyncComponent(frontendToolEntry.value.load) : null,
 )

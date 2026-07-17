@@ -1,5 +1,6 @@
 package com.back.tool.pdf;
 
+import com.back.global.util.ExifOrientationSupport;
 import com.back.tool.model.ToolInput;
 import com.back.tool.model.ToolModule;
 import com.back.tool.model.ToolParams;

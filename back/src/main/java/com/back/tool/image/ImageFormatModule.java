@@ -1,5 +1,6 @@
 package com.back.tool.image;
 
+import com.back.global.util.ExifOrientationSupport;
 import com.back.tool.model.ToolInput;
 import com.back.tool.model.ToolModule;
 import com.back.tool.model.ToolParams;
@@ -59,7 +60,9 @@ public class ImageFormatModule implements ToolModule {
                 image = flattenAlpha(image);
             }
             // 메타데이터는 동일 포맷 재인코딩(png→png, jpg→jpg)일 때만 유지 가능하다.
-            IIOMetadata metadata = (keepMetadata && targetFormat.equals(source.formatName()))
+            // 방향을 보정했다면 원본 메타데이터에 남은 EXIF Orientation 태그 때문에 뷰어가 다시
+            // 돌려버릴 수 있어(이중 회전) 이 경우엔 메타데이터를 유지하지 않는다.
+            IIOMetadata metadata = (keepMetadata && targetFormat.equals(source.formatName()) && !source.orientationCorrected())
                     ? source.metadata() : null;
 
             Path output = Files.createTempFile("imgfmt-", "." + ext);
@@ -70,7 +73,7 @@ public class ImageFormatModule implements ToolModule {
         }
     }
 
-    private record SourceImage(BufferedImage image, String formatName, IIOMetadata metadata) {}
+    private record SourceImage(BufferedImage image, String formatName, IIOMetadata metadata, boolean orientationCorrected) {}
 
     private SourceImage readSource(Path src, boolean withMetadata) throws IOException {
         try (ImageInputStream stream = ImageIO.createImageInputStream(src.toFile())) {
@@ -87,8 +90,12 @@ public class ImageFormatModule implements ToolModule {
                 String format = reader.getFormatName().toLowerCase();
                 if (format.equals("jpg")) format = "jpeg";
                 BufferedImage image = reader.read(0);
+                // 폰카메라 등은 픽셀은 그대로 두고 EXIF Orientation 태그로만 회전 방향을 표시하는데,
+                // ImageIO 리더는 이 태그를 무시하므로 직접 보정하지 않으면 결과물이 옆으로 눕거나 뒤집힌다.
+                int orientation = ExifOrientationSupport.readOrientation(src);
+                image = ExifOrientationSupport.applyOrientation(image, orientation);
                 IIOMetadata metadata = withMetadata ? reader.getImageMetadata(0) : null;
-                return new SourceImage(image, format, metadata);
+                return new SourceImage(image, format, metadata, orientation != 1);
             } finally {
                 reader.dispose();
             }

@@ -39,6 +39,7 @@ public class ImageResizeModule implements ToolModule {
             throw new ToolProcessingException("파라미터 'unit'은 px 또는 %여야 합니다. (입력값: " + unit + ")");
         }
         boolean keepAspectRatio = params.getBool("keepAspectRatio", true);
+        boolean preventUpscale = params.getBool("preventUpscale", true);
         int quality = params.getInt("quality", 85, 1, 100);
 
         Path src = input.files().get(0);
@@ -60,6 +61,11 @@ public class ImageResizeModule implements ToolModule {
             } else {
                 targetWidth = params.getInt("width", 800, 1, 20000);
                 targetHeight = params.getInt("height", 600, 1, 20000);
+            }
+            // 확대 방지: 처리 후 경고만 하던 것과 달리, 애초에 원본보다 큰 축으로는 요청하지 못하게 막는다.
+            if (preventUpscale) {
+                targetWidth = Math.min(targetWidth, srcWidth);
+                targetHeight = Math.min(targetHeight, srcHeight);
             }
 
             String ext = extension(src);

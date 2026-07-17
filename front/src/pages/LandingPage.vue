@@ -22,7 +22,7 @@
       v-motion
       :initial="{ opacity: 0, y: 15 }"
       :enter="{ opacity: 1, y: 0, transition: { duration: 500, type: 'spring', bounce: 0.1 } }"
-      class="relative z-10 mx-auto flex max-w-[720px] flex-col items-center px-4 pb-8 pt-8 text-center sm:pt-12"
+      class="relative z-10 mx-auto flex max-w-[720px] flex-col items-center px-4 pb-8 pt-12 text-center sm:pt-20"
     >
       <div class="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary mb-5 backdrop-blur-md">
         ✨ v2 포털 개편 베타
@@ -140,7 +140,7 @@ const ZONE_BORDER_CLASS: Record<ZoneId, string> = {
 const {recentIds} = useRecentTools()
 const modules = ref<Module[]>([])
 const paletteRef = ref<InstanceType<typeof CommandPalette> | null>(null)
-const shortcutKey = navigator.userAgent.includes('Mac') ? '⌘K' : 'Ctrl K'
+const shortcutKey = navigator.userAgent.includes('Mac') ? '⌘K 또는 /' : 'Ctrl K 또는 /'
 
 const recentModules = computed(() =>
     recentIds.value
@@ -158,6 +158,9 @@ const zoneModuleCounts = computed(() =>
 
 function handleKeydown(e: KeyboardEvent) {
   if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault()
+    paletteRef.value?.open()
+  } else if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
     e.preventDefault()
     paletteRef.value?.open()
   }

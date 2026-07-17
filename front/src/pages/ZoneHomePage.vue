@@ -1,22 +1,44 @@
 <template>
   <div class="mx-auto flex w-full max-w-[1200px] flex-col px-4 pb-10 sm:px-6">
 
-    <!-- Page title -->
-    <div class="pb-2 pt-8">
-      <h1 class="text-xl font-semibold tracking-tight text-foreground">
-        {{ activeCategory ?? zone.name }}
-        <span class="ml-1.5 align-middle font-mono text-[13px] font-normal text-muted-foreground">{{
-            filteredModules.length
-          }}</span>
-      </h1>
-      <p class="mt-1 text-[13px] text-muted-foreground">
-        {{ activeCategory ? `${activeCategory} 카테고리의 도구입니다.` : zone.description }}
-      </p>
+    <!-- Page title & View Toggle -->
+    <div class="flex items-end justify-between pb-2 pt-8">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-foreground">
+          {{ activeCategory ?? zone.name }}
+          <span class="ml-1.5 align-middle font-mono text-sm font-medium text-muted-foreground/60">{{
+              filteredModules.length
+            }}</span>
+        </h1>
+        <p class="mt-2 text-sm text-muted-foreground/80">
+          {{ activeCategory ? `${activeCategory} 카테고리의 도구입니다.` : zone.description }}
+        </p>
+      </div>
+
+      <!-- View Toggle (Segmented Control) -->
+      <div class="flex items-center rounded-lg border border-border/60 bg-card p-0.5 shadow-sm">
+        <button
+            class="flex items-center justify-center rounded-md px-2.5 py-1.5 transition-all"
+            :class="viewMode === 'grid' ? 'bg-accent text-foreground shadow-sm ring-1 ring-border/50' : 'text-muted-foreground hover:text-foreground'"
+            @click="viewMode = 'grid'"
+            title="바둑판 보기"
+        >
+          <LayoutGrid class="size-3.5" />
+        </button>
+        <button
+            class="flex items-center justify-center rounded-md px-2.5 py-1.5 transition-all"
+            :class="viewMode === 'list' ? 'bg-accent text-foreground shadow-sm ring-1 ring-border/50' : 'text-muted-foreground hover:text-foreground'"
+            @click="viewMode = 'list'"
+            title="리스트 보기"
+        >
+          <List class="size-3.5" />
+        </button>
+      </div>
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="grid grid-cols-1 gap-3 pt-4 sm:grid-cols-2 xl:grid-cols-3">
-      <div v-for="n in 18" :key="n" class="h-[68px] animate-pulse rounded-xl bg-muted"/>
+    <div v-if="loading" :class="viewMode === 'list' ? 'flex flex-col gap-2 pt-4' : 'grid grid-cols-1 gap-3 pt-4 sm:grid-cols-2 xl:grid-cols-3'">
+      <div v-for="n in 18" :key="n" class="animate-pulse rounded-xl bg-muted" :class="viewMode === 'list' ? 'h-[52px]' : 'h-[68px]'" />
     </div>
 
     <!-- 빈 구역 안내 (즐겨찾기·최근 사용도 없을 때만) -->
@@ -30,35 +52,36 @@
     <template v-else-if="activeCategory === null">
       <!-- 즐겨찾기 -->
       <section v-if="favoriteModules.length > 0">
-        <h2 class="flex items-baseline gap-2 pb-2 pt-6">
-          <span class="font-mono text-[11px] font-medium uppercase tracking-wider text-muted-foreground">즐겨찾기</span>
+        <h2 class="mb-4 mt-8 flex items-center gap-2 border-b border-border/40 pb-2">
+          <span class="text-sm font-bold uppercase tracking-wider text-foreground">즐겨찾기</span>
         </h2>
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          <ToolCard v-for="mod in favoriteModules" :key="mod.id" :mod="mod"/>
+        <div :class="viewMode === 'list' ? 'flex flex-col gap-2' : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3'">
+          <ToolCard v-for="mod in favoriteModules" :key="mod.id" :mod="mod" :mode="viewMode"/>
         </div>
       </section>
 
       <!-- 최근 사용 -->
       <section v-if="recentModules.length > 0">
-        <h2 class="flex items-baseline gap-2 pb-2 pt-6">
-          <span class="font-mono text-[11px] font-medium uppercase tracking-wider text-muted-foreground">최근 사용</span>
+        <h2 class="mb-4 mt-8 flex items-center gap-2 border-b border-border/40 pb-2">
+          <span class="text-sm font-bold uppercase tracking-wider text-foreground">최근 사용</span>
         </h2>
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          <ToolCard v-for="mod in recentModules" :key="mod.id" :mod="mod"/>
+        <div :class="viewMode === 'list' ? 'flex flex-col gap-2' : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3'">
+          <ToolCard v-for="mod in recentModules" :key="mod.id" :mod="mod" :mode="viewMode"/>
         </div>
       </section>
 
       <!-- 카테고리별 섹션 -->
       <section v-for="section in categorySections" :key="section.name">
-        <h2 class="flex items-baseline gap-2 pb-2 pt-6">
-          <span class="text-[13px] font-semibold text-foreground">{{ section.name }}</span>
-          <span class="font-mono text-[11px] text-muted-foreground">{{ section.modules.length }}</span>
+        <h2 class="mb-4 mt-8 flex items-center gap-2 border-b border-border/40 pb-2">
+          <span class="text-sm font-bold text-foreground">{{ section.name }}</span>
+          <span class="rounded-full bg-secondary/80 px-2 py-0.5 font-mono text-[10px] font-medium text-muted-foreground">{{ section.modules.length }}</span>
         </h2>
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div :class="viewMode === 'list' ? 'flex flex-col gap-2' : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3'">
           <ToolCard
               v-for="(mod, i) in section.modules"
               :key="mod.id"
               :mod="mod"
+              :mode="viewMode"
               :style="{'--stagger-i': Math.min(section.offset + i, 24)}"
               class="stagger-in"
           />
@@ -67,11 +90,12 @@
     </template>
 
     <!-- 카테고리 필터 시 단일 그리드 -->
-    <div v-else class="grid grid-cols-1 gap-3 pt-4 sm:grid-cols-2 xl:grid-cols-3">
+    <div v-else :class="viewMode === 'list' ? 'flex flex-col gap-2 pt-4' : 'grid grid-cols-1 gap-3 pt-4 sm:grid-cols-2 xl:grid-cols-3'">
       <ToolCard
           v-for="(mod, i) in filteredModules"
           :key="mod.id"
           :mod="mod"
+          :mode="viewMode"
           :style="{'--stagger-i': Math.min(i, 24)}"
           class="stagger-in"
       />
@@ -90,12 +114,15 @@ import {ZONES, type ZoneId} from '../config/zones'
 import {useToolFilter} from '../composables/useToolFilter'
 import {useFavorites} from '../composables/useFavorites'
 import {useRecentTools} from '../composables/useRecentTools'
+import {useViewMode} from '../composables/useViewMode'
 import ToolCard from '../components/ToolCard.vue'
+import {LayoutGrid, List} from 'lucide-vue-next'
 
 const props = defineProps<{ zoneId: ZoneId }>()
 
 const zone = computed(() => ZONES.find(z => z.id === props.zoneId)!)
 
+const {viewMode, toggleViewMode} = useViewMode()
 const {activeCategory} = useToolFilter()
 const {favoriteIds} = useFavorites()
 const {recentIds} = useRecentTools()

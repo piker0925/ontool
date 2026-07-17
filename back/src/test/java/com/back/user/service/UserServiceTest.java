@@ -97,6 +97,22 @@ class UserServiceTest {
     }
 
     @Test
+    void upsertFromSocialLogin_이모지가_섞인_닉네임을_잘라도_서로게이트_쌍이_깨지지_않는다() {
+        when(userRepository.findByProviderAndProviderId(any(), any())).thenReturn(Optional.empty());
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // "가" 1개 + 이모지(서로게이트 쌍, UTF-16 2유닛) 25개 = 26 코드포인트, 51 UTF-16 유닛.
+        // 예전 substring(0,20)은 UTF-16 유닛 기준이라 20번째 유닛이 이모지 쌍 한가운데를 잘랐다.
+        String nicknameWithEmoji = "가" + "😀".repeat(25);
+
+        User result = userService.upsertFromSocialLogin(AuthProvider.KAKAO, "k3", null, nicknameWithEmoji);
+
+        String nickname = result.getNickname();
+        assertThat(nickname.codePointCount(0, nickname.length())).isEqualTo(20);
+        assertThat(Character.isHighSurrogate(nickname.charAt(nickname.length() - 1))).isFalse();
+    }
+
+    @Test
     void upsertFromSocialLogin_닉네임이_비어있으면_기본값을_사용한다() {
         when(userRepository.findByProviderAndProviderId(any(), any())).thenReturn(Optional.empty());
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));

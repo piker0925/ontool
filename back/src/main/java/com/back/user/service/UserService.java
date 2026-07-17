@@ -46,6 +46,12 @@ public class UserService {
 
     private String truncateNickname(String nickname) {
         String trimmed = (nickname == null || nickname.isBlank()) ? DEFAULT_NICKNAME : nickname.trim();
-        return trimmed.length() > NICKNAME_MAX_LENGTH ? trimmed.substring(0, NICKNAME_MAX_LENGTH) : trimmed;
+        // substring(0, 20)은 UTF-16 유닛 기준이라 서로게이트 쌍(이모지 등)을 한가운데서 자를 수 있다 —
+        // 코드포인트 기준으로 잘라야 20번째 "글자"가 항상 온전하다.
+        if (trimmed.codePointCount(0, trimmed.length()) <= NICKNAME_MAX_LENGTH) {
+            return trimmed;
+        }
+        int cutIndex = trimmed.offsetByCodePoints(0, NICKNAME_MAX_LENGTH);
+        return trimmed.substring(0, cutIndex);
     }
 }

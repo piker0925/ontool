@@ -87,4 +87,19 @@ describe('DefaultLayout — 구역 스코프 사이드바', () => {
 
         expect(document.documentElement.dataset.zone).toBe('files')
     })
+
+    it('구역 스위처는 모바일 드로어(aside) 밖에 있어 드로어를 열지 않아도 항상 보인다', async () => {
+        await router.push('/dev')
+        const wrapper = mount(DefaultLayout, {global: {plugins: [router]}})
+        await flushPromises()
+
+        const aside = wrapper.find('aside')
+        const asideHrefs = aside.findAll('a').map(a => a.attributes('href'))
+        expect(asideHrefs).not.toEqual(expect.arrayContaining(['/files', '/life', '/fun']))
+
+        const outsideAsideHrefs = wrapper.findAll('a')
+            .filter(a => !aside.element.contains(a.element))
+            .map(a => a.attributes('href'))
+        expect(outsideAsideHrefs).toEqual(expect.arrayContaining(['/dev', '/files', '/life', '/fun']))
+    })
 })

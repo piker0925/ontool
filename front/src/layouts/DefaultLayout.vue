@@ -23,22 +23,6 @@
         </span>
       </router-link>
 
-      <!-- 구역 스위처 -->
-      <nav class="flex gap-1 px-3 pb-3" aria-label="구역 전환">
-        <router-link
-            v-for="zone in ZONES"
-            :key="zone.id"
-            :class="currentZoneId === zone.id
-            ? [ZONE_BG_CLASS[zone.id], ZONE_TEXT_CLASS[zone.id]]
-            : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'"
-            :aria-current="currentZoneId === zone.id ? 'page' : undefined"
-            class="flex-1 truncate rounded-lg px-1.5 py-1.5 text-center text-[11px] font-medium transition-colors"
-            :to="zone.route"
-        >
-          {{ zone.name }}
-        </router-link>
-      </nav>
-
       <!-- Search -->
       <div class="px-3 pb-3">
         <button
@@ -121,6 +105,25 @@
 
     <!-- Main -->
     <div class="flex min-w-0 flex-1 flex-col">
+      <!-- 구역 스위처: 데스크톱·모바일 공통, 드로어와 무관하게 항상 노출 -->
+      <nav
+          class="flex shrink-0 items-stretch gap-1 border-b border-border bg-background px-2 py-1.5 sm:px-4"
+          aria-label="구역 전환"
+      >
+        <router-link
+            v-for="zone in ZONES"
+            :key="zone.id"
+            :class="currentZoneId === zone.id
+            ? [ZONE_BG_CLASS[zone.id], ZONE_TEXT_CLASS[zone.id]]
+            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'"
+            :aria-current="currentZoneId === zone.id ? 'page' : undefined"
+            class="flex flex-1 items-center justify-center rounded-lg px-2 py-2.5 text-center text-[13px] font-medium transition-colors sm:flex-initial sm:px-4"
+            :to="zone.route"
+        >
+          {{ zone.name }}
+        </router-link>
+      </nav>
+
       <!-- 모바일 톱바 -->
       <header class="flex h-12 shrink-0 items-center gap-1 border-b border-border bg-background px-2 lg:hidden">
         <button

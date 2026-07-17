@@ -1,7 +1,5 @@
 package com.back.user.service;
 
-import com.back.global.exception.AppException;
-import com.back.global.exception.ErrorCode;
 import com.back.global.security.jwt.JwtProvider;
 import com.back.user.dto.TokenPair;
 import com.back.user.entity.RefreshToken;
@@ -24,9 +22,7 @@ import java.util.HexFormat;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -68,35 +64,29 @@ class RefreshTokenServiceTest {
     }
 
     @Test
-    void rotate_존재하지_않는_토큰이면_거부한다() {
-        when(refreshTokenRepository.findByTokenHash(any())).thenReturn(Optional.empty());
+    void rotate_존재하지_않는_토큰이면_빈값을_반환한다() {
+        when(refreshTokenRepository.findByTokenHashForUpdate(any())).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> refreshTokenService.rotate("garbage"))
-                .isInstanceOf(AppException.class)
-                .extracting(e -> ((AppException) e).getErrorCode())
-                .isEqualTo(ErrorCode.INVALID_REFRESH_TOKEN);
+        assertThat(refreshTokenService.rotate("garbage")).isEmpty();
     }
 
     @Test
-    void rotate_만료된_토큰이면_거부한다() {
+    void rotate_만료된_토큰이면_빈값을_반환한다() {
         String rawToken = "expired-raw";
         RefreshToken row = new RefreshToken(1L, sha256(rawToken), NOW.minusSeconds(1));
-        when(refreshTokenRepository.findByTokenHash(sha256(rawToken))).thenReturn(Optional.of(row));
+        when(refreshTokenRepository.findByTokenHashForUpdate(sha256(rawToken))).thenReturn(Optional.of(row));
 
-        assertThatThrownBy(() -> refreshTokenService.rotate(rawToken))
-                .isInstanceOf(AppException.class)
-                .extracting(e -> ((AppException) e).getErrorCode())
-                .isEqualTo(ErrorCode.INVALID_REFRESH_TOKEN);
+        assertThat(refreshTokenService.rotate(rawToken)).isEmpty();
     }
 
     @Test
     void rotate_아직_회전되지_않은_토큰이면_새_토큰쌍을_발급하고_이전_토큰을_회전_기록한다() {
         String rawToken = "current-raw";
         RefreshToken row = new RefreshToken(1L, sha256(rawToken), NOW.plusDays(14));
-        when(refreshTokenRepository.findByTokenHash(sha256(rawToken))).thenReturn(Optional.of(row));
+        when(refreshTokenRepository.findByTokenHashForUpdate(sha256(rawToken))).thenReturn(Optional.of(row));
         when(jwtProvider.issueAccessToken(1L)).thenReturn("new-access");
 
-        TokenPair result = refreshTokenService.rotate(rawToken);
+        TokenPair result = refreshTokenService.rotate(rawToken).orElseThrow();
 
         assertThat(result.accessToken()).isEqualTo("new-access");
         assertThat(result.refreshToken()).isNotBlank().isNotEqualTo(rawToken);
@@ -116,10 +106,10 @@ class RefreshTokenServiceTest {
         String oldRaw = "old-raw";
         RefreshToken row = new RefreshToken(1L, sha256(oldRaw), NOW.plusDays(14));
         row.rotate("successor-raw", NOW.minusSeconds(10));
-        when(refreshTokenRepository.findByTokenHash(sha256(oldRaw))).thenReturn(Optional.of(row));
+        when(refreshTokenRepository.findByTokenHashForUpdate(sha256(oldRaw))).thenReturn(Optional.of(row));
         when(jwtProvider.issueAccessToken(1L)).thenReturn("fresh-access");
 
-        TokenPair result = refreshTokenService.rotate(oldRaw);
+        TokenPair result = refreshTokenService.rotate(oldRaw).orElseThrow();
 
         assertThat(result.accessToken()).isEqualTo("fresh-access");
         assertThat(result.refreshToken()).isEqualTo("successor-raw");
@@ -128,17 +118,15 @@ class RefreshTokenServiceTest {
     }
 
     @Test
-    void rotate_유예를_초과한_재사용은_탈취로_간주해_해당_유저의_토큰을_전부_폐기한다() {
+    void rotate_유예를_초과한_재사용은_탈취로_간주해_해당_유저의_토큰을_전부_폐기하고_빈값을_반환한다() {
         String oldRaw = "old-raw";
         RefreshToken row = new RefreshToken(1L, sha256(oldRaw), NOW.plusDays(14));
         row.rotate("successor-raw", NOW.minusSeconds(31));
-        when(refreshTokenRepository.findByTokenHash(sha256(oldRaw))).thenReturn(Optional.of(row));
+        when(refreshTokenRepository.findByTokenHashForUpdate(sha256(oldRaw))).thenReturn(Optional.of(row));
 
-        assertThatThrownBy(() -> refreshTokenService.rotate(oldRaw))
-                .isInstanceOf(AppException.class)
-                .extracting(e -> ((AppException) e).getErrorCode())
-                .isEqualTo(ErrorCode.INVALID_REFRESH_TOKEN);
+        assertThat(refreshTokenService.rotate(oldRaw)).isEmpty();
 
+        // current 자신도 포함해 지운다 — 제외하면 같은 유출 토큰을 반복 재생해 계정을 계속 로그아웃시킬 수 있다.
         verify(refreshTokenRepository).deleteAllByUserId(1L);
     }
 

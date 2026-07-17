@@ -1,5 +1,7 @@
 package com.back.user.controller;
 
+import com.back.global.exception.AppException;
+import com.back.global.exception.ErrorCode;
 import com.back.global.security.jwt.AccessTokenRevocationService;
 import com.back.global.security.jwt.BearerTokenExtractor;
 import com.back.user.dto.LogoutRequest;
@@ -26,7 +28,8 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public TokenPair refresh(@RequestBody RefreshRequest request) {
-        return refreshTokenService.rotate(request.refreshToken());
+        return refreshTokenService.rotate(request.refreshToken())
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_REFRESH_TOKEN));
     }
 
     @PostMapping("/logout")

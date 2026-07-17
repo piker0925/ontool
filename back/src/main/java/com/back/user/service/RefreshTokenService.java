@@ -1,7 +1,5 @@
 package com.back.user.service;
 
-import com.back.global.exception.AppException;
-import com.back.global.exception.ErrorCode;
 import com.back.global.security.TokenHasher;
 import com.back.global.security.jwt.JwtProvider;
 import com.back.user.dto.TokenPair;
@@ -17,6 +15,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.Optional;
 
 @Service
 public class RefreshTokenService {
@@ -56,17 +55,23 @@ public class RefreshTokenService {
         return new TokenPair(jwtProvider.issueAccessToken(userId), rawToken);
     }
 
+    // 탈취 감지(유예 초과 재사용)를 포함해 어떤 경우든 예외를 던지지 않고 Optional.empty()를
+    // 반환한다 — 여기서 던지면 이 메서드의 트랜잭션 전체(탈취 시 전체 폐기 포함)가 롤백되어
+    // "폐기했다"는 게 실제로는 아무 일도 안 한 게 된다. 401 변환은 AuthController가 담당한다.
     @Transactional
-    public TokenPair rotate(String rawRefreshToken) {
-        RefreshToken current = refreshTokenRepository.findByTokenHash(TokenHasher.sha256(rawRefreshToken))
-                .orElseThrow(() -> new AppException(ErrorCode.INVALID_REFRESH_TOKEN));
+    public Optional<TokenPair> rotate(String rawRefreshToken) {
+        Optional<RefreshToken> maybeCurrent = refreshTokenRepository.findByTokenHashForUpdate(TokenHasher.sha256(rawRefreshToken));
+        if (maybeCurrent.isEmpty()) {
+            return Optional.empty();
+        }
 
+        RefreshToken current = maybeCurrent.get();
         if (current.getExpiresAt().isBefore(now())) {
-            throw new AppException(ErrorCode.INVALID_REFRESH_TOKEN);
+            return Optional.empty();
         }
 
         if (current.getRotatedAt() == null) {
-            return rotateFresh(current);
+            return Optional.of(rotateFresh(current));
         }
         return reuseWithinGraceOrRevoke(current);
     }
@@ -90,13 +95,15 @@ public class RefreshTokenService {
         return new TokenPair(jwtProvider.issueAccessToken(userId), newRawToken);
     }
 
-    private TokenPair reuseWithinGraceOrRevoke(RefreshToken current) {
+    private Optional<TokenPair> reuseWithinGraceOrRevoke(RefreshToken current) {
         Duration sinceRotation = Duration.between(current.getRotatedAt(), now());
         if (sinceRotation.compareTo(GRACE_PERIOD) <= 0) {
-            return new TokenPair(jwtProvider.issueAccessToken(current.getUserId()), current.getGraceToken());
+            return Optional.of(new TokenPair(jwtProvider.issueAccessToken(current.getUserId()), current.getGraceToken()));
         }
+        // current 자신도 포함해서 지운다 — 제외하면 같은 유출된 토큰을 반복 재생해 매번 계정을
+        // 다시 로그아웃시키는 용도로 악용될 수 있다.
         refreshTokenRepository.deleteAllByUserId(current.getUserId());
-        throw new AppException(ErrorCode.INVALID_REFRESH_TOKEN);
+        return Optional.empty();
     }
 
     private LocalDateTime now() {

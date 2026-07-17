@@ -2,10 +2,10 @@
   <div class="min-h-screen bg-background relative overflow-hidden">
 
     <!-- 히어로 배경 그라데이션 (대문 한정 허용) -->
-    <div class="pointer-events-none absolute inset-0 flex justify-center -z-10">
-      <div class="absolute -top-[15%] left-[10%] h-[500px] w-[500px] rounded-full bg-zone-accent-dev/10 blur-[100px] dark:bg-zone-accent-dev/15"></div>
-      <div class="absolute -top-[10%] right-[10%] h-[400px] w-[400px] rounded-full bg-zone-accent-fun/10 blur-[100px] dark:bg-zone-accent-fun/15"></div>
-      <div class="absolute top-[20%] left-[30%] h-[300px] w-[300px] rounded-full bg-zone-accent-files/10 blur-[80px] dark:bg-zone-accent-files/15"></div>
+    <div class="pointer-events-none absolute inset-0 flex justify-center z-0">
+      <div class="absolute -top-[15%] left-[10%] h-[500px] w-[500px] rounded-full bg-blue-500/15 blur-[100px] dark:bg-blue-500/20"></div>
+      <div class="absolute -top-[10%] right-[10%] h-[400px] w-[400px] rounded-full bg-purple-500/15 blur-[100px] dark:bg-purple-500/20"></div>
+      <div class="absolute top-[20%] left-[30%] h-[300px] w-[300px] rounded-full bg-teal-500/15 blur-[80px] dark:bg-teal-500/20"></div>
     </div>
 
     <!-- 상단 바: 워드마크 + 로그인 + 테마 토글 -->

@@ -28,6 +28,9 @@ dependencies {
 
 	// DB
 	runtimeOnly("com.mysql:mysql-connector-j")
+	// Spring Boot 4 모듈화로 flyway-mysql만으로는 자동 설정이 붙지 않는다 — starter가 autoconfigure 모듈을 가져온다.
+	implementation("org.springframework.boot:spring-boot-starter-flyway")
+	implementation("org.flywaydb:flyway-mysql")
 
 	// Lombok
 	compileOnly("org.projectlombok:lombok")

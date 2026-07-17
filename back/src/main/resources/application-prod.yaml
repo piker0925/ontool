@@ -6,8 +6,14 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      # 스키마의 유일한 진실은 이제 Flyway 마이그레이션이다 (ADR-0025). JPA는 스키마를 건드리지 않고
+      # 기동 시점에 엔티티-스키마 불일치만 검증한다.
+      ddl-auto: validate
     show-sql: false
+  # 기존 운영 DB는 이미 V1이 기술하는 테이블을 갖고 있으므로 V1을 건너뛰고 이후 버전부터 적용한다.
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
   security:
     user:
       name: ${ADMIN_USERNAME}

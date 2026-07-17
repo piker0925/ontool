@@ -8,6 +8,10 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: false
+  # 로컬 개발 흐름 무변화 (ADR-0025): 엔티티를 자유롭게 고치면 create-drop이 즉시 반영한다.
+  # Flyway는 prod 전용 — 로컬에서는 꺼서 마이그레이션 스크립트 작성 없이도 개발이 막히지 않게 한다.
+  flyway:
+    enabled: false
   security:
     user:
       name: admin

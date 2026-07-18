@@ -40,7 +40,7 @@ class JobServiceTest {
         when(jobRepository.save(any(Job.class))).thenAnswer(inv -> inv.getArgument(0));
 
         LocalDateTime before = LocalDateTime.now();
-        Job job = service.create("image-resize", Lane.HEAVY, "owner-1", List.of("uploads/temp/x/a.png"), Map.of());
+        Job job = service.create("image-resize", Lane.HEAVY, "owner-1", null, List.of("uploads/temp/x/a.png"), Map.of());
         LocalDateTime after = LocalDateTime.now();
 
         // expiresAt은 "지금 + 설정된 TTL(30분)" 범위 안에 있어야 한다.
@@ -56,8 +56,8 @@ class JobServiceTest {
         JobService longTtl = new JobService(jobRepository, toolStatsService, Duration.ofHours(24), 20);
         when(jobRepository.save(any(Job.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        Job shortJob = shortTtl.create("m", Lane.HEAVY, "owner-1", List.of(), Map.of());
-        Job longJob = longTtl.create("m", Lane.HEAVY, "owner-1", List.of(), Map.of());
+        Job shortJob = shortTtl.create("m", Lane.HEAVY, "owner-1", null, List.of(), Map.of());
+        Job longJob = longTtl.create("m", Lane.HEAVY, "owner-1", null, List.of(), Map.of());
 
         assertThat(shortJob.getExpiresAt()).isBefore(longJob.getExpiresAt());
     }

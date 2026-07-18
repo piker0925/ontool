@@ -9,6 +9,8 @@ import com.back.job.repository.JobRepository;
 import com.back.stats.service.ToolStatsService;
 import com.back.tool.model.Lane;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -52,18 +54,19 @@ public class JobService {
         }
     }
 
-    public Job create(String moduleId, Lane lane, String ownerToken,
+    public Job create(String moduleId, Lane lane, String ownerToken, Long userId,
                       List<String> inputPaths, Map<String, String> params) {
-        return create(moduleId, lane, ownerToken, null, inputPaths, params);
+        return create(moduleId, lane, ownerToken, userId, null, inputPaths, params);
     }
 
-    public Job create(String moduleId, Lane lane, String ownerToken, String batchId,
+    public Job create(String moduleId, Lane lane, String ownerToken, Long userId, String batchId,
                       List<String> inputPaths, Map<String, String> params) {
         toolStatsService.incrementUseCount(moduleId);
         Job job = new Job();
         job.setModuleId(moduleId);
         job.setLane(lane);
         job.setOwnerToken(ownerToken);
+        job.setUserId(userId);
         job.setBatchId(batchId);
         job.setStatus(JobStatus.PENDING);
         job.setInputPaths(inputPaths);
@@ -110,5 +113,15 @@ public class JobService {
     /** 관리자 큐 조회(060) — 지정한 상태의 Job 목록. */
     public List<Job> findByStatusIn(Set<JobStatus> statuses) {
         return jobRepository.findAllByStatusIn(statuses);
+    }
+
+    /** 회원 작업 이력(050) — 최신순 페이징. */
+    public Page<Job> findByUserId(Long userId, Pageable pageable) {
+        return jobRepository.findAllByUserIdOrderByCreatedAtDesc(userId, pageable);
+    }
+
+    /** 결과 보관 기간이 지났는지 — 지났으면 파일은 이미 청소됐을 수 있다(row는 회원 Job이라 보존됨, 050). */
+    public boolean isExpired(Job job) {
+        return LocalDateTime.now().isAfter(job.getExpiresAt());
     }
 }

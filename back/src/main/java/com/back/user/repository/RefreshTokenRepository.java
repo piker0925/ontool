@@ -8,11 +8,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
 
     Optional<RefreshToken> findByTokenHash(String tokenHash);
+
+    List<RefreshToken> findAllByUserId(Long userId);
 
     // rotate() 전용 락 조회. 회전은 결과를 읽고 바로 갱신하므로, 동시에 같은(아직 회전 전) 토큰으로
     // 두 요청이 들어오면 뒤 트랜잭션이 앞 트랜잭션 커밋까지 블로킹돼야 한다 — 락 없이 두 트랜잭션이

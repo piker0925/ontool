@@ -3,7 +3,10 @@ package com.back.job.repository;
 import com.back.job.entity.Job;
 import com.back.job.entity.JobStatus;
 import com.back.tool.model.Lane;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -47,6 +50,14 @@ public interface JobRepository extends JpaRepository<Job, String> {
 
     /** 관리자 큐 조회(060) — 상태별 현재 Job 목록. */
     List<Job> findAllByStatusIn(Collection<JobStatus> statuses);
+
+    /** 회원 작업 이력(050) — 최신순 페이징. */
+    Page<Job> findAllByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
+
+    /** 회원 탈퇴(055-②) — Job row는 지우지 않고 작성자 연결만 끊는다(익명 Job과 동일한 처지가 된다). */
+    @Modifying
+    @Query("UPDATE Job j SET j.userId = null WHERE j.userId = :userId")
+    void anonymizeByUserId(@Param("userId") Long userId);
 
     @Query(value = "SELECT COUNT(*) as total, " +
             "COALESCE(SUM(status = 'DONE'), 0) as done_count, " +

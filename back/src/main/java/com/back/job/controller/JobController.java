@@ -47,7 +47,9 @@ public class JobController {
     @GetMapping("/{id}/result")
     public JobResultResponse getResult(@PathVariable String id) {
         Job job = jobService.get(id);
-        if (job.getResultKey() != null) {
+        // 회원 Job은 만료 후에도 row가 보존된다(050) — resultKey는 남아있어도 파일은 TTL 청소로 이미 삭제됐으므로
+        // 만료 시 URL은 내려주지 않는다. resultText는 파일이 아니라 DB 컬럼이라 만료와 무관하게 유효하다.
+        if (job.getResultKey() != null && !jobService.isExpired(job)) {
             // 파일 결과 + advisory 텍스트(예: 업스케일 경고)가 함께 있을 수 있다.
             return new JobResultResponse(fileStorage.getUrl(job.getResultKey()), job.getResultText());
         }

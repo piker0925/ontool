@@ -1,5 +1,6 @@
 package com.back;
 
+import com.back.job.entity.Job;
 import com.back.job.repository.JobRepository;
 import com.back.tool.model.ToolInput;
 import com.back.tool.model.ToolModule;

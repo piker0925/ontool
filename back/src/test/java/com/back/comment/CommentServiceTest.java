@@ -37,7 +37,7 @@ class CommentServiceTest extends AbstractMySQLIntegrationTest {
 
     @Test
     void addComment_savesAndReturns() {
-        Comment comment = commentService.addComment("sql-formatter", "좋은 도구입니다!");
+        Comment comment = commentService.addComment("sql-formatter", "좋은 도구입니다!", null);
 
         assertThat(comment.getId()).isNotNull();
         assertThat(comment.getModuleId()).isEqualTo("sql-formatter");
@@ -47,8 +47,8 @@ class CommentServiceTest extends AbstractMySQLIntegrationTest {
 
     @Test
     void getComments_returnsOrderedByCreatedAtDesc() {
-        commentService.addComment("sql-formatter", "첫 번째 댓글");
-        commentService.addComment("sql-formatter", "두 번째 댓글");
+        commentService.addComment("sql-formatter", "첫 번째 댓글", null);
+        commentService.addComment("sql-formatter", "두 번째 댓글", null);
 
         List<Comment> comments = commentService.getComments("sql-formatter");
 
@@ -60,7 +60,7 @@ class CommentServiceTest extends AbstractMySQLIntegrationTest {
 
     @Test
     void getComments_differentModuleId_returnsEmpty() {
-        commentService.addComment("sql-formatter", "SQL 댓글");
+        commentService.addComment("sql-formatter", "SQL 댓글", null);
 
         List<Comment> comments = commentService.getComments("json-yaml");
 

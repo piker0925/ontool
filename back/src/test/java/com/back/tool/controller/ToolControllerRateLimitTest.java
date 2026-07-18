@@ -67,13 +67,13 @@ class ToolControllerRateLimitTest {
                 .andExpect(jsonPath("$.code").value("RATE_LIMITED"))
                 .andExpect(jsonPath("$.message").isNotEmpty());
 
-        verify(jobService, never()).create(any(), any(), any(), any(), any());
+        verify(jobService, never()).create(any(), any(), any(), any(), any(), any());
     }
 
     @Test
     void 한_IP가_한도를_넘어도_다른_IP는_영향받지_않는다() throws Exception {
         JobService jobService = mock(JobService.class);
-        when(jobService.create(any(), any(), any(), any(), any())).thenReturn(mock(Job.class));
+        when(jobService.create(any(), any(), any(), any(), any(), any())).thenReturn(mock(Job.class));
         RateLimiter rateLimiter = new RateLimiter(1, 60);
         MockMvc mockMvc = buildMockMvc(rateLimiter, jobService);
 

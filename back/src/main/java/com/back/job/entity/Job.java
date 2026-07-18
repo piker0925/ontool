@@ -39,6 +39,11 @@ public class Job {
     @Column(length = 36)
     private String ownerToken;
 
+    // 로그인 사용자면 기록(작업 이력, 050). 익명 Job은 null — X-Client-Id(ownerToken)와 병행 유지.
+    @Setter
+    @Column(name = "user_id")
+    private Long userId;
+
     // 자원 등급 레인. 생성 시 모듈의 getLane()으로 확정 (ADR-0019)
     @Setter
     @Enumerated(EnumType.STRING)

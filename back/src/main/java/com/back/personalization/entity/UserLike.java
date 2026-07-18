@@ -1,37 +1,34 @@
-package com.back.comment.entity;
+package com.back.personalization.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "comment")
+@Table(name = "user_like", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "module_id"}))
 @Getter
 @NoArgsConstructor
-public class Comment {
+public class UserLike {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Setter
-    @Column(nullable = false, length = 50)
-    private String moduleId;
-
-    @Setter
-    @Column(columnDefinition = "text")
-    private String content;
-
-    // 로그인 작성자면 기록(닉네임 표시, 051). 익명 댓글은 null.
-    @Setter
-    @Column(name = "user_id")
+    @Column(name = "user_id", nullable = false)
     private Long userId;
+
+    @Column(name = "module_id", nullable = false, length = 50)
+    private String moduleId;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    public UserLike(Long userId, String moduleId) {
+        this.userId = userId;
+        this.moduleId = moduleId;
+    }
 
     @PrePersist
     void onCreate() {

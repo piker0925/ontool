@@ -2,6 +2,8 @@ package com.back.global.config;
 
 import com.back.global.exception.ErrorCode;
 import com.back.global.response.ErrorResponse;
+import com.back.global.security.admin.AdminAuthenticationEntryPoint;
+import com.back.global.security.admin.AdminLoginLockoutFilter;
 import com.back.global.security.jwt.JwtAuthenticationFilter;
 import com.back.global.security.oauth2.OAuth2LoginFailureHandler;
 import com.back.global.security.oauth2.OAuth2LoginSuccessHandler;
@@ -16,6 +18,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +32,8 @@ public class SecurityConfig {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final AdminLoginLockoutFilter adminLoginLockoutFilter;
+    private final AdminAuthenticationEntryPoint adminAuthenticationEntryPoint;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
 
@@ -43,18 +48,23 @@ public class SecurityConfig {
                 // 관리자 계정만 갖는 ROLE_ADMIN(spring.security.user.roles)이 있어야 통과한다.
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/v1/users/me").authenticated()
+                .requestMatchers("/api/v1/users/me/personalization/**").authenticated()
+                .requestMatchers("/api/v1/users/me/jobs").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/comments/*").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout").authenticated()
                 .anyRequest().permitAll()
             )
             .exceptionHandling(handling -> handling
                     .defaultAuthenticationEntryPointFor(jsonAuthenticationEntryPoint(), API_REQUEST_MATCHER)
             )
-            .httpBasic(Customizer.withDefaults())
+            .httpBasic(basic -> basic.authenticationEntryPoint(adminAuthenticationEntryPoint))
             .oauth2Login(oauth2 -> oauth2
                     .successHandler(oAuth2LoginSuccessHandler)
                     .failureHandler(oAuth2LoginFailureHandler)
             )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            // 관리자 Basic Auth 브루트포스 방어(IP별 실패 잠금) — 자격증명 검증 전에 먼저 거른다.
+            .addFilterBefore(adminLoginLockoutFilter, BasicAuthenticationFilter.class);
         return http.build();
     }
 

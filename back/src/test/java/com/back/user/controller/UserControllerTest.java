@@ -2,9 +2,12 @@ package com.back.user.controller;
 
 import com.back.AbstractMySQLIntegrationTest;
 import com.back.global.security.jwt.JwtProvider;
+import com.back.user.dto.TokenPair;
 import com.back.user.entity.AuthProvider;
 import com.back.user.entity.User;
+import com.back.user.repository.RefreshTokenRepository;
 import com.back.user.repository.UserRepository;
+import com.back.user.service.RefreshTokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,8 +19,10 @@ import org.springframework.web.context.WebApplicationContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -29,12 +34,17 @@ class UserControllerTest extends AbstractMySQLIntegrationTest {
     @Autowired
     UserRepository userRepository;
     @Autowired
+    RefreshTokenRepository refreshTokenRepository;
+    @Autowired
+    RefreshTokenService refreshTokenService;
+    @Autowired
     JwtProvider jwtProvider;
 
     MockMvc mockMvc;
 
     @BeforeEach
     void setup() {
+        refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
         mockMvc = MockMvcBuilders.webAppContextSetup(wac).apply(springSecurity()).build();
     }
@@ -136,5 +146,23 @@ class UserControllerTest extends AbstractMySQLIntegrationTest {
 
         User reloadedB = userRepository.findById(userB.getId()).orElseThrow();
         assertThat(reloadedB.getNickname()).isEqualTo("B닉네임");
+    }
+
+    @Test
+    void delete_인증없이_요청하면_401() throws Exception {
+        mockMvc.perform(delete("/api/v1/users/me"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void delete_탈퇴하면_204이고_User_row가_삭제되며_기존_refresh_토큰도_더이상_쓸수없다() throws Exception {
+        User user = userRepository.save(new User(AuthProvider.GOOGLE, "wd1", null, "탈퇴테스트"));
+        TokenPair tokens = refreshTokenService.issue(user.getId());
+
+        mockMvc.perform(delete("/api/v1/users/me").header("Authorization", "Bearer " + tokens.accessToken()))
+                .andExpect(status().isNoContent());
+
+        assertThat(userRepository.findById(user.getId())).isEmpty();
+        assertThat(refreshTokenService.rotate(tokens.refreshToken())).isEmpty();
     }
 }

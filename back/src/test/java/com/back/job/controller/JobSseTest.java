@@ -54,7 +54,7 @@ class JobSseTest extends AbstractMySQLIntegrationTest {
         // Create PENDING job — connects to SSE while still pending.
         // The blocking send() call returns when the server calls emitter.complete()
         // (which happens once the worker marks the job DONE).
-        Job job = jobService.create("sse-echo", com.back.tool.model.Lane.HEAVY, "owner-1", List.of(), Map.of());
+        Job job = jobService.create("sse-echo", com.back.tool.model.Lane.HEAVY, "owner-1", null, List.of(), Map.of());
 
         HttpClient client = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(5))

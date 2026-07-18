@@ -20,6 +20,7 @@ import com.back.tool.service.ToolService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -79,6 +80,7 @@ public class ToolController {
     public ResponseEntity<?> upload(@PathVariable String moduleId,
                                     @RequestPart("files") List<MultipartFile> files,
                                     @RequestParam Map<String, String> params,
+                                    @AuthenticationPrincipal Long userId,
                                     HttpServletRequest request) {
         ToolModule module = toolService.getModule(moduleId);
         if (!module.isHeavy()) {
@@ -100,7 +102,7 @@ public class ToolController {
             jobService.assertWithinQuota(ownerToken, 1);
             String tempId = UUID.randomUUID().toString();
             List<String> paths = saveFiles(tempId, files);
-            Job job = jobService.create(moduleId, lane, ownerToken, paths, params);
+            Job job = jobService.create(moduleId, lane, ownerToken, userId, paths, params);
             return ResponseEntity.accepted().body(new JobCreateResponse(job.getId(), job.getExpiresAt()));
         }
 
@@ -110,7 +112,7 @@ public class ToolController {
         List<Job> jobs = files.stream().map(file -> {
             String tempId = UUID.randomUUID().toString();
             List<String> paths = saveFiles(tempId, List.of(file));
-            return jobService.create(moduleId, lane, ownerToken, batchId, paths, params);
+            return jobService.create(moduleId, lane, ownerToken, userId, batchId, paths, params);
         }).toList();
         List<String> jobIds = jobs.stream().map(Job::getId).toList();
         return ResponseEntity.accepted().body(new BatchCreateResponse(batchId, jobIds));

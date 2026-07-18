@@ -49,7 +49,7 @@ let refreshPromise: Promise<string | null> | null = null
 apiClient.interceptors.request.use((config) => {
     // vueuse/core useStorage 기본값이 로컬스토리지에 저장됨
     const token = localStorage.getItem('dtk_access')
-    if (token) {
+    if (token && !config.headers.Authorization) {
         config.headers.Authorization = `Bearer ${token}`
     }
     return config
@@ -60,11 +60,12 @@ apiClient.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config
         
-        // 401이면서 이미 재시도한 요청이 아니고, refresh URL 자체가 아닌 경우
+        // 401이면서 이미 재시도한 요청이 아니고, refresh URL 자체가 아니며, Basic Auth를 쓰는 /admin 요청이 아닌 경우
         if (
             error.response?.status === 401 && 
             !originalRequest._retry && 
-            originalRequest.url !== '/api/v1/auth/refresh'
+            originalRequest.url !== '/api/v1/auth/refresh' &&
+            !originalRequest.url?.startsWith('/admin')
         ) {
             originalRequest._retry = true
 

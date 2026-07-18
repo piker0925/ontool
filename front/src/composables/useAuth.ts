@@ -16,7 +16,7 @@ interface User {
   createdAt: string
 }
 
-const user = ref<User | null>(null)
+export const user = ref<User | null>(null)
 const isLoading = ref(false)
 
 export function useAuth() {

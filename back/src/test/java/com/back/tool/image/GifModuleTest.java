@@ -290,4 +290,113 @@ class GifModuleTest {
         assertThat(module.isHeavy()).isTrue();
         assertThat(module.getCategory()).isEqualTo("image");
     }
+
+    @Test
+    void captionText가_없으면_기존과_동일하게_자막_없이_생성된다() throws Exception {
+        List<Path> frames = List.of(
+                createFrame("cap-none1.png", Color.RED, 200, 100),
+                createFrame("cap-none2.png", Color.BLUE, 200, 100));
+
+        ToolResult result = module.process(new ToolInput(frames, Map.of("delay", "100")));
+
+        BufferedImage first = readGifFrame(result.outputFile(), 0);
+        BufferedImage second = readGifFrame(result.outputFile(), 1);
+        assertThat(first.getWidth()).isEqualTo(200);
+        assertThat(first.getHeight()).isEqualTo(100);
+        assertThat(new Color(first.getRGB(100, 50))).isEqualTo(Color.RED);
+        assertThat(new Color(second.getRGB(100, 50))).isEqualTo(Color.BLUE);
+    }
+
+    @Test
+    void captionText_지정시_모든_프레임에_동일한_자막이_실제로_렌더링된다() throws Exception {
+        List<Path> frames = List.of(
+                createFrame("cap1.png", Color.RED, 200, 100),
+                createFrame("cap2.png", Color.BLUE, 200, 100),
+                createFrame("cap3.png", Color.GREEN, 200, 100));
+
+        ToolResult withoutCaption = module.process(new ToolInput(frames, Map.of("delay", "100")));
+        ToolResult withCaption = module.process(new ToolInput(frames,
+                Map.of("delay", "100", "captionText", "hello",
+                        "captionColor", "#FFFF00", "captionBackground", "#000000")));
+
+        // 기본 위치(bottom)의 자막 박스가 깔리는 y=90 지점을 세 프레임 모두에서 비교한다.
+        // 배경 박스가 반투명(alpha 160)으로 원본 색과 블렌딩되므로 정확한 색상값이 아니라
+        // "자막 유무에 따라 실제로 픽셀이 달라졌는지"를 비교한다(AC 문구 그대로).
+        for (int i = 0; i < 3; i++) {
+            BufferedImage before = readGifFrame(withoutCaption.outputFile(), i);
+            BufferedImage after = readGifFrame(withCaption.outputFile(), i);
+            assertThat(new Color(after.getRGB(100, 90)))
+                    .as("프레임 %d의 자막 영역 픽셀이 자막 없는 버전과 달라야 한다", i)
+                    .isNotEqualTo(new Color(before.getRGB(100, 90)));
+        }
+    }
+
+    @Test
+    void captionPosition을_top_bottom으로_바꾸면_자막이_그려지는_y영역이_실제로_달라진다() throws Exception {
+        List<Path> frames = List.of(createFrame("pos1.png", Color.RED, 200, 100));
+
+        ToolResult baseline = module.process(new ToolInput(frames, Map.of("delay", "100")));
+        ToolResult topResult = module.process(new ToolInput(frames,
+                Map.of("delay", "100", "captionText", "caption",
+                        "captionPosition", "top", "captionColor", "#FFFF00", "captionBackground", "#000000")));
+        ToolResult bottomResult = module.process(new ToolInput(frames,
+                Map.of("delay", "100", "captionText", "caption",
+                        "captionPosition", "bottom", "captionColor", "#FFFF00", "captionBackground", "#000000")));
+
+        BufferedImage baseFrame = readGifFrame(baseline.outputFile(), 0);
+        BufferedImage topFrame = readGifFrame(topResult.outputFile(), 0);
+        BufferedImage bottomFrame = readGifFrame(bottomResult.outputFile(), 0);
+
+        int topRowY = 5;
+        int bottomRowY = 95;
+
+        // top: 위쪽 영역은 달라지고, 아래쪽 영역은 자막 없는 버전과 동일해야 한다.
+        assertThat(new Color(topFrame.getRGB(100, topRowY)))
+                .isNotEqualTo(new Color(baseFrame.getRGB(100, topRowY)));
+        assertThat(new Color(topFrame.getRGB(100, bottomRowY)))
+                .isEqualTo(new Color(baseFrame.getRGB(100, bottomRowY)));
+
+        // bottom: 아래쪽 영역은 달라지고, 위쪽 영역은 자막 없는 버전과 동일해야 한다.
+        assertThat(new Color(bottomFrame.getRGB(100, bottomRowY)))
+                .isNotEqualTo(new Color(baseFrame.getRGB(100, bottomRowY)));
+        assertThat(new Color(bottomFrame.getRGB(100, topRowY)))
+                .isEqualTo(new Color(baseFrame.getRGB(100, topRowY)));
+    }
+
+    @Test
+    void 자막_텍스트가_프레임_너비보다_길면_줄바꿈되어_캔버스를_벗어나지_않는다() throws Exception {
+        // 폭 100px에 비해 훨씬 긴 문장을 넣어 여러 줄로 줄바꿈되도록 강제하고,
+        // 세로로 아주 긴 캔버스(2000px)를 써서 줄바꿈된 자막 블록이 프레임 하단까지는
+        // 절대 닿지 않는다는 것을(=넘치지 않는다는 것을) 폰트 메트릭 오차와 무관하게 검증한다.
+        List<Path> frames = List.of(createFrame("overflow1.png", Color.RED, 100, 2000));
+        String longCaption = "this is a very long caption that cannot possibly fit on a single line "
+                + "within a one hundred pixel wide frame without wrapping across many lines of text";
+
+        ToolResult baseline = module.process(new ToolInput(frames, Map.of("delay", "100")));
+        ToolResult result = module.process(new ToolInput(frames,
+                Map.of("delay", "100", "captionText", longCaption,
+                        "captionPosition", "top", "captionColor", "#FFFF00", "captionBackground", "#000000")));
+
+        BufferedImage baseFrame = readGifFrame(baseline.outputFile(), 0);
+        BufferedImage frame = readGifFrame(result.outputFile(), 0);
+
+        // 캔버스 크기 자체는 절대 바뀌지 않는다(넘친 텍스트 때문에 캔버스가 커지거나 잘리지 않음).
+        assertThat(frame.getWidth()).isEqualTo(100);
+        assertThat(frame.getHeight()).isEqualTo(2000);
+
+        // 여러 줄로 실제 줄바꿈되었는지: 서로 다른 두 줄 영역(y=5, y=45)이 모두
+        // 자막 없는 버전과 달라야 한다 — 한 줄에 다 우겨넣었다면 두 번째 줄 영역은
+        // baseline과 같았을 것이다.
+        assertThat(new Color(frame.getRGB(50, 5)))
+                .as("첫 줄 영역")
+                .isNotEqualTo(new Color(baseFrame.getRGB(50, 5)));
+        assertThat(new Color(frame.getRGB(50, 45)))
+                .as("두 번째 줄 이후 영역")
+                .isNotEqualTo(new Color(baseFrame.getRGB(50, 45)));
+
+        // 프레임 하단(y=1900)은 자막 블록이 절대 도달하지 못하는 위치 — 캔버스를
+        // 벗어나기는커녕 자막 블록 자체가 프레임 안 상단에 국한되어 있음을 증명한다.
+        assertThat(new Color(frame.getRGB(50, 1900)))
+                .isEqualTo(new Color(baseFrame.getRGB(50, 1900)));
+    }
 }

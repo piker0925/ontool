@@ -1,22 +1,16 @@
 <template>
   <!-- Viewport (Infinite Width) -->
   <div class="h-screen w-full overflow-hidden bg-slate-50 dark:bg-background relative flex justify-center">
-    <!-- App Container (Centered, Max 1600px) -->
-    <div class="flex h-full w-full max-w-[1600px] relative z-10 2xl:border-x 2xl:border-border/30 bg-background/50">
-
-    <!-- 메인 페이지와 100% 동일한 깊이감의 융합 배경 -->
+    <!-- 메인 페이지와 100% 동일한 깊이감의 융합 배경 (무한 너비) -->
     <div class="pointer-events-none absolute inset-0 flex justify-center z-0 overflow-hidden">
-      <!-- 배경 도트 패턴 (다크 모드 전용: 고급스러운 Vercel 개발자 느낌) -->
+      <!-- 배경 도트 패턴 -->
       <div class="absolute inset-0 hidden dark:block bg-[radial-gradient(#64748b_1px,transparent_1px)] [background-size:24px_24px] opacity-60 transition-opacity duration-1000"></div>
-      
-      <!-- 페이드 아웃 마스크 (도트가 서서히 사라지게 함) -->
+      <!-- 페이드 아웃 마스크 -->
       <div class="absolute inset-0 bg-gradient-to-b from-transparent via-slate-50/80 to-slate-50 dark:via-background/50 dark:to-background"></div>
-      
-      <!-- 살아 숨쉬는 동적 Aurora 글로우 (구역 테마 컬러 연동) -->
-      <div class="absolute top-[-10%] left-[-10%] h-[500px] w-[500px] rounded-full bg-zone-accent/15 blur-[120px] dark:bg-zone-accent/20 dark:blur-[100px] animate-blob mix-blend-multiply dark:mix-blend-screen transition-colors duration-1000"></div>
-      <div class="absolute top-[20%] right-[-10%] h-[400px] w-[600px] rounded-full bg-zone-accent/10 blur-[120px] dark:bg-zone-accent/10 dark:blur-[100px] animate-blob animation-delay-2000 mix-blend-multiply dark:mix-blend-screen transition-colors duration-1000"></div>
-      <div class="absolute bottom-[-20%] left-[20%] h-[600px] w-[600px] rounded-full bg-zone-accent/10 blur-[150px] dark:bg-zone-accent/15 dark:blur-[120px] animate-blob animation-delay-4000 mix-blend-multiply dark:mix-blend-screen transition-colors duration-1000"></div>
     </div>
+
+    <!-- App Container (Full Width) -->
+    <div class="flex h-full w-full relative z-10">
 
     <!-- 모바일 드로어 백드롭 -->
     <div
@@ -381,30 +375,5 @@ async function loadModules() {
 </script>
 
 <style scoped>
-@keyframes blob {
-  0% {
-    transform: translate(0px, 0px) scale(1);
-  }
-  33% {
-    transform: translate(20vw, 15vh) scale(1.1);
-  }
-  66% {
-    transform: translate(-10vw, 25vh) scale(0.9);
-  }
-  100% {
-    transform: translate(0px, 0px) scale(1);
-  }
-}
 
-.animate-blob {
-  animation: blob 25s infinite alternate ease-in-out;
-}
-
-.animation-delay-2000 {
-  animation-delay: 2s;
-}
-
-.animation-delay-4000 {
-  animation-delay: 4s;
-}
 </style>

@@ -25,6 +25,19 @@
           <span class="shrink-0 rounded-md bg-secondary/60 px-2 py-0.5 font-mono text-[10px] font-medium text-muted-foreground">{{ mod.category }}</span>
         </CommandItem>
       </CommandGroup>
+      <CommandGroup v-if="isAdminSearch" heading="System">
+        <CommandItem
+            value="admin 어드민 관리자"
+            class="flex items-center gap-3 py-2.5 cursor-pointer text-rose-500"
+            @select="router.push('/admin'); isOpen = false"
+        >
+          <div class="flex size-7 shrink-0 items-center justify-center rounded-md bg-rose-500/10 text-rose-500 shadow-sm">
+            <Lock class="size-4" />
+          </div>
+          <span class="flex-1 truncate text-[14px] font-medium">관리자 콘솔 (Admin)</span>
+          <span class="shrink-0 rounded-md bg-rose-500/10 px-2 py-0.5 font-mono text-[10px] font-medium text-rose-500">system</span>
+        </CommandItem>
+      </CommandGroup>
     </CommandList>
     <div class="flex items-center gap-5 border-t border-border/50 px-4 py-3 font-mono text-[11px] text-muted-foreground bg-muted/20">
       <span>↑↓ 이동</span>
@@ -41,6 +54,7 @@ import type {Module} from '../types'
 import {getCategoryConfig} from '../utils/categoryConfig'
 import {zoneOf} from '../config/zones'
 import {keywordStrings, resolveAliasQuery} from '../utils/keywordAlias'
+import {Lock} from 'lucide-vue-next'
 import {
   CommandDialog,
   CommandEmpty,
@@ -74,6 +88,11 @@ const grouped = computed(() =>
       return acc
     }, {}),
 )
+
+const isAdminSearch = computed(() => {
+  const s = search.value.toLowerCase().trim()
+  return s === 'admin' || s === '어드민' || s === '관리자'
+})
 
 function navigate(mod: Module) {
   isOpen.value = false

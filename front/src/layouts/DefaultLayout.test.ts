@@ -63,13 +63,19 @@ describe('DefaultLayout — 구역 스코프 사이드바', () => {
         expect(wrapper.text()).not.toContain('PDF')
     })
 
-    it('구역 스위처가 4구역 라우트로 이동 가능한 링크를 렌더링한다', async () => {
+    it('구역 스위처 트리거를 클릭하면 4구역 라우트로 이동 가능한 링크가 나타난다', async () => {
         await router.push('/dev')
-        const wrapper = mount(DefaultLayout, {global: {plugins: [router]}})
+        const wrapper = mount(DefaultLayout, {global: {plugins: [router]}, attachTo: document.body})
         await flushPromises()
 
-        const hrefs = wrapper.findAll('a').map(a => a.attributes('href'))
+        // DropdownMenuContent는 reka-ui가 document.body로 텔레포트하므로 wrapper 밖에서 찾는다
+        await wrapper.find('[data-testid="zone-switcher-trigger"]').trigger('click')
+        await flushPromises()
+
+        const hrefs = Array.from(document.body.querySelectorAll('a')).map(a => a.getAttribute('href'))
         expect(hrefs).toEqual(expect.arrayContaining(['/dev', '/files', '/life', '/fun']))
+
+        wrapper.unmount()
     })
 
     it('현재 구역을 document.documentElement의 data-zone 속성에 반영한다', async () => {
@@ -88,19 +94,34 @@ describe('DefaultLayout — 구역 스코프 사이드바', () => {
         expect(document.documentElement.dataset.zone).toBe('files')
     })
 
-    it('구역 스위처는 모바일 드로어(aside) 밖에 있어 드로어를 열지 않아도 항상 보인다', async () => {
+    it('구역 스위처 트리거는 모바일 드로어(aside) 밖에 있어 드로어를 열지 않아도 항상 보인다', async () => {
         await router.push('/dev')
         const wrapper = mount(DefaultLayout, {global: {plugins: [router]}})
         await flushPromises()
 
         const aside = wrapper.find('aside')
-        const asideHrefs = aside.findAll('a').map(a => a.attributes('href'))
-        expect(asideHrefs).not.toEqual(expect.arrayContaining(['/files', '/life', '/fun']))
+        const trigger = wrapper.find('[data-testid="zone-switcher-trigger"]')
+        expect(trigger.exists()).toBe(true)
+        expect(aside.element.contains(trigger.element)).toBe(false)
+    })
+})
 
-        const outsideAsideHrefs = wrapper.findAll('a')
-            .filter(a => !aside.element.contains(a.element))
-            .map(a => a.attributes('href'))
-        expect(outsideAsideHrefs).toEqual(expect.arrayContaining(['/dev', '/files', '/life', '/fun']))
+describe('DefaultLayout — 모바일 드로어', () => {
+    it('백드롭의 z-index가 드로어(aside)보다 낮아야 한다 — 백드롭이 위에 있으면 메뉴가 블러 처리된 검은 막에 가려 안 보인다', async () => {
+        await router.push('/dev')
+        const wrapper = mount(DefaultLayout, {global: {plugins: [router]}})
+        await flushPromises()
+
+        await wrapper.findAll('header button')[0].trigger('click')
+        await flushPromises()
+
+        const backdrop = wrapper.find('[data-testid="drawer-backdrop"]')
+        const aside = wrapper.find('aside')
+        expect(backdrop.exists()).toBe(true)
+
+        const backdropZ = Number(backdrop.attributes('class')?.match(/(?:^| )z-(\d+)/)?.[1])
+        const asideZ = Number(aside.attributes('class')?.match(/(?:^| )z-(\d+)/)?.[1])
+        expect(backdropZ).toBeLessThan(asideZ)
     })
 })
 
@@ -115,14 +136,21 @@ describe('DefaultLayout — 브레드크럼', () => {
         expect(breadcrumb.text()).toContain('포맷터')
     })
 
-    it('구역 링크는 해당 모듈의 기본 구역(zones[0]) 홈으로 이동한다', async () => {
+    it('브레드크럼의 구역 스위처는 해당 모듈의 기본 구역(zones[0])을 표시하고, 클릭하면 그 구역 홈으로 이동하는 링크를 보여준다', async () => {
         await router.push('/tools/pdf-merge')
-        const wrapper = mount(DefaultLayout, {global: {plugins: [router]}})
+        const wrapper = mount(DefaultLayout, {global: {plugins: [router]}, attachTo: document.body})
         await flushPromises()
 
-        const breadcrumb = wrapper.find('[data-testid="breadcrumb"]')
-        const zoneLink = breadcrumb.findAll('a').at(1)
-        expect(zoneLink?.attributes('href')).toBe('/files')
+        const trigger = wrapper.find('[data-testid="breadcrumb"] [data-testid="zone-switcher-trigger"]')
+        expect(trigger.text()).toContain('파일·문서')
+
+        await trigger.trigger('click')
+        await flushPromises()
+
+        const hrefs = Array.from(document.body.querySelectorAll('a')).map(a => a.getAttribute('href'))
+        expect(hrefs).toContain('/files')
+
+        wrapper.unmount()
     })
 
     it('카테고리 링크는 구역 홈 경로에 category 쿼리를 붙여 이동한다', async () => {
@@ -131,7 +159,7 @@ describe('DefaultLayout — 브레드크럼', () => {
         await flushPromises()
 
         const breadcrumb = wrapper.find('[data-testid="breadcrumb"]')
-        const categoryLink = breadcrumb.findAll('a').at(2)
+        const categoryLink = breadcrumb.findAll('a').at(1)
         const href = categoryLink?.attributes('href') ?? ''
         const url = new URL(href, 'http://localhost')
         expect(url.pathname).toBe('/dev')

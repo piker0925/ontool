@@ -15,7 +15,8 @@
     <!-- 모바일 드로어 백드롭 -->
     <div
         v-if="drawerOpen"
-        class="fixed inset-0 z-50 bg-black/50 lg:hidden backdrop-blur-sm"
+        data-testid="drawer-backdrop"
+        class="fixed inset-0 z-30 bg-black/50 lg:hidden backdrop-blur-sm"
         @click="drawerOpen = false"
     />
 
@@ -96,31 +97,11 @@
 
     <!-- Main -->
     <div class="flex min-w-0 flex-1 flex-col relative z-10">
-      <!-- 구역 스위처: 데스크톱·모바일 공통 헤더 상단에 상시 노출(드로어와 무관) — ADR-0023, 216984b -->
-      <nav
-          class="flex shrink-0 items-stretch gap-1 border-b border-white/60 dark:border-white/10 bg-white/40 dark:bg-background/80 backdrop-blur-[30px] px-2 py-1.5 sm:px-4 sticky top-0 z-20"
-          aria-label="구역 전환"
-      >
-        <router-link
-            v-for="zone in ZONES"
-            :key="zone.id"
-            :class="currentZoneId === zone.id
-            ? [ZONE_BG_CLASS[zone.id], ZONE_TEXT_CLASS[zone.id]]
-            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'"
-            :aria-current="currentZoneId === zone.id ? 'page' : undefined"
-            class="flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-center text-[12px] font-medium transition-colors sm:flex-initial sm:px-3"
-            :to="zone.route"
-        >
-          <component :is="ZONE_ICONS[zone.id]" class="size-[13px]" />
-          {{ zone.name }}
-        </router-link>
-      </nav>
-
       <!-- 상단 글로벌 헤더 -->
       <header class="flex h-[52px] shrink-0 justify-center border-b border-white/60 dark:border-white/10 bg-white/40 dark:bg-background/80 backdrop-blur-[30px] sticky top-0 z-20 shadow-[0_4px_24px_rgb(0,0,0,0.02)] dark:shadow-none">
         <div class="flex w-full max-w-[1440px] items-center justify-between px-4 sm:px-6">
           <!-- 좌측: 모바일 메뉴 & 경로 (Breadcrumbs) -->
-          <div class="flex items-center gap-3 w-1/3 min-w-0">
+          <div class="flex min-w-0 flex-1 items-center gap-3 lg:w-1/3 lg:flex-none">
             <button
                 class="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground lg:hidden shrink-0"
                 @click="drawerOpen = true"
@@ -133,13 +114,34 @@
                 <BrandLogo class="scale-[0.75] origin-left" />
               </router-link>
               <span class="text-border">/</span>
-              <router-link 
-                :to="zoneHomeRoute" 
-                class="truncate transition-colors hover:underline hover:underline-offset-4" 
-                :class="ZONE_TEXT_CLASS[currentZoneId || 'dev']"
-              >
-                {{ currentZoneName }}
-              </router-link>
+              <!-- 구역 스위처: 브레드크럼 "구역" 자리를 대신하는 pill. 클릭하면 나머지 구역으로 전환 —
+                   드로어를 열 필요 없이 헤더에서 바로 닿으므로 216984b의 "드로어 뒤에 숨지 않음" 요건을 만족한다. -->
+              <DropdownMenu>
+                <DropdownMenuTrigger as-child>
+                  <button
+                      data-testid="zone-switcher-trigger"
+                      type="button"
+                      class="flex shrink-0 items-center gap-1 truncate rounded-md px-1.5 py-0.5 -mx-1.5 transition-colors hover:bg-accent"
+                      :class="ZONE_TEXT_CLASS[currentZoneId || 'dev']"
+                  >
+                    <component :is="ZONE_ICONS[currentZoneId || 'dev']" class="size-[13px] shrink-0" />
+                    <span class="truncate">{{ currentZoneName }}</span>
+                    <ChevronDown class="size-3 shrink-0 opacity-60" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" class="w-[200px] p-1.5 rounded-xl shadow-xl">
+                  <DropdownMenuItem
+                      v-for="zone in ZONES" :key="zone.id"
+                      as-child
+                      class="rounded-lg cursor-pointer mb-1 last:mb-0"
+                  >
+                    <router-link :to="zone.route" class="flex items-center gap-2.5 w-full px-1.5 py-1.5">
+                      <component :is="ZONE_ICONS[zone.id]" class="size-[14px] shrink-0" :class="ZONE_TEXT_CLASS[zone.id]" />
+                      <span class="text-[13px] font-medium text-foreground">{{ zone.name }}</span>
+                    </router-link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <span class="text-border">/</span>
               <router-link
                  v-if="displayCategory !== '전체 도구'"
@@ -163,7 +165,7 @@
           </div>
 
           <!-- 우측 액션 (데스크톱 & 모바일) -->
-          <div class="flex items-center justify-end gap-2 w-1/3 shrink-0">
+          <div class="flex shrink-0 items-center justify-end gap-2 lg:w-1/3">
             <!-- 모바일 전용 검색 아이콘 -->
             <button
                 class="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground lg:hidden"
@@ -191,12 +193,18 @@
 <script lang="ts" setup>
 import {computed, onMounted, onUnmounted, ref, watch} from 'vue'
 import {useRoute} from 'vue-router'
-import {LayoutGrid, Menu, MessageSquarePlus, Search, Star, Terminal, FileText, Coffee, Gamepad2} from 'lucide-vue-next'
+import {LayoutGrid, Menu, MessageSquarePlus, Search, Star, Terminal, FileText, Coffee, Gamepad2, ChevronDown} from 'lucide-vue-next'
 import {apiClient} from '../api/client'
 import {MOCK_MODULES} from '../api/mock'
 import {normalizeApiModules} from '../api/modules'
 
 import {ZONES, zoneOf, type ZoneId} from '../config/zones'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../components/ui/dropdown-menu'
 import type {Module} from '../types'
 import {CATEGORY_CONFIG, CATEGORY_ORDER} from '../utils/categoryConfig'
 import {useToolFilter} from '../composables/useToolFilter'
@@ -222,12 +230,6 @@ const {activeCategory} = useToolFilter()
 const {favoriteIds} = useFavorites()
 
 // Tailwind Oxide는 소스에 리터럴로 등장하는 클래스만 스캔한다 — 동적 템플릿 문자열 금지
-const ZONE_BG_CLASS: Record<ZoneId, string> = {
-  dev: 'bg-zone-accent-dev/10',
-  files: 'bg-zone-accent-files/10',
-  life: 'bg-zone-accent-life/10',
-  fun: 'bg-zone-accent-fun/10',
-}
 const ZONE_TEXT_CLASS: Record<ZoneId, string> = {
   dev: 'text-zone-accent-dev',
   files: 'text-zone-accent-files',

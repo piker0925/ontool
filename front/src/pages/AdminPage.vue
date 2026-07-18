@@ -257,7 +257,7 @@ const username = ref('')
 const password = ref('')
 const loginError = ref('')
 const authed = ref(false)
-let authHeader = ''
+let authHeader = sessionStorage.getItem('admin_auth') || ''
 
 // --- 탭 상태 ---
 type TabId = 'stats' | 'users' | 'ops'
@@ -325,6 +325,7 @@ async function login() {
   authHeader = 'Basic ' + btoa(`${username.value}:${password.value}`)
   try {
     await apiClient.get('/admin/stats', {headers: {Authorization: authHeader}})
+    sessionStorage.setItem('admin_auth', authHeader)
     authed.value = true
     loadStats()
   } catch {
@@ -415,5 +416,19 @@ function formatDate(dt: string): string {
   if (!dt) return ''
   const date = new Date(dt)
   return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+}
+
+// 컴포넌트 마운트 시 세션 스토리지에 인증 정보가 있으면 자동 로그인 시도
+if (authHeader) {
+  apiClient.get('/admin/stats', {headers: {Authorization: authHeader}})
+      .then(() => {
+        authed.value = true
+        loadStats()
+      })
+      .catch(() => {
+        // 토큰이 유효하지 않으면 삭제
+        sessionStorage.removeItem('admin_auth')
+        authHeader = ''
+      })
 }
 </script>

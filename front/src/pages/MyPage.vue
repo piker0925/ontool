@@ -54,10 +54,9 @@
         </div>
       </CardContent>
       <CardFooter class="flex justify-between rounded-b-xl border-t bg-muted/50 p-4">
-        <Button variant="ghost" class="gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive" disabled>
+        <Button variant="ghost" class="gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive" @click="showWithdrawModal = true">
           <Trash2 class="h-4 w-4" />
           회원 탈퇴
-          <Badge variant="outline" class="ml-1 h-4 px-1 py-0 text-[10px]">SOON</Badge>
         </Button>
         <Button variant="outline" class="gap-2" @click="logout">
           <LogOut class="h-4 w-4" />
@@ -72,6 +71,26 @@
     <div v-else-if="isLoading" class="py-12 text-center text-muted-foreground">
       로딩 중...
     </div>
+
+    <!-- 회원 탈퇴 확인 모달 -->
+    <Dialog v-model:open="showWithdrawModal">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>정말 탈퇴하시겠습니까?</DialogTitle>
+          <DialogDescription class="pt-4 space-y-2">
+            <p>탈퇴 시 계정 정보 및 즐겨찾기, 좋아요 등 <strong>모든 개인 데이터가 즉시 삭제되며 절대 복구할 수 없습니다.</strong></p>
+            <p>작성하신 댓글과 작업 이력은 삭제되지 않지만 익명으로 전환됩니다.</p>
+            <p class="text-destructive font-semibold mt-2">※ 동일한 계정으로 다시 가입하더라도 기존 데이터는 복구되지 않습니다.</p>
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter class="mt-4 sm:justify-end gap-2 sm:gap-0">
+          <Button variant="outline" @click="showWithdrawModal = false">취소</Button>
+          <Button variant="destructive" @click="confirmWithdraw" :disabled="isWithdrawing">
+            {{ isWithdrawing ? '처리 중...' : '영구 탈퇴' }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
@@ -84,14 +103,18 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../compone
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { Input } from '../components/ui/input'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../components/ui/dialog'
 import JobHistorySection from '../components/JobHistorySection.vue'
 import { Edit2, Check, X, LogOut, Trash2 } from 'lucide-vue-next'
+import { apiClient } from '../api/client'
 
 const router = useRouter()
 const { user, isLoggedIn, isLoading, fetchUser, logout, updateNickname } = useAuth()
 
 const isEditingNickname = ref(false)
 const editNickname = ref('')
+const showWithdrawModal = ref(false)
+const isWithdrawing = ref(false)
 
 onMounted(async () => {
   if (!isLoggedIn.value) {
@@ -138,6 +161,23 @@ async function saveNickname() {
     cancelEdit()
   } catch (e) {
     // 에러 처리는 useAuth에서 토스트로 띄움
+  }
+}
+
+async function confirmWithdraw() {
+  isWithdrawing.value = true
+  try {
+    await apiClient.delete('/api/v1/users/me')
+    showWithdrawModal.value = false
+    toast.success('회원 탈퇴가 완료되었습니다.')
+    
+    // 로그아웃 로직 수행(로컬스토리지 정리 및 리다이렉트)
+    await logout()
+  } catch (e) {
+    console.error('Withdrawal failed:', e)
+    toast.error('회원 탈퇴 처리에 실패했습니다. 잠시 후 다시 시도해주세요.')
+  } finally {
+    isWithdrawing.value = false
   }
 }
 

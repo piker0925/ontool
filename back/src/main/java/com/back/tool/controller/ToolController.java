@@ -123,8 +123,7 @@ public class ToolController {
 
     private List<String> saveFiles(String tempId, List<MultipartFile> files) {
         return files.stream().map(file -> {
-            String name = StringUtils.cleanPath(
-                    file.getOriginalFilename() != null ? file.getOriginalFilename() : "upload");
+            String name = sanitizeFileName(file.getOriginalFilename());
             Path dest = uploadDir.toAbsolutePath().resolve("temp").resolve(tempId).resolve(name);
             try {
                 Files.createDirectories(dest.getParent());
@@ -134,5 +133,16 @@ public class ToolController {
                 throw new UncheckedIOException(e);
             }
         }).toList();
+    }
+
+    // 업로드 파일명은 공격자가 제어할 수 있는 입력이다(../../ 등으로 uploadDir 밖에 쓰기 시도 가능,
+    // CodeQL java/path-injection). getFileName()으로 경로 구분자를 걷어내 파일명만 남긴다.
+    private String sanitizeFileName(String originalFilename) {
+        String raw = originalFilename != null ? originalFilename : "upload";
+        String name = Path.of(StringUtils.cleanPath(raw)).getFileName().toString();
+        if (name.isBlank() || name.equals(".") || name.equals("..")) {
+            return "upload";
+        }
+        return name;
     }
 }

@@ -44,13 +44,20 @@ public class XmlFormatterModule implements ToolModule {
         int indentWidth = params.getInt("indentWidth", 2, 1, 8);
         boolean declaration = params.getBool("declaration", false);
         try {
-            DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            // 이 모듈은 순수 포맷터라 DOCTYPE/DTD가 필요 없다 — 통째로 막아 XXE(외부 엔티티로 로컬 파일
+            // 읽기)와 billion-laughs류 엔티티 확장 DoS를 함께 차단한다 (CodeQL java/xxe).
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            DocumentBuilder builder = factory.newDocumentBuilder();
             Document doc = builder.parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
 
             if (minify) removeWhitespaceNodes(doc.getDocumentElement());
             doc.setXmlStandalone(true); // 선언 출력 시 standalone="no"가 붙지 않도록
 
-            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            transformerFactory.setAttribute(javax.xml.XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            transformerFactory.setAttribute(javax.xml.XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+            Transformer transformer = transformerFactory.newTransformer();
             transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, declaration ? "no" : "yes");
             if (declaration) {
                 transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");

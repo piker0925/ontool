@@ -101,6 +101,20 @@ class XmlFormatterModuleTest {
     }
 
     @Test
+    void 외부엔티티로_로컬파일을_읽으려는_XML은_거부되고_내용이_새지_않는다() {
+        // CodeQL java/xxe 회귀 테스트: DOCTYPE으로 로컬 파일을 끌어와 응답에 섞어보려는 시도.
+        // 통과 조건은 "정상 처리되지만 내용이 비어있음"이 아니라 명확한 처리 실패다 — 그래야
+        // DOCTYPE을 그냥 무시해 우연히 안전해진 구현과 실제로 막은 구현을 구분할 수 있다.
+        String xxe = "<?xml version=\"1.0\"?>"
+                + "<!DOCTYPE root [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]>"
+                + "<root>&xxe;</root>";
+
+        assertThatThrownBy(() -> run(Map.of("xml", xxe)))
+                .isInstanceOf(ToolProcessingException.class)
+                .hasMessageContaining("XML 처리 실패");
+    }
+
+    @Test
     void moduleMetadata() {
         assertThat(module.getId()).isEqualTo("xml-formatter");
         assertThat(module.isHeavy()).isFalse();

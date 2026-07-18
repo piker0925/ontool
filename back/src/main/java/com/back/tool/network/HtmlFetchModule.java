@@ -120,6 +120,10 @@ public class HtmlFetchModule implements ToolModule {
             throw new ToolProcessingException("요청이 중단되었습니다", e);
         } catch (IOException e) {
             throw new ToolProcessingException("HTML 가져오기 실패: " + e.getMessage(), e);
+        } finally {
+            // 이 스레드(요청 처리 스레드)에 남은 DNS 고정을 지운다 — 스레드 풀에서 재사용될 다음
+            // 요청(다른 호스트, 혹은 완전히 다른 기능)에 새어나가지 않도록 한다.
+            DnsPinning.clearThread();
         }
     }
 
@@ -142,7 +146,6 @@ public class HtmlFetchModule implements ToolModule {
 
     /** SSRF 방어: 호스트를 IP로 해석해 사설/내부 대역이면 차단한다. */
     private void validateTarget(URI uri) {
-        if (allowPrivateAddresses) return;
         String host = uri.getHost();
         InetAddress[] addresses;
         try {
@@ -150,11 +153,17 @@ public class HtmlFetchModule implements ToolModule {
         } catch (UnknownHostException e) {
             throw new ToolProcessingException("호스트를 찾을 수 없습니다: " + host, e);
         }
-        for (InetAddress address : addresses) {
-            if (isBlockedAddress(address)) {
-                throw new ToolProcessingException("접근이 차단된 주소입니다 (사설/내부 IP): " + host);
+        if (!allowPrivateAddresses) {
+            for (InetAddress address : addresses) {
+                if (isBlockedAddress(address)) {
+                    throw new ToolProcessingException("접근이 차단된 주소입니다 (사설/내부 IP): " + host);
+                }
             }
         }
+        // DNS 리바인딩 방지: 방금 검증에 쓴 주소를 그대로 고정한다. 고정해두지 않으면 바로 뒤
+        // HttpClient가 실제 연결을 맺을 때 이 호스트명을 다시 조회하는데, 그 사이 공격자의
+        // DNS 응답이 바뀌어(TTL=0) 검증은 통과하고 연결은 내부 IP로 가는 TOCTOU가 생긴다.
+        DnsPinning.pin(host, addresses);
     }
 
     /** 사설(RFC 1918)·루프백·링크로컬·멀티캐스트·CGNAT·IPv6 ULA 대역 여부. */

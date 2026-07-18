@@ -165,6 +165,27 @@ class HtmlFetchModuleTest {
     }
 
     @Test
+    void 요청_처리후에는_고정된_DNS항목이_남지_않는다() {
+        // DNS 리바인딩 방지용 고정이 스레드에 계속 남으면, 스레드 풀에서 재사용될 다음 요청이
+        // (다른 호스트라도) 엉뚱하게 이 고정을 참조할 수 있다. finally에서 정리되는지 확인.
+        localModule().process(urlInput("/"));
+
+        assertThat(DnsPinning.get("localhost")).isNull();
+    }
+
+    @Test
+    void 검증후_고정은_되었지만_이후_단계에서_실패로_끝나도_고정이_남지_않는다() {
+        // validateTarget에서 고정까지는 성공하고(allowPrivateAddresses로 차단 검사만 생략) 이후
+        // 응답 크기 초과로 실패하는 경우 — 성공 경로만 finally를 타면 스레드 풀 재사용 시
+        // 다음 요청에 이 고정이 새어나간다.
+        assertThatThrownBy(() -> localModule().process(urlInput("/big")))
+                .isInstanceOf(ToolProcessingException.class)
+                .hasMessageContaining("응답이 너무 큽니다");
+
+        assertThat(DnsPinning.get("localhost")).isNull();
+    }
+
+    @Test
     void moduleMetadata() {
         HtmlFetchModule module = new HtmlFetchModule();
         assertThat(module.getId()).isEqualTo("html-fetch");

@@ -132,6 +132,22 @@ export const MOCK_MODULES: Module[] = [
         zones: ['life'],
     },
     {
+        id: 'finance-calculator', name: '금융 계산기', category: '생활', isHeavy: false, isFrontendOnly: true,
+        description: '대출 원리금(상환표) · 예금/적금 · 전월세 전환율 · 부가세',
+        keywords: [
+            {keyword: '대출', query: 'tab=loan'},
+            {keyword: '원리금', query: 'tab=loan'},
+            {keyword: '상환표', query: 'tab=loan'},
+            {keyword: '예금', query: 'tab=deposit'},
+            {keyword: '적금', query: 'tab=deposit'},
+            {keyword: '전월세', query: 'tab=jeonse'},
+            {keyword: '전세', query: 'tab=jeonse'},
+            {keyword: '부가세', query: 'tab=vat'},
+            {keyword: '부가가치세', query: 'tab=vat'},
+        ],
+        zones: ['life'],
+    },
+    {
         id: 'code-gen', name: '코드 생성기', category: '생성기', isHeavy: false, isFrontendOnly: true,
         description: 'QR · 바코드 생성',
         keywords: [

@@ -45,7 +45,7 @@ public class ImageCollageModule implements ToolModule {
         ToolParams params = ToolParams.of(input);
         int columns = params.getInt("columns", 2, 1, 50);
         int spacing = params.getInt("spacing", 0, 0, 500);
-        Color backgroundColor = parseHexColor(params.getString("backgroundColor", "#FFFFFF"));
+        Color backgroundColor = params.getColor("backgroundColor", "#FFFFFF");
 
         int rows = (int) Math.ceil(files.size() / (double) columns);
 
@@ -84,17 +84,5 @@ public class ImageCollageModule implements ToolModule {
         } catch (IOException e) {
             throw new ToolProcessingException("이미지 콜라주 생성 실패: " + e.getMessage(), e);
         }
-    }
-
-    private Color parseHexColor(String hex) {
-        String v = hex.trim();
-        if (v.startsWith("#")) {
-            v = v.substring(1);
-        }
-        if (!v.matches("[0-9a-fA-F]{6}")) {
-            throw new ToolProcessingException(
-                    "파라미터 'backgroundColor'는 #RRGGBB 형식의 hex 색상이어야 합니다. (입력값: " + hex + ")");
-        }
-        return new Color(Integer.parseInt(v, 16));
     }
 }

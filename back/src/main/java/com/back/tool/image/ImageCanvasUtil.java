@@ -15,10 +15,7 @@ import java.util.List;
 
 /**
  * "최대 크기 캔버스 + 여백 패딩(contain-pad)" 기법의 공용 구현.
- * {@link GifModule}이 먼저 이 기법을 도입했으나(프레임 크기 통일용, 배경은 항상 흰색 고정),
- * 병렬 작업 중인 이슈가 GifModule.java를 직접 수정하고 있어 이번 이슈에서는 그 파일을
- * 건드리지 않고 이 유틸리티로 일반화(배경색 파라미터화)해 신규 모듈(ImageCollageModule)에서
- * 재사용한다. GifModule의 사본은 그대로 남아 완전한 중복 제거는 아니다 — 후속 정리 과제.
+ * {@link GifModule}, {@link ImageCollageModule}이 여러 이미지의 크기를 하나로 통일할 때 공유한다.
  */
 final class ImageCanvasUtil {
 

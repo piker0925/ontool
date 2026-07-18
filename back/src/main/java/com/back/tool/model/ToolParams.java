@@ -1,5 +1,6 @@
 package com.back.tool.model;
 
+import java.awt.Color;
 import java.util.Map;
 
 /**
@@ -58,5 +59,19 @@ public record ToolParams(Map<String, String> raw) {
             throw new ToolProcessingException(
                     "파라미터 '" + key + "'에 허용되지 않는 값입니다. (입력값: " + v + ")");
         }
+    }
+
+    /** "#RRGGBB" 또는 "RRGGBB" 형식의 hex 색상을 Color로 변환한다. */
+    public Color getColor(String key, String defaultValue) {
+        String v = getString(key, defaultValue);
+        String hex = v.trim();
+        if (hex.startsWith("#")) {
+            hex = hex.substring(1);
+        }
+        if (!hex.matches("[0-9a-fA-F]{6}")) {
+            throw new ToolProcessingException(
+                    "파라미터 '" + key + "'는 #RRGGBB 형식의 hex 색상이어야 합니다. (입력값: " + v + ")");
+        }
+        return new Color(Integer.parseInt(hex, 16));
     }
 }

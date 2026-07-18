@@ -39,10 +39,8 @@ public class QrCodeModule implements ToolModule {
         int margin = params.getInt("margin", 4, 0, 10);
         ErrorCorrectionLevel level =
                 params.getEnum("errorCorrection", ErrorCorrectionLevel.class, ErrorCorrectionLevel.M);
-        int foreground = CodeImageSupport.parseHexColor(
-                params.getString("foreground", "#000000"), "foreground");
-        int background = CodeImageSupport.parseHexColor(
-                params.getString("background", "#FFFFFF"), "background");
+        int foreground = params.getColor("foreground", "#000000").getRGB();
+        int background = params.getColor("background", "#FFFFFF").getRGB();
 
         try {
             BitMatrix matrix = new QRCodeWriter().encode(

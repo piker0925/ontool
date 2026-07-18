@@ -39,10 +39,8 @@ public class BarcodeModule implements ToolModule {
         Format format = params.getEnum("format", Format.class, Format.CODE128);
         int width = params.getInt("width", 400, 50, 2000);
         int height = params.getInt("height", 120, 20, 1000);
-        int foreground = CodeImageSupport.parseHexColor(
-                params.getString("foreground", "#000000"), "foreground");
-        int background = CodeImageSupport.parseHexColor(
-                params.getString("background", "#FFFFFF"), "background");
+        int foreground = params.getColor("foreground", "#000000").getRGB();
+        int background = params.getColor("background", "#FFFFFF").getRGB();
 
         validateContent(format, content);
 

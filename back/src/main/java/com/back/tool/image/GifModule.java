@@ -5,19 +5,16 @@ import com.back.tool.model.ToolModule;
 import com.back.tool.model.ToolParams;
 import com.back.tool.model.ToolProcessingException;
 import com.back.tool.model.ToolResult;
-import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.stereotype.Component;
 import org.w3c.dom.NodeList;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
 import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.ImageWriter;
 import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.metadata.IIOMetadataNode;
 import javax.imageio.stream.FileImageOutputStream;
-import javax.imageio.stream.ImageInputStream;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -68,15 +65,14 @@ public class GifModule implements ToolModule {
         String captionText = params.getString("captionText", null); // 없으면 자막 미사용(기존과 동일 동작)
         CaptionPosition captionPosition =
                 params.getEnum("captionPosition", CaptionPosition.class, CaptionPosition.BOTTOM);
-        Color captionColor = parseHexColor(params.getString("captionColor", "#FFFFFF"), "captionColor");
-        Color captionBackground =
-                parseHexColor(params.getString("captionBackground", "#000000"), "captionBackground");
+        Color captionColor = params.getColor("captionColor", "#FFFFFF");
+        Color captionBackground = params.getColor("captionBackground", "#000000");
 
         try {
             int canvasWidth = frameWidth;
             int canvasHeight = frameHeight;
             if (canvasWidth <= 0 || canvasHeight <= 0) {
-                int[] maxSize = detectMaxDimensions(input.files());
+                int[] maxSize = ImageCanvasUtil.detectMaxDimensions(input.files());
                 if (canvasWidth <= 0) canvasWidth = maxSize[0];
                 if (canvasHeight <= 0) canvasHeight = maxSize[1];
             }
@@ -93,7 +89,7 @@ public class GifModule implements ToolModule {
                     if (frame == null) {
                         throw new ToolProcessingException("이미지 파일을 읽을 수 없습니다: " + framePath.getFileName());
                     }
-                    frame = containPad(frame, canvasWidth, canvasHeight);
+                    frame = ImageCanvasUtil.containPad(frame, canvasWidth, canvasHeight, Color.WHITE);
                     if (captionText != null) {
                         drawCaption(frame, captionText, captionPosition, captionColor, captionBackground);
                     }
@@ -106,56 +102,6 @@ public class GifModule implements ToolModule {
         } catch (IOException e) {
             throw new ToolProcessingException("GIF 생성 실패: " + e.getMessage(), e);
         }
-    }
-
-    /** 전체 프레임 중 가로·세로 각각의 최댓값을 헤더만 읽어 파악한다 (풀 디코딩 없이 캔버스 크기 결정). */
-    private int[] detectMaxDimensions(List<Path> files) throws IOException {
-        int maxWidth = 0;
-        int maxHeight = 0;
-        for (Path path : files) {
-            try (ImageInputStream iis = ImageIO.createImageInputStream(path.toFile())) {
-                if (iis == null) {
-                    throw new ToolProcessingException("이미지 파일을 읽을 수 없습니다: " + path.getFileName());
-                }
-                var readers = ImageIO.getImageReaders(iis);
-                if (!readers.hasNext()) {
-                    throw new ToolProcessingException("이미지 파일을 읽을 수 없습니다: " + path.getFileName());
-                }
-                ImageReader reader = readers.next();
-                try {
-                    reader.setInput(iis);
-                    maxWidth = Math.max(maxWidth, reader.getWidth(0));
-                    maxHeight = Math.max(maxHeight, reader.getHeight(0));
-                } finally {
-                    reader.dispose();
-                }
-            }
-        }
-        return new int[]{maxWidth, maxHeight};
-    }
-
-    /**
-     * 원본 전체가 보이도록 캔버스 안에 맞춰 축소·확대(비율 유지) 후 중앙에 배치하고,
-     * 남는 여백은 흰색으로 채운다 (CSS object-fit: contain과 동일). 자르지 않으므로
-     * 원본 비율이 제각각이어도 내용 손실 없이 프레임 크기를 통일할 수 있다.
-     */
-    private BufferedImage containPad(BufferedImage frame, int targetWidth, int targetHeight) throws IOException {
-        if (frame.getWidth() == targetWidth && frame.getHeight() == targetHeight) return frame;
-
-        double scale = Math.min(targetWidth / (double) frame.getWidth(), targetHeight / (double) frame.getHeight());
-        int scaledWidth = Math.max(1, (int) Math.round(frame.getWidth() * scale));
-        int scaledHeight = Math.max(1, (int) Math.round(frame.getHeight() * scale));
-        BufferedImage scaled = (scaledWidth == frame.getWidth() && scaledHeight == frame.getHeight())
-                ? frame
-                : Thumbnails.of(frame).forceSize(scaledWidth, scaledHeight).asBufferedImage();
-
-        BufferedImage padded = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g = padded.createGraphics();
-        g.setColor(Color.WHITE);
-        g.fillRect(0, 0, targetWidth, targetHeight);
-        g.drawImage(scaled, (targetWidth - scaledWidth) / 2, (targetHeight - scaledHeight) / 2, null);
-        g.dispose();
-        return padded;
     }
 
     /**
@@ -221,19 +167,6 @@ public class GifModule implements ToolModule {
             lines.add(current.toString());
         }
         return lines;
-    }
-
-    /** "#RRGGBB" 또는 "RRGGBB" 형식의 hex 색상을 Color로 변환한다. */
-    private Color parseHexColor(String hex, String paramName) {
-        String v = hex.trim();
-        if (v.startsWith("#")) {
-            v = v.substring(1);
-        }
-        if (!v.matches("[0-9a-fA-F]{6}")) {
-            throw new ToolProcessingException(
-                    "파라미터 '" + paramName + "'는 #RRGGBB 형식의 hex 색상이어야 합니다. (입력값: " + hex + ")");
-        }
-        return new Color(Integer.parseInt(v, 16));
     }
 
     private Color withAlpha(Color color, int alpha) {

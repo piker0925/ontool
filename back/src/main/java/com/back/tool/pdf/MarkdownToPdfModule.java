@@ -58,6 +58,7 @@ public class MarkdownToPdfModule implements ToolModule {
 
     @Override
     public ToolResult process(ToolInput input) {
+        requireFiles(input);
         ToolParams params = ToolParams.of(input);
         String paperSize = resolvePaperSize(params.getString("paperSize", "A4"));
         int marginMm = params.getInt("margin", 20, 0, 50);

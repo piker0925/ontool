@@ -29,6 +29,7 @@ public class OpenApiToCodeModule implements ToolModule {
 
     @Override
     public ToolResult process(ToolInput input) {
+        requireFiles(input);
         try {
             Path specFile = input.files().get(0);
             String language = input.params().getOrDefault("language", "java");

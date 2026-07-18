@@ -31,9 +31,7 @@ public class PdfMergeModule implements ToolModule {
 
     @Override
     public ToolResult process(ToolInput input) {
-        if (input.files().isEmpty()) {
-            throw new ToolProcessingException("병합할 PDF 파일이 없습니다.");
-        }
+        requireFiles(input);
         try {
             Path output = Files.createTempFile("pdfmerge-", ".pdf");
             PDFMergerUtility merger = new PDFMergerUtility();

@@ -385,6 +385,14 @@ class ImageFormatModuleTest {
     }
 
     @Test
+    void 파일_0개면_ToolProcessingException을_던진다() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                module.process(new ToolInput(List.of(), Map.of())))
+                .isInstanceOf(com.back.tool.model.ToolProcessingException.class)
+                .hasMessageContaining("처리할 파일이 없습니다");
+    }
+
+    @Test
     void moduleMetadata() {
         assertThat(module.getId()).isEqualTo("image-format");
         assertThat(module.isHeavy()).isTrue();

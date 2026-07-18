@@ -1,6 +1,7 @@
 package com.back.tool.pdf;
 
 import com.back.tool.model.ToolInput;
+import com.back.tool.model.ToolProcessingException;
 import com.back.tool.model.ToolResult;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PdfMergeModuleTest {
 
@@ -61,6 +63,14 @@ class PdfMergeModuleTest {
                 assertThat(stripper.getText(doc)).contains(expectedLabels[i]);
             }
         }
+    }
+
+    @Test
+    void 파일_0개면_ToolProcessingException을_던진다() {
+        PdfMergeModule module = new PdfMergeModule();
+        assertThatThrownBy(() -> module.process(new ToolInput(List.of(), Map.of())))
+                .isInstanceOf(ToolProcessingException.class)
+                .hasMessageContaining("처리할 파일이 없습니다");
     }
 
     @Test

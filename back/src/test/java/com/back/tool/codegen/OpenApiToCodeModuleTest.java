@@ -1,6 +1,7 @@
 package com.back.tool.codegen;
 
 import com.back.tool.model.ToolInput;
+import com.back.tool.model.ToolProcessingException;
 import com.back.tool.model.ToolResult;
 import org.junit.jupiter.api.Test;
 
@@ -13,6 +14,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class OpenApiToCodeModuleTest {
 
@@ -42,6 +44,14 @@ class OpenApiToCodeModuleTest {
             }
             assertThat(source).contains("id").contains("name");
         }
+    }
+
+    @Test
+    void 파일_0개면_ToolProcessingException을_던진다() {
+        OpenApiToCodeModule module = new OpenApiToCodeModule();
+        assertThatThrownBy(() -> module.process(new ToolInput(List.of(), Map.of())))
+                .isInstanceOf(ToolProcessingException.class)
+                .hasMessageContaining("처리할 파일이 없습니다");
     }
 
     @Test

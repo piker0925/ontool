@@ -110,6 +110,25 @@ class ToolControllerFilelessUploadTest extends AbstractMySQLIntegrationTest {
     }
 
     @Test
+    void 파일_0개로_단일파일_모듈을_호출하면_Job이_FAILED로_끝난다() throws Exception {
+        // 라우팅이 넓어지며 acceptsMultipleFiles=false인 단일 파일 모듈(image-resize)도 파일 0개로
+        // 호출 가능해졌다 — requireFiles 가드가 없으면 files.get(0)에서 IndexOutOfBoundsException이
+        // 던져지고, JobWorker의 광범위 catch(Exception)이 잡아 FAILED로 끝나긴 하지만 명확한 에러가
+        // 아니었다. 이제는 명확한 ToolProcessingException으로 거부되고, 그 결과가 실제로 Job
+        // 상태(FAILED)까지 깔끔하게 반영되는지 컨트롤러~워커 전체 스택으로 확인한다.
+        String resp = mockMvc.perform(multipart("/api/v1/tools/image-resize/upload"))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.jobId").exists())
+                .andReturn().getResponse().getContentAsString();
+        String jobId = JsonPath.read(resp, "$.jobId");
+
+        await().atMost(10, SECONDS).until(() -> isTerminal(jobId));
+
+        assertThat(jobRepository.findById(jobId).orElseThrow().getStatus().name())
+                .isEqualTo("FAILED");
+    }
+
+    @Test
     void 여러_파일과_acceptsMultipleFiles모듈이면_배치가_아니라_단일_Job이다() throws Exception {
         MockMultipartFile f1 = new MockMultipartFile("files", "a.pdf", "application/pdf", minimalPdfBytes());
         MockMultipartFile f2 = new MockMultipartFile("files", "b.pdf", "application/pdf", minimalPdfBytes());

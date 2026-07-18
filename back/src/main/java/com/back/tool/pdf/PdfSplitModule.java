@@ -41,6 +41,7 @@ public class PdfSplitModule implements ToolModule {
 
     @Override
     public ToolResult process(ToolInput input) {
+        requireFiles(input);
         ToolParams params = ToolParams.of(input);
         String pageRangeSpec = params.getString("pageRange", "");
         String groupMode = params.getString("groupMode", "낱장");

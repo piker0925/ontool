@@ -33,6 +33,7 @@ public class ImageResizeModule implements ToolModule {
 
     @Override
     public ToolResult process(ToolInput input) {
+        requireFiles(input);
         ToolParams params = ToolParams.of(input);
         String unit = params.getString("unit", "px");
         if (!unit.equals("px") && !unit.equals("%")) {

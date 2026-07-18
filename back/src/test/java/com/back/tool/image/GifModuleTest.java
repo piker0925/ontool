@@ -1,6 +1,7 @@
 package com.back.tool.image;
 
 import com.back.tool.model.ToolInput;
+import com.back.tool.model.ToolProcessingException;
 import com.back.tool.model.ToolResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class GifModuleTest {
 
@@ -282,6 +284,13 @@ class GifModuleTest {
 
         IIOMetadataNode gce = childNode(firstFrameMetadata(result.outputFile()), "GraphicControlExtension");
         assertThat(gce.getAttribute("delayTime")).isEqualTo("50"); // 500ms = 50cs
+    }
+
+    @Test
+    void 파일_0개면_ToolProcessingException을_던진다() {
+        assertThatThrownBy(() -> module.process(new ToolInput(List.of(), Map.of())))
+                .isInstanceOf(ToolProcessingException.class)
+                .hasMessageContaining("처리할 파일이 없습니다");
     }
 
     @Test

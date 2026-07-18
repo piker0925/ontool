@@ -58,6 +58,7 @@ public class VulnScanModule implements ToolModule {
 
     @Override
     public ToolResult process(ToolInput input) {
+        requireFiles(input);
         try {
             String content = Files.readString(input.files().get(0));
             String filename = input.files().get(0).getFileName().toString();

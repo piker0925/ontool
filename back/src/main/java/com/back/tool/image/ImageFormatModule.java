@@ -41,6 +41,7 @@ public class ImageFormatModule implements ToolModule {
 
     @Override
     public ToolResult process(ToolInput input) {
+        requireFiles(input);
         ToolParams params = ToolParams.of(input);
         String targetFormat = params.getString("targetFormat", "png").toLowerCase();
         if (targetFormat.equals("jpg")) targetFormat = "jpeg";

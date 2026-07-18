@@ -44,9 +44,7 @@ public class ImageToPdfModule implements ToolModule {
 
     @Override
     public ToolResult process(ToolInput input) {
-        if (input.files().isEmpty()) {
-            throw new ToolProcessingException("PDF로 변환할 이미지 파일이 없습니다.");
-        }
+        requireFiles(input);
         ToolParams params = ToolParams.of(input);
         String paperSize = params.getString("paperSize", "원본");
         String orientation = params.getString("orientation", "portrait");

@@ -1,6 +1,7 @@
 package com.back.tool.security;
 
 import com.back.tool.model.ToolInput;
+import com.back.tool.model.ToolProcessingException;
 import com.back.tool.model.ToolResult;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class VulnScanModuleTest {
 
@@ -276,6 +278,14 @@ class VulnScanModuleTest {
 
         assertThat(result.isFile()).isFalse();
         assertThat(result.textResult()).contains("스캔 대상: 2개");
+    }
+
+    @Test
+    void 파일_0개면_ToolProcessingException을_던진다() {
+        VulnScanModule module = new VulnScanModule();
+        assertThatThrownBy(() -> module.process(new ToolInput(List.of(), Map.of())))
+                .isInstanceOf(ToolProcessingException.class)
+                .hasMessageContaining("처리할 파일이 없습니다");
     }
 
     @Test

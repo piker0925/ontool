@@ -150,6 +150,13 @@ class JsonSchemaToDtoModuleTest {
     }
 
     @Test
+    void 파일_0개면_ToolProcessingException을_던진다() {
+        assertThatThrownBy(() -> module.process(new ToolInput(List.of(), Map.of())))
+                .isInstanceOf(ToolProcessingException.class)
+                .hasMessageContaining("처리할 파일이 없습니다");
+    }
+
+    @Test
     void moduleMetadata() {
         assertThat(module.getId()).isEqualTo("json-schema-to-dto");
         assertThat(module.isHeavy()).isTrue();

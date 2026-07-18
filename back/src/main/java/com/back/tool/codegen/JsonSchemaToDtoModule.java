@@ -61,6 +61,7 @@ public class JsonSchemaToDtoModule implements ToolModule {
 
     @Override
     public ToolResult process(ToolInput input) {
+        requireFiles(input);
         ToolParams params = ToolParams.of(input);
         InputType inputType = params.getEnum("inputType", InputType.class, InputType.SCHEMA);
         DtoStyle dtoStyle = params.getEnum("dtoStyle", DtoStyle.class, DtoStyle.JACKSON);

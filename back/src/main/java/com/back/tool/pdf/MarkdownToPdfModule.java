@@ -5,7 +5,6 @@ import com.back.tool.model.ToolModule;
 import com.back.tool.model.ToolParams;
 import com.back.tool.model.ToolProcessingException;
 import com.back.tool.model.ToolResult;
-import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension;
 import com.vladsch.flexmark.ext.gfm.strikethrough.StrikethroughExtension;
 import com.vladsch.flexmark.ext.tables.TablesExtension;
@@ -13,28 +12,22 @@ import com.vladsch.flexmark.html.HtmlRenderer;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Node;
 import com.vladsch.flexmark.util.data.MutableDataSet;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Component
 public class MarkdownToPdfModule implements ToolModule {
 
-    private static final Parser PARSER;
-    private static final HtmlRenderer RENDERER;
-    private static final Set<String> PAPER_SIZES = Set.of("A4", "LETTER", "A5");
+    // package-private: ResumePdfModule도 같은 flexmark 파싱 설정을 재사용한다.
+    static final Parser PARSER;
+    static final HtmlRenderer RENDERER;
     private static final Pattern HEADING = Pattern.compile("<h([1-6])>(.*?)</h\\1>", Pattern.DOTALL);
     private static final Pattern TAG = Pattern.compile("<[^>]+>");
-    private static final String FONT_FAMILY = "Pretendard";
 
     static {
         MutableDataSet options = new MutableDataSet();
@@ -59,7 +52,7 @@ public class MarkdownToPdfModule implements ToolModule {
     @Override
     public ToolResult process(ToolInput input) {
         ToolParams params = ToolParams.of(input);
-        String paperSize = resolvePaperSize(params.getString("paperSize", "A4"));
+        String paperSize = HtmlToPdfRenderer.resolvePaperSize(params.getString("paperSize", "A4"));
         int marginMm = params.getInt("margin", 20, 0, 50);
         boolean toc = params.getBool("toc", false);
 
@@ -68,15 +61,15 @@ public class MarkdownToPdfModule implements ToolModule {
             Node document = PARSER.parse(markdown);
             // 사용자가 붙여넣은 raw HTML에 &nbsp; 같은 미선언 엔티티가 섞여 있으면 openhtmltopdf의
             // 엄격한 XML 파서가 변환 자체를 실패시키므로 실제 공백 문자로 미리 치환해 둔다.
-            String body = RENDERER.render(document).replace("&nbsp;", " ");
+            String body = RENDERER.render(document).replace("&nbsp;", " ");
             if (toc) {
                 body = injectToc(body);
             }
             String html = "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"/>"
-                    + "<style>@page{size:" + paperSize + ";margin:" + marginMm + "mm}"
-                    + "body{font-family:'" + FONT_FAMILY + "',sans-serif;margin:0;line-height:1.6}"
+                    + "<style>" + HtmlToPdfRenderer.pageRule(paperSize, marginMm)
+                    + "body{font-family:'" + HtmlToPdfRenderer.FONT_FAMILY + "',sans-serif;margin:0;line-height:1.6}"
                     + "pre{background:#f4f4f4;padding:12px;border-radius:4px;white-space:pre-wrap;word-break:break-all}"
-                    + "code{font-family:'" + FONT_FAMILY + "',monospace}"
+                    + "code{font-family:'" + HtmlToPdfRenderer.FONT_FAMILY + "',monospace}"
                     + "table{border-collapse:collapse;width:100%}"
                     + "th,td{border:1px solid #d0d0d0;padding:6px 10px;text-align:left}"
                     + "th{background:#f4f4f4}"
@@ -86,14 +79,7 @@ public class MarkdownToPdfModule implements ToolModule {
                     + "ul.toc a{color:#1a56db;text-decoration:none}</style></head><body>"
                     + body + "</body></html>";
 
-            Path output = Files.createTempFile("md2pdf-", ".pdf");
-            try (OutputStream os = Files.newOutputStream(output)) {
-                PdfRendererBuilder builder = new PdfRendererBuilder();
-                builder.useFont(MarkdownToPdfModule::fontStream, FONT_FAMILY);
-                builder.withHtmlContent(html, null);
-                builder.toStream(os);
-                builder.run();
-            }
+            Path output = HtmlToPdfRenderer.renderToTempFile(html, "md2pdf-");
             return ToolResult.ofFile(output);
         } catch (Exception e) {
             throw new ToolProcessingException("마크다운 → PDF 변환 실패: " + e.getMessage(), e);
@@ -125,22 +111,5 @@ public class MarkdownToPdfModule implements ToolModule {
         }
         m.appendTail(rewritten);
         return "<ul class=\"toc\">" + tocItems + "</ul>" + rewritten;
-    }
-
-    private static InputStream fontStream() {
-        try {
-            return new ClassPathResource("fonts/Pretendard-Regular.ttf").getInputStream();
-        } catch (IOException e) {
-            throw new ToolProcessingException("한글 폰트 로드 실패: " + e.getMessage(), e);
-        }
-    }
-
-    private String resolvePaperSize(String paperSize) {
-        String normalized = paperSize.trim().toUpperCase();
-        if (!PAPER_SIZES.contains(normalized)) {
-            throw new ToolProcessingException(
-                    "용지 크기는 A4, Letter, A5 중 하나여야 합니다. (입력값: " + paperSize + ")");
-        }
-        return normalized;
     }
 }

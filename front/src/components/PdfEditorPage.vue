@@ -52,12 +52,23 @@
             <option value="REMOVE">비밀번호 제거</option>
           </select>
           <label class="mt-2 text-[11px] text-muted-foreground">비밀번호</label>
-          <input
-              v-model="password"
-              class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-ring focus:ring-2 focus:ring-ring/20"
-              placeholder="비밀번호 입력"
-              type="text"
-          />
+          <div class="relative">
+            <input
+                v-model="password"
+                :type="showPassword ? 'text' : 'password'"
+                class="w-full rounded-md border border-input bg-background px-3 py-1.5 pr-9 text-[13px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-ring focus:ring-2 focus:ring-ring/20"
+                placeholder="비밀번호 입력"
+            />
+            <button
+                :aria-label="showPassword ? '비밀번호 숨기기' : '비밀번호 표시'"
+                class="absolute right-0 top-0 flex h-full w-9 items-center justify-center text-muted-foreground/70 hover:text-foreground"
+                type="button"
+                @click="showPassword = !showPassword"
+            >
+              <EyeOff v-if="showPassword" class="size-4"/>
+              <Eye v-else class="size-4"/>
+            </button>
+          </div>
         </div>
 
         <div v-else class="flex flex-col gap-1.5">
@@ -116,6 +127,7 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
+import {Eye, EyeOff} from 'lucide-vue-next'
 import FileUploader from './FileUploader.vue'
 import HeavyJobStatusPanel from './HeavyJobStatusPanel.vue'
 import WatermarkEditorCanvas, {type WatermarkTextElement} from './WatermarkEditorCanvas.vue'
@@ -165,6 +177,7 @@ const watermarkOpacity = ref('30')
 
 const passwordMode = ref<'SET' | 'REMOVE'>('SET')
 const password = ref('')
+const showPassword = ref(false)
 
 const headerText = ref('')
 const footerText = ref('')

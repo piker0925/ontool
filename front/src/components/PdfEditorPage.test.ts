@@ -75,6 +75,18 @@ describe('PdfEditorPage', () => {
         expect(uploaderProps(wrapper).moduleId).toBe('pdf-watermark')
     })
 
+    it('비밀번호 입력란은 기본적으로 마스킹되고, 표시 버튼을 누르면 평문으로 전환된다', async () => {
+        const wrapper = await mountWithQuery('?mode=password')
+        const passwordInput = wrapper.find('input[placeholder="비밀번호 입력"]')
+        expect(passwordInput.attributes('type')).toBe('password')
+
+        await wrapper.find('button[aria-label="비밀번호 표시"]').trigger('click')
+        expect(passwordInput.attributes('type')).toBe('text')
+
+        await wrapper.find('button[aria-label="비밀번호 숨기기"]').trigger('click')
+        expect(passwordInput.attributes('type')).toBe('password')
+    })
+
     it('워터마크 편집기가 요소를 갱신하면 FileUploader에 textElements JSON으로 전달된다', async () => {
         const wrapper = await mountWithQuery('')
         const elements = [

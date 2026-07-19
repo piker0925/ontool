@@ -1,5 +1,5 @@
 import type {Component} from 'vue'
-import {AlignLeft, Calculator, FileText, Globe, Image, ShieldCheck, Terminal, Type, Wrench, Zap,} from 'lucide-vue-next'
+import {AlignLeft, Calculator, FileText, Globe, Image, PartyPopper, ShieldCheck, Terminal, Type, Wrench, Zap,} from 'lucide-vue-next'
 
 export interface CategoryConfig {
     icon: Component
@@ -18,10 +18,11 @@ export const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
     '네트워크': {icon: Globe as Component, bg: 'bg-sky-50', color: 'text-sky-600', thumbBg: 'bg-sky-600'},
     'DevOps': {icon: Terminal as Component, bg: 'bg-orange-50', color: 'text-orange-600', thumbBg: 'bg-orange-600'},
     '생활': {icon: Calculator as Component, bg: 'bg-teal-50', color: 'text-teal-600', thumbBg: 'bg-teal-600'},
+    '재미': {icon: PartyPopper as Component, bg: 'bg-fuchsia-50', color: 'text-fuchsia-600', thumbBg: 'bg-fuchsia-600'},
 }
 
 export const CATEGORY_ORDER = [
-    'PDF', '이미지', '생성기', '보안·암호화', '포맷터', '텍스트', '네트워크', 'DevOps', '생활',
+    'PDF', '이미지', '생성기', '보안·암호화', '포맷터', '텍스트', '네트워크', 'DevOps', '생활', '재미',
 ]
 
 // 매핑되지 않은 카테고리용 기본 설정

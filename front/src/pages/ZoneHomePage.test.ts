@@ -4,6 +4,7 @@ import {createMemoryHistory, createRouter} from 'vue-router'
 import {ref} from 'vue'
 import ZoneHomePage from './ZoneHomePage.vue'
 import {apiClient} from '../api/client'
+import type {Module} from '../types'
 
 vi.mock('../api/client', () => ({
     apiClient: {get: vi.fn()},
@@ -12,6 +13,16 @@ vi.mock('../api/client', () => ({
 const favoriteIds = ref<string[]>([])
 vi.mock('../composables/useFavorites', () => ({
     useFavorites: () => ({favoriteIds, isFavorite: (id: string) => favoriteIds.value.includes(id), toggle: vi.fn()}),
+}))
+
+// 실제 카탈로그(MOCK_MODULES)는 구역이 계속 채워지므로 여기 의존하면 새 도구가 추가될 때마다 깨진다 —
+// 테스트별로 필요한 프론트 전용 모듈만 명시적으로 고정한다.
+// vi.mock은 import보다 먼저 호이스팅되므로, 팩토리가 참조하는 상태는 vi.hoisted로 만들어야 TDZ 에러가 안 난다.
+const {mockFrontendModules} = vi.hoisted(() => ({mockFrontendModules: {value: [] as Module[]}}))
+vi.mock('../api/mock', () => ({
+    get MOCK_MODULES() {
+        return mockFrontendModules.value
+    },
 }))
 
 const mockGet = apiClient.get as ReturnType<typeof vi.fn>
@@ -24,6 +35,7 @@ const router = createRouter({
 beforeEach(() => {
     vi.clearAllMocks()
     favoriteIds.value = []
+    mockFrontendModules.value = []
 })
 
 describe('ZoneHomePage', () => {
@@ -44,6 +56,12 @@ describe('ZoneHomePage', () => {
 
     it('프론트 전용 모듈은 카테고리가 CATEGORY_ORDER에 없어도(예: 생활) 구역 홈 그리드에 실제로 렌더링된다', async () => {
         mockGet.mockResolvedValueOnce({data: []})
+        mockFrontendModules.value = [
+            {
+                id: 'salary-calculator', name: '급여 계산기', category: '생활', isHeavy: false,
+                isFrontendOnly: true, zones: ['life'],
+            },
+        ]
 
         const wrapper = mount(ZoneHomePage, {props: {zoneId: 'life'}, global: {plugins: [router]}})
         await flushPromises()
@@ -65,7 +83,6 @@ describe('ZoneHomePage', () => {
     })
 
     it('해당 구역에 도구가 없으면 준비 중 안내 문구를 보여준다', async () => {
-        // fun 구역은 3차(§10-7) 착수 전까지 프론트 전용 도구가 없음 — life는 061(급여 계산기)부터 채워지므로 더 이상 빈 구역 예시로 못 씀
         mockGet.mockResolvedValueOnce({
             data: [
                 {id: 'pdf-merge', name: 'PDF 병합', category: 'PDF', isHeavy: true, zones: ['files']},

@@ -181,4 +181,30 @@ export const MOCK_MODULES: Module[] = [
         keywords: ['인보이스', 'invoice', '청구서'],
         zones: ['files'],
     },
+
+    // 재미
+    {
+        id: 'lotto-number', name: '로또 번호 생성기', category: '재미', isHeavy: false, isFrontendOnly: true,
+        description: '1~45 중 중복 없는 로또 번호 6개 무작위 생성',
+        keywords: ['로또', 'lotto'],
+        zones: ['fun'],
+    },
+    {
+        id: 'random-team-ladder', name: '랜덤 팀 나누기·사다리타기', category: '재미', isHeavy: false, isFrontendOnly: true,
+        description: '참가자 무작위 팀 분배 또는 사다리타기 경로 배정',
+        keywords: ['팀 나누기', '사다리타기', '사다리', 'ladder'],
+        zones: ['fun'],
+    },
+    {
+        id: 'random-nickname', name: '랜덤 닉네임 생성기', category: '재미', isHeavy: false, isFrontendOnly: true,
+        description: '형용사+명사 조합 무작위 한국어 닉네임 생성',
+        keywords: ['닉네임', 'nickname'],
+        zones: ['fun'],
+    },
+    {
+        id: 'random-palette', name: '색상 팔레트 생성기', category: '재미', isHeavy: false, isFrontendOnly: true,
+        description: '보색·유사색 등 규칙 기반 무작위 색상 팔레트 생성',
+        keywords: ['팔레트', 'palette', '색상 조합'],
+        zones: ['dev', 'fun'],
+    },
 ]

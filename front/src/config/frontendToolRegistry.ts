@@ -27,6 +27,10 @@ export const FRONTEND_TOOL_COMPONENTS: Record<string, FrontendToolEntry> = {
     'aes': {load: () => import('../components/tools/AesTool.vue'), layout: 'narrow'},
     'salary-calculator': {load: () => import('../components/SalaryCalculatorPage.vue'), layout: 'narrow'},
     'finance-calculator': {load: () => import('../components/FinanceCalculatorPage.vue'), layout: 'narrow'},
+    'lotto-number': {load: () => import('../components/tools/LottoNumberTool.vue'), layout: 'narrow'},
+    'random-team-ladder': {load: () => import('../components/tools/RandomTeamLadderTool.vue'), layout: 'narrow'},
+    'random-nickname': {load: () => import('../components/tools/RandomNicknameTool.vue'), layout: 'narrow'},
+    'random-palette': {load: () => import('../components/tools/RandomPaletteTool.vue'), layout: 'narrow'},
 
     'data-convert': {load: () => import('../components/UnifiedConvertPage.vue'), layout: 'wide'},
     'encoder': {load: () => import('../components/UnifiedEncoderPage.vue'), layout: 'wide'},

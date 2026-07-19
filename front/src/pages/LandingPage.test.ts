@@ -59,13 +59,14 @@ describe('LandingPage', () => {
 
     it('구역 카드에 해당 구역의 도구 수를 표시한다', async () => {
         // normalizeApiModules는 백엔드 응답과 무관하게 MOCK_MODULES의 isFrontendOnly 항목을 항상
-        // 덧붙인다. files 구역에는 pdf-editor·document-generator(081/082, 합성 프론트 전용 모듈)가
-        // 있으므로, 목(mock) 백엔드 응답의 pdf-merge 1개 + 이 2개 = 3개가 기대값이다.
+        // 덧붙인다. files 구역에는 pdf-watermark·pdf-password·pdf-header-footer(PDF 편집기가 개별
+        // 페이지 3개로 분리됨)·document-generator가 있으므로, 목(mock) 백엔드 응답의 pdf-merge 1개
+        // + 이 4개 = 5개가 기대값이다.
         const wrapper = mount(LandingPage, {global: {plugins: [router]}})
         await flushPromises()
 
         const filesCard = wrapper.findAll('a').find(a => a.attributes('href') === '/files')
-        expect(filesCard?.text()).toContain('3 Tools')
+        expect(filesCard?.text()).toContain('5 Tools')
     })
 
     it('검색 트리거를 클릭하면 CommandPalette가 열린다', async () => {

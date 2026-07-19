@@ -162,17 +162,21 @@ export const MOCK_MODULES: Module[] = [
         zones: ['dev'],
     },
     {
-        id: 'pdf-editor', name: 'PDF 편집기', category: 'PDF', isHeavy: false, isFrontendOnly: true,
-        description: '워터마크 삽입 · 비밀번호 설정/해제 · 헤더/푸터/페이지번호',
-        keywords: [
-            {keyword: '워터마크', query: 'mode=watermark'},
-            {keyword: 'watermark', query: 'mode=watermark'},
-            {keyword: '비밀번호', query: 'mode=password'},
-            {keyword: 'password', query: 'mode=password'},
-            {keyword: '헤더', query: 'mode=header-footer'},
-            {keyword: '푸터', query: 'mode=header-footer'},
-            {keyword: '페이지번호', query: 'mode=header-footer'},
-        ],
+        id: 'pdf-watermark', name: '워터마크 삽입', category: 'PDF', isHeavy: false, isFrontendOnly: true,
+        description: 'PDF·이미지에 텍스트/이미지 워터마크 삽입 — 드래그 배치, 배경 전체 채우기 지원',
+        keywords: ['워터마크', 'watermark'],
+        zones: ['files'],
+    },
+    {
+        id: 'pdf-password', name: 'PDF 비밀번호 설정/해제', category: 'PDF', isHeavy: false, isFrontendOnly: true,
+        description: 'PDF 열람 비밀번호를 설정하거나 제거',
+        keywords: ['비밀번호', 'password', 'PDF 암호'],
+        zones: ['files'],
+    },
+    {
+        id: 'pdf-header-footer', name: '헤더/푸터/페이지번호', category: 'PDF', isHeavy: false, isFrontendOnly: true,
+        description: 'PDF 각 페이지에 헤더·푸터·페이지 번호 삽입',
+        keywords: ['헤더', '푸터', '페이지번호'],
         zones: ['files'],
     },
     {

@@ -55,6 +55,10 @@
             ><X class="size-3.5"/>
             </button>
           </div>
+          <div class="flex items-center justify-between border-t border-border pt-2 text-[12px] text-muted-foreground">
+            <span>합계</span>
+            <span class="font-medium text-foreground" data-testid="invoice-total">{{ invoiceTotal.toLocaleString() }}</span>
+          </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
@@ -103,7 +107,7 @@ const issuerAddress = ref('')
 const recipient = ref('')
 const recipientAddress = ref('')
 const invoiceNumber = ref('')
-const issueDate = ref('')
+const issueDate = ref(new Date().toISOString().slice(0, 10))
 const items = ref([{description: '', quantity: '', unitPrice: ''}])
 const paperSize = ref<typeof PAPER_SIZES[number]>('A4')
 const margin = ref('20')
@@ -114,6 +118,16 @@ function isCompleteItem(i: {description: string, quantity: string, unitPrice: st
 
 const invoiceValid = computed(() =>
     issuer.value.trim() !== '' && recipient.value.trim() !== '' && items.value.some(isCompleteItem))
+
+// 실제 제출 시 필터링되는 완전한 품목만 합산한다 — 그래야 여기 보이는 합계가 실제 생성될
+// PDF의 합계와 항상 일치한다. 수량·단가가 숫자가 아니면(백엔드가 결국 막을 값) 그 행은 0으로
+// 취급해 합계 전체가 NaN으로 오염되지 않게 한다.
+const invoiceTotal = computed(() =>
+    items.value.filter(isCompleteItem).reduce((sum, i) => {
+      const qty = parseFloat(i.quantity)
+      const unitPrice = parseFloat(i.unitPrice)
+      return isNaN(qty) || isNaN(unitPrice) ? sum : sum + qty * unitPrice
+    }, 0))
 
 function addItem() {
   items.value.push({description: '', quantity: '', unitPrice: ''})

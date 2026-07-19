@@ -138,4 +138,29 @@ describe('DocumentGeneratorPage', () => {
 
         expect(wrapper.findComponent(HeavyJobStatusPanel).props('uploadError')).toBeTruthy()
     })
+
+    it('발행일은 오늘 날짜(YYYY-MM-DD)로 기본 채워진다', () => {
+        const wrapper = mountPage()
+        const today = new Date().toISOString().slice(0, 10)
+        expect(inputByPlaceholder(wrapper, '2026-07-18').element.value).toBe(today)
+    })
+
+    it('완전한 품목의 수량×단가 합계를 실시간으로 보여주고, 불완전한 품목은 합계에서 제외한다', async () => {
+        const wrapper = mountPage()
+        await fillMinimumValidInvoice(wrapper) // 1 × 100000
+        expect(wrapper.find('[data-testid="invoice-total"]').text()).toBe((100000).toLocaleString())
+
+        const addButton = wrapper.findAll('button').find(b => b.text().includes('품목 추가'))!
+        await addButton.trigger('click')
+        const rows = wrapper.findAll('input').filter(i => i.attributes('placeholder') === '품목명')
+        expect(rows).toHaveLength(2)
+        await wrapper.findAll('input').filter(i => i.attributes('placeholder') === '수량')[1].setValue('3')
+        await wrapper.findAll('input').filter(i => i.attributes('placeholder') === '단가')[1].setValue('2000')
+        // 두 번째 행은 품목명이 비어 있어(불완전) 3×2000은 합계에 안 잡혀야 한다.
+        expect(wrapper.find('[data-testid="invoice-total"]').text()).toBe((100000).toLocaleString())
+
+        await rows[1].setValue('배송비')
+        // 이제 완전해졌으니 100000 + 3×2000 = 106000
+        expect(wrapper.find('[data-testid="invoice-total"]').text()).toBe((106000).toLocaleString())
+    })
 })

@@ -1,8 +1,16 @@
 import {describe, expect, it} from 'vitest'
 import {mount} from '@vue/test-utils'
 import HeavyJobStatusPanel from './HeavyJobStatusPanel.vue'
+import type {HeavyJobProgress, HeavyJobResult} from '../composables/useHeavyJob'
 
-const BASE_PROPS = {
+const BASE_PROPS: {
+    jobId: string | null
+    progress: HeavyJobProgress | null
+    reconnecting: boolean
+    sseFailed: boolean
+    result: HeavyJobResult | null
+    uploadError: string | null
+} = {
     jobId: null,
     progress: null,
     reconnecting: false,

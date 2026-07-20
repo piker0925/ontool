@@ -84,3 +84,13 @@ export function traceLadderPaths(participantCount: number, rungs: LadderRung[], 
     const rungsByRow = groupRungsByRow(rungs)
     return Array.from({length: participantCount}, (_, start) => traceLadderPath(start, rungsByRow, rows).end)
 }
+
+/**
+ * 사용자가 입력한 당첨 항목을 도착 슬롯 라벨로 확정한다.
+ * 빈 줄을 제거한 개수가 count와 정확히 일치해야 채택하고, 아니면 번호("1번".."N번")로 대체한다.
+ */
+export function resolveOutcomeLabels(outcomes: string[], count: number): string[] {
+    const trimmed = outcomes.map(s => s.trim()).filter(Boolean)
+    if (trimmed.length === count) return trimmed
+    return Array.from({length: count}, (_, i) => `${i + 1}번`)
+}

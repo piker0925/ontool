@@ -42,6 +42,15 @@
     </template>
 
     <template v-else>
+      <div class="flex flex-col gap-1.5">
+        <label class="text-[11px] font-medium text-muted-foreground">당첨 항목 (선택 — 참가자 수만큼 입력하면 번호 대신 항목명이 표시됩니다)</label>
+        <textarea v-model="outcomesInput"
+                  class="min-h-16 rounded-xl border border-border bg-card p-3 text-[13px] text-foreground outline-none focus:border-ring resize-y"
+                  placeholder="커피 쏘기, 청소당번, 지각비 면제..."/>
+        <p v-if="outcomesMismatch" class="text-[11px] text-amber-500">
+          입력한 항목 수({{ outcomesCount }}개)가 참가자 수({{ participants.length }}명)와 달라 번호로 표시됩니다.
+        </p>
+      </div>
       <button
           :disabled="participants.length < 2"
           class="rounded-xl bg-primary py-2.5 text-[14px] font-semibold text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-40"
@@ -78,7 +87,7 @@
 
         <div class="flex flex-col gap-1">
           <p v-for="(end, start) in ladderResult" :key="start" class="text-[13px] text-foreground/80">
-            {{ participants[start] }} → {{ end + 1 }}번
+            {{ participants[start] }} → {{ outcomeLabels[end] }}
           </p>
         </div>
       </div>
@@ -91,6 +100,7 @@ import {computed, ref} from 'vue'
 import {
   generateLadderRungs,
   groupRungsByRow,
+  resolveOutcomeLabels,
   splitIntoTeams,
   traceLadderPath,
   traceLadderPaths,
@@ -118,6 +128,14 @@ const rungs = ref<LadderRung[]>([])
 const ladderResult = ref<number[]>([])
 const selectedStart = ref<number | null>(null)
 const animationKey = ref(0)
+const outcomesInput = ref('')
+
+const parsedOutcomes = computed(() =>
+    outcomesInput.value.split(/[\n,]/).map(s => s.trim()).filter(Boolean),
+)
+const outcomesCount = computed(() => parsedOutcomes.value.length)
+const outcomesMismatch = computed(() => outcomesCount.value > 0 && outcomesCount.value !== participants.value.length)
+const outcomeLabels = computed(() => resolveOutcomeLabels(parsedOutcomes.value, participants.value.length))
 
 const svgWidth = computed(() => Math.max(colGap, participants.value.length * colGap))
 

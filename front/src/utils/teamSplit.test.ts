@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest'
-import {generateLadderRungs, splitIntoTeams, traceLadderPaths} from './teamSplit'
+import {generateLadderRungs, resolveOutcomeLabels, splitIntoTeams, traceLadderPaths} from './teamSplit'
 
 describe('splitIntoTeams', () => {
     it('참가자 10명을 3팀으로 나누면 팀 인원 차이가 최대 1명 이내다', () => {
@@ -45,5 +45,27 @@ describe('사다리타기 (generateLadderRungs + traceLadderPaths)', () => {
                 expect(sorted[i] - sorted[i - 1]).toBeGreaterThanOrEqual(2)
             }
         }
+    })
+})
+
+describe('resolveOutcomeLabels', () => {
+    it('당첨 항목 개수가 참가자 수와 정확히 일치하면 그대로(trim해서) 사용한다', () => {
+        const labels = resolveOutcomeLabels(['커피 쏘기', '청소당번', '지각비 면제'], 3)
+        expect(labels).toEqual(['커피 쏘기', '청소당번', '지각비 면제'])
+    })
+
+    it('빈 줄은 걸러내고 trim한다', () => {
+        const labels = resolveOutcomeLabels(['  커피 쏘기  ', '', '청소당번'], 2)
+        expect(labels).toEqual(['커피 쏘기', '청소당번'])
+    })
+
+    it('개수가 참가자 수와 다르면 번호(1번~N번)로 대체한다', () => {
+        const labels = resolveOutcomeLabels(['커피 쏘기'], 3)
+        expect(labels).toEqual(['1번', '2번', '3번'])
+    })
+
+    it('당첨 항목을 아예 입력하지 않으면 번호로 대체한다', () => {
+        const labels = resolveOutcomeLabels([], 4)
+        expect(labels).toEqual(['1번', '2번', '3번', '4번'])
     })
 })

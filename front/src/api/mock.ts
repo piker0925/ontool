@@ -380,7 +380,7 @@ export const MOCK_MODULES: Module[] = [
     },
 
     // 미니게임 (프론트 전용, 상태는 컴포넌트 내부 — 서버 저장 없음, v3 이전 범위. ADR-0026)
-    // component 로더는 여기 두지 않는다 — config/gameRegistry.ts와 그 주석 참고.
+    // component 로더는 여기 두지 않는다 — config/shellComponents.ts와 그 주석 참고.
     {
         id: 'game-reaction-time', name: '반응속도 테스트', category: '게임', isHeavy: false, isFrontendOnly: true,
         description: '신호가 뜨면 최대한 빨리 클릭해 반응 속도를 측정',
@@ -423,7 +423,7 @@ export const MOCK_MODULES: Module[] = [
     },
     // 게임은 아니지만 078의 상주형 게임 페이지 모델(GamePage)을 그대로 재사용한다 — kind는 'tool'(생략)로
     // 두어 게임 카테고리에 섞이지 않게 하고, 생산성 도구로 분류한다(component 로더는 여전히
-    // gameRegistry.ts를 거친다 — 렌더은 kind가 아니라 component로 결정되므로 무관, ADR-0026).
+    // shellComponents.ts를 거친다 — 렌더은 kind가 아니라 component로 결정되므로 무관, ADR-0026).
     // '생활' 카테고리는 main 병합 시점(ADR-0028)에 급여·근로/금융/날짜·나이/건강/단위·변환으로
     // 이미 세분화되어 있었고 뽀모도로에 맞는 게 없어 '생산성' 카테고리를 새로 만들었다.
     {

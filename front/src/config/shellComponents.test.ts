@@ -1,11 +1,11 @@
 import {describe, expect, it} from 'vitest'
 import {MOCK_MODULES} from '../api/mock'
-import {GAME_COMPONENTS} from './gameRegistry'
+import {FULL_SHELL_COMPONENTS} from './shellComponents'
 import {FRONTEND_TOOL_COMPONENTS} from './frontendToolRegistry'
 
-describe('GAME_COMPONENTS — 등록 일관성', () => {
+describe('FULL_SHELL_COMPONENTS — 등록 일관성', () => {
     const moduleIds = new Set(MOCK_MODULES.map(m => m.id))
-    const registryIds = Object.keys(GAME_COMPONENTS)
+    const registryIds = Object.keys(FULL_SHELL_COMPONENTS)
 
     it('모든 등록 id가 실제 MOCK_MODULES 항목과 대응한다 (오타 방지)', () => {
         const orphans = registryIds.filter(id => !moduleIds.has(id))
@@ -17,7 +17,7 @@ describe('GAME_COMPONENTS — 등록 일관성', () => {
         expect(duplicated).toEqual([])
     })
 
-    it.each(Object.entries(GAME_COMPONENTS))(
+    it.each(Object.entries(FULL_SHELL_COMPONENTS))(
         '%s 의 loader가 실제 컴포넌트로 resolve된다',
         async (_id, load) => {
             const component = await load()

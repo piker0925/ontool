@@ -5,6 +5,6 @@
 </template>
 
 <script lang="ts" setup>
-import GamePage from '../GamePage.vue'
+import GamePage from './GamePage.vue'
 import PomodoroBoard from './PomodoroBoard.vue'
 </script>

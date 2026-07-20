@@ -47,7 +47,7 @@
 
 <script lang="ts" setup>
 import {computed, onUnmounted, ref} from 'vue'
-import {createPomodoroState, pause, type PomodoroState, start, tick} from '../../utils/pomodoroTimer'
+import {createPomodoroState, pause, type PomodoroState, start, tick} from '../utils/pomodoroTimer'
 
 const DEFAULT_WORK_MIN = 25
 const DEFAULT_BREAK_MIN = 5

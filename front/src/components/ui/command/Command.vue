@@ -1,10 +1,11 @@
 <script lang="ts" setup>
 import type {ListboxRootEmits, ListboxRootProps} from "reka-ui"
-import {ListboxRoot, useFilter, useForwardPropsEmits} from "reka-ui"
+import {ListboxRoot, useForwardPropsEmits} from "reka-ui"
 import type {HTMLAttributes} from "vue"
 import {reactive, ref, watch} from "vue"
 import {reactiveOmit} from "@vueuse/core"
 import {cn} from "@/lib/utils"
+import {fuzzyScore} from "@/utils/fuzzyMatch"
 import {provideCommandContext} from "."
 
 const props = withDefaults(defineProps<ListboxRootProps & { class?: HTMLAttributes["class"] }>(), {
@@ -21,7 +22,6 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
 const allItems = ref<Map<string, string>>(new Map())
 const allGroups = ref<Map<string, Set<string>>>(new Map())
 
-const {contains} = useFilter({sensitivity: "base"})
 const filterState = reactive({
   search: "",
   filtered: {
@@ -47,9 +47,9 @@ function filterItems() {
 
   // Check which items should be included
   for (const [id, value] of allItems.value) {
-    const score = contains(value, filterState.search)
-    filterState.filtered.items.set(id, score ? 1 : 0)
-    if (score)
+    const score = fuzzyScore(value, filterState.search)
+    filterState.filtered.items.set(id, score)
+    if (score > 0)
       itemCount++
   }
 

@@ -11,7 +11,7 @@
         <CommandItem
             v-for="mod in group"
             :key="mod.id"
-            :value="`${mod.name} ${mod.category} ${mod.description ?? ''} ${keywordStrings(mod.keywords).join(' ')}`"
+            :value="moduleSearchText(mod)"
             class="flex items-center gap-3 py-2.5 cursor-pointer"
             @select="navigate(mod)"
         >
@@ -54,6 +54,7 @@ import type {Module} from '../types'
 import {getCategoryConfig} from '../utils/categoryConfig'
 import {zoneOf} from '../config/zones'
 import {keywordStrings, resolveAliasQuery} from '../utils/keywordAlias'
+import {fuzzyScore} from '../utils/fuzzyMatch'
 import {Lock} from 'lucide-vue-next'
 import {
   CommandDialog,
@@ -80,14 +81,30 @@ function onSearchInput(e: Event) {
   search.value = (e.target as HTMLInputElement).value ?? ''
 }
 
-const grouped = computed(() =>
-    props.modules.reduce<Record<string, Module[]>>((acc, mod) => {
-      // zones[0]이 기본 구역 (ADR-0023) — 카테고리까지 묶지 않고 큼직한 구역으로만 그룹핑하여 스캐닝 극대화
-      const groupLabel = zoneOf(mod.zones[0]).name
-      ;(acc[groupLabel] ??= []).push(mod)
-      return acc
-    }, {}),
-)
+/** CommandItem의 :value 바인딩과 정렬용 점수 계산이 동일한 텍스트를 봐야 하므로 하나로 공유한다. */
+function moduleSearchText(mod: Module): string {
+  return `${mod.name} ${mod.category} ${mod.description ?? ''} ${keywordStrings(mod.keywords).join(' ')}`
+}
+
+const grouped = computed(() => {
+  const query = search.value.trim()
+  // 검색어가 있으면 퍼지 매칭 점수로 필터링·정렬한 뒤 그룹을 구성한다 — CommandItem/CommandGroup은
+  // v-if로 숨기기만 할 뿐 재배열은 하지 않으므로, 랭킹 순서는 여기서 배열 순서로 반영해야 한다.
+  const modules = query
+      ? props.modules
+          .map(mod => ({mod, score: fuzzyScore(moduleSearchText(mod), query)}))
+          .filter(({score}) => score > 0)
+          .sort((a, b) => b.score - a.score)
+          .map(({mod}) => mod)
+      : props.modules
+
+  return modules.reduce<Record<string, Module[]>>((acc, mod) => {
+    // zones[0]이 기본 구역 (ADR-0023) — 카테고리까지 묶지 않고 큼직한 구역으로만 그룹핑하여 스캐닝 극대화
+    const groupLabel = zoneOf(mod.zones[0]).name
+    ;(acc[groupLabel] ??= []).push(mod)
+    return acc
+  }, {})
+})
 
 const isAdminSearch = computed(() => {
   const s = search.value.toLowerCase().trim()

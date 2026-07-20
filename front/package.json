@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "vue-tsc -b"
   },
   "dependencies": {
@@ -44,6 +45,7 @@
     "@types/node": "^24.13.2",
     "@types/spark-md5": "^3.0.5",
     "@vitejs/plugin-vue": "^6.0.7",
+    "@vitest/coverage-v8": "4.1.9",
     "@vue/test-utils": "^2.4.11",
     "@vue/tsconfig": "^0.9.1",
     "jsdom": "^29.1.1",

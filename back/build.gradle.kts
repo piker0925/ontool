@@ -104,15 +104,33 @@ tasks.withType<Test> {
 	finalizedBy(tasks.jacocoTestReport)
 }
 
+// 커버리지 리포트에서 제외하는 클래스 — "테스트가 없다"가 아니라 "이 방식으로는 측정 자체가 안 된다"는
+// 뜻이라 여기 남긴다. 패키지 와일드카드가 아니라 클래스를 하나씩 나열한다 — tool/network 패키지에는
+// HtmlFetchModule처럼 실제로 미검증 분기가 있는 클래스도 있어서, 와일드카드를 쓰면 그런 진짜 공백까지
+// 같이 가려진다.
+val jacocoExcludes = listOf(
+	// main()은 모든 @SpringBootTest가 부트스트랩 과정에서 암묵적으로 검증한다 — 스프링 부트 관례상
+	// main() 자체를 직접 호출하는 테스트는 두지 않는다.
+	"com/back/BackApplication.class",
+	// DnsPinning*은 DnsPinningTest·DnsPinningResolverProviderTest로 실제 검증되고 통과한다. 하지만
+	// JEP 418 DNS 리졸버 SPI라 JVM 부트스트랩 단계에서 ServiceLoader가 로드하는데, 이 로딩 경로가
+	// JaCoCo 에이전트의 계측 타이밍을 벗어나 실행 카운터가 항상 0으로 잡힌다(도구의 구조적 한계).
+	"com/back/tool/network/DnsPinning.class",
+	"com/back/tool/network/DnsPinningResolverProvider.class",
+	"com/back/tool/network/DnsPinningResolverProvider\$1.class",
+)
+
 tasks.jacocoTestReport {
 	dependsOn(tasks.test)
 	reports {
 		html.required = true
 		xml.required = true
 	}
+	classDirectories.setFrom(classDirectories.files.map { fileTree(it) { exclude(jacocoExcludes) } })
 }
 
 tasks.jacocoTestCoverageVerification {
+	classDirectories.setFrom(classDirectories.files.map { fileTree(it) { exclude(jacocoExcludes) } })
 	violationRules {
 		rule {
 			limit {

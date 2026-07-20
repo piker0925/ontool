@@ -46,10 +46,6 @@ final class KoreanFontSupport {
         }
     }
 
-    static Font awtFont(float size) {
-        return awtFont(size, FontWeight.REGULAR);
-    }
-
     static Font awtFont(float size, FontWeight weight) {
         try (InputStream is = new ClassPathResource(weight.resource).getInputStream()) {
             return Font.createFont(Font.TRUETYPE_FONT, is).deriveFont(size);

@@ -90,7 +90,12 @@ async function onFileChange(e: Event) {
     }
 
     docType.value = 'docx'
-    await renderDocx(buffer)
+    try {
+      await renderDocx(buffer)
+    } catch (e) {
+      console.error('DOCX 렌더링 실패', e)
+      throw new Error('DOCX 파일을 읽을 수 없습니다 (손상되었거나 지원하지 않는 형식)')
+    }
   } catch (e) {
     docType.value = null
     error.value = e instanceof Error ? e.message : '파일을 읽는 중 오류가 발생했습니다'

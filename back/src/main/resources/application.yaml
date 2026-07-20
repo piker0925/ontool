@@ -60,6 +60,10 @@ ffmpeg:
   binary-path: ${FFMPEG_PATH:ffmpeg}
   ffprobe-path: ${FFPROBE_PATH:ffprobe}
 
+# 오피스 문서 변환기(094, ADR-0029) — LibreOffice 바이너리 경로. 기본값은 PATH에서 찾는다.
+libreoffice:
+  binary-path: ${LIBREOFFICE_PATH:soffice}
+
 # 소셜 로그인 JWT (ADR-0024). access 30분 — 값 자체는 고정이라 프로파일 분기 없이 여기 둔다.
 # secret은 prod에서 JWT_SECRET 환경변수로 반드시 교체할 것 — 아래 기본값은 로컬 전용.
 jwt:

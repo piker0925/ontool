@@ -21,7 +21,8 @@ const META_BY_ID = new Map(MOCK_MODULES.map(m => [m.id, m]))
 
 // 백엔드 목록에서 숨기는 모듈: 통합 도구(인코더/데이터 변환/텍스트 유틸/다중 해시/코드 생성기/PDF 편집기/문서 생성기)로
 // 흡수된 모듈. 백엔드에 남아 있으며 통합 페이지가 내부적으로 호출한다
-// (qr-code, barcode, pdf-watermark, pdf-password, pdf-header-footer, invoice-generator 포함).
+// (qr-code, barcode, pdf-watermark, pdf-password, pdf-header-footer, invoice-generator,
+// office-document-convert 포함 — 094, 커스텀 프론트 컴포넌트가 useHeavyJob으로 직접 배선).
 // 프론트 전용으로 이전한 모듈(subnet-calc·url-parser·cron·hmac·aes·text-diff·regex-tester·totp)과
 // 백엔드에서 완전히 제거된 모듈(resume-pdf — ADR 반영, markdown-to-pdf와 차별성 부족으로 폐기)은
 // 여기서 숨길 필요가 없다(API가 반환하지 않음).
@@ -29,6 +30,7 @@ const HIDDEN_MODULE_IDS = new Set([
     'sha256', 'json-yaml', 'json-toml', 'json-xml', 'csv-json',
     'qr-code', 'barcode',
     'pdf-watermark', 'pdf-password', 'pdf-header-footer', 'invoice-generator',
+    'office-document-convert',
 ])
 
 export function normalizeApiModules(data: Module[]): Module[] {

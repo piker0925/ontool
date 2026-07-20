@@ -18,6 +18,9 @@
     <!-- 하단 고정 액션 바: 미리보기 크기와 무관하게 항상 같은 위치. 초기화는 좌측 업로드 패널의 ✕. -->
     <div class="flex items-center gap-3 border-t border-border px-4 py-3">
       <span v-if="pages > 1" class="text-[12px] text-muted-foreground">총 {{ pages }}페이지</span>
+      <Button v-if="url && kind === 'pdf'" as-child variant="outline">
+        <a :href="url" rel="noopener noreferrer" target="_blank">↗ 새 탭에서 열기</a>
+      </Button>
       <Button v-if="url" as-child>
         <a :href="url" download>⬇ 다운로드</a>
       </Button>

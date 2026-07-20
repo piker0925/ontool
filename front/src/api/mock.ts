@@ -190,6 +190,12 @@ export const MOCK_MODULES: Module[] = [
         zones: ['fun'],
     },
     {
+        id: 'lotto-simulator', name: '로또 시뮬레이터', category: '재미', isHeavy: false, isFrontendOnly: true,
+        description: '목표 번호를 정해두고 무작위 구매를 반복해 당첨 확률을 체감하는 시뮬레이터',
+        keywords: ['로또 시뮬레이터', 'lotto simulator', '확률'],
+        zones: ['fun'],
+    },
+    {
         id: 'random-team-ladder', name: '랜덤 팀 나누기·사다리타기', category: '재미', isHeavy: false, isFrontendOnly: true,
         description: '참가자 무작위 팀 분배 또는 사다리타기 경로 배정',
         keywords: ['팀 나누기', '사다리타기', '사다리', 'ladder'],

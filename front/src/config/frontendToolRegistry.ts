@@ -15,7 +15,6 @@ export const FRONTEND_TOOL_COMPONENTS: Record<string, FrontendToolEntry> = {
     'uuid': {load: () => import('../components/tools/UuidTool.vue'), layout: 'narrow'},
     'timestamp': {load: () => import('../components/tools/TimestampTool.vue'), layout: 'narrow'},
     'color-code': {load: () => import('../components/tools/ColorCodeTool.vue'), layout: 'narrow'},
-    'json-formatter': {load: () => import('../components/tools/JsonFormatterTool.vue'), layout: 'narrow'},
     'jwt-decoder': {load: () => import('../components/tools/JwtDecoderTool.vue'), layout: 'narrow'},
     'text-diff': {load: () => import('../components/tools/TextDiffTool.vue'), layout: 'narrow'},
     'regex-tester': {load: () => import('../components/tools/RegexTesterTool.vue'), layout: 'narrow'},
@@ -54,6 +53,7 @@ export const FRONTEND_TOOL_COMPONENTS: Record<string, FrontendToolEntry> = {
     'faker-ko': {load: () => import('../components/tools/FakerKoTool.vue'), layout: 'narrow'},
     'svg-optimizer': {load: () => import('../components/tools/SvgOptimizerTool.vue'), layout: 'narrow'},
 
+    'json-formatter': {load: () => import('../components/UnifiedJsonPage.vue'), layout: 'wide'},
     'data-convert': {load: () => import('../components/UnifiedConvertPage.vue'), layout: 'wide'},
     'encoder': {load: () => import('../components/UnifiedEncoderPage.vue'), layout: 'wide'},
     'text-utils': {load: () => import('../components/UnifiedTextUtilsPage.vue'), layout: 'wide'},
@@ -61,6 +61,8 @@ export const FRONTEND_TOOL_COMPONENTS: Record<string, FrontendToolEntry> = {
     'pdf-watermark': {load: () => import('../components/PdfWatermarkPage.vue'), layout: 'wide'},
     'pdf-password': {load: () => import('../components/PdfPasswordPage.vue'), layout: 'wide'},
     'pdf-header-footer': {load: () => import('../components/PdfHeaderFooterPage.vue'), layout: 'wide'},
+    'markdown-tools': {load: () => import('../components/UnifiedMarkdownPage.vue'), layout: 'wide'},
+    'css-tools': {load: () => import('../components/UnifiedCssPage.vue'), layout: 'wide'},
     'document-generator': {load: () => import('../components/DocumentGeneratorPage.vue'), layout: 'wide'},
     'wordcloud': {load: () => import('../components/WordcloudPage.vue'), layout: 'wide'},
 }

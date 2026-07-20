@@ -86,7 +86,6 @@ export const MOCK_MODULES: Module[] = [
     },
 
     // 프론트엔드 전용 도구 (브라우저에서 직접 처리)
-    {id: 'json-formatter', name: 'JSON 포맷터', category: '포맷터', isHeavy: false, isFrontendOnly: true, description: 'JSON 정렬 및 미니파이', zones: ['dev']},
     {id: 'jwt-decoder', name: 'JWT 디코더', category: '포맷터', isHeavy: false, isFrontendOnly: true, description: 'JWT 토큰 Header·Payload 파싱', zones: ['dev']},
     {id: 'timestamp', name: '타임스탬프', category: '포맷터', isHeavy: false, isFrontendOnly: true, description: 'Unix timestamp ↔ 날짜/시간 변환', zones: ['dev']},
     {id: 'color-code', name: '색상 코드', category: '포맷터', isHeavy: false, isFrontendOnly: true, description: 'HEX ↔ RGB ↔ HSL 변환', zones: ['dev']},
@@ -105,6 +104,48 @@ export const MOCK_MODULES: Module[] = [
     },
 
     // 통합 도구 (여러 도구를 하나의 화면으로 흡수)
+    {
+        id: 'json-formatter', name: 'JSON 도구', category: '포맷터', isHeavy: false, isFrontendOnly: true,
+        description: '포맷터 · Diff 뷰어 · JSONPath 플레이그라운드',
+        keywords: [
+            {keyword: '포맷', query: 'tab=formatter'},
+            {keyword: '미니파이', query: 'tab=formatter'},
+            {keyword: 'diff', query: 'tab=diff'},
+            {keyword: 'jsonpath', query: 'tab=jsonpath'},
+            {keyword: 'json path', query: 'tab=jsonpath'},
+            'json',
+        ],
+        zones: ['dev'],
+    },
+    {
+        id: 'markdown-tools', name: '마크다운 도구', category: '텍스트', isHeavy: false, isFrontendOnly: true,
+        description: 'TOC(목차) 생성기 · 표 생성기',
+        keywords: [
+            {keyword: 'toc', query: 'tab=toc'},
+            {keyword: '목차', query: 'tab=toc'},
+            {keyword: '표', query: 'tab=table'},
+            {keyword: 'table', query: 'tab=table'},
+            {keyword: 'csv', query: 'tab=table'},
+            'markdown', '마크다운',
+        ],
+        zones: ['dev'],
+    },
+    {
+        id: 'css-tools', name: 'CSS 도구', category: '생성기', isHeavy: false, isFrontendOnly: true,
+        description: 'Gradient/Box-shadow 생성기 · 타이포그래피 스케일 계산기',
+        keywords: [
+            {keyword: 'gradient', query: 'tab=gradient'},
+            {keyword: '그라디언트', query: 'tab=gradient'},
+            {keyword: '그라데이션', query: 'tab=gradient'},
+            {keyword: 'box-shadow', query: 'tab=gradient'},
+            {keyword: '그림자', query: 'tab=gradient'},
+            {keyword: 'type scale', query: 'tab=typescale'},
+            {keyword: '타이포그래피', query: 'tab=typescale'},
+            {keyword: '폰트 크기', query: 'tab=typescale'},
+            'css',
+        ],
+        zones: ['dev'],
+    },
     {
         id: 'encoder', name: '인코더/디코더', category: '포맷터', isHeavy: false, isFrontendOnly: true,
         description: 'Base64 · URL · HTML Entity 인코딩/디코딩',

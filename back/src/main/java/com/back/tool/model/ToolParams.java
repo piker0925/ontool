@@ -14,6 +14,28 @@ public record ToolParams(Map<String, String> raw) {
         return new ToolParams(input.params());
     }
 
+    public boolean has(String key) {
+        String v = raw.get(key);
+        return v != null && !v.isBlank();
+    }
+
+    public double getDouble(String key, double defaultValue, double min, double max) {
+        String v = raw.get(key);
+        if (v == null || v.isBlank()) return defaultValue;
+        double parsed;
+        try {
+            parsed = Double.parseDouble(v.trim());
+        } catch (NumberFormatException _) {
+            throw new ToolProcessingException(
+                    "파라미터 '" + key + "'는 숫자여야 합니다. (입력값: " + v + ")");
+        }
+        if (parsed < min || parsed > max) {
+            throw new ToolProcessingException(
+                    "파라미터 '" + key + "'는 " + min + "~" + max + " 사이여야 합니다. (입력값: " + parsed + ")");
+        }
+        return parsed;
+    }
+
     public String getString(String key, String defaultValue) {
         String v = raw.get(key);
         return (v == null || v.isBlank()) ? defaultValue : v;

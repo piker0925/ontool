@@ -4,7 +4,6 @@ import {createMemoryHistory, createRouter} from 'vue-router'
 import PdfEditorPage from './PdfEditorPage.vue'
 import FileUploader from './FileUploader.vue'
 import HeavyJobStatusPanel from './HeavyJobStatusPanel.vue'
-import {apiClient} from '../api/client'
 
 vi.mock('../api/client', () => ({
     apiClient: {get: vi.fn(), post: vi.fn()},

@@ -1,8 +1,19 @@
 import {describe, expect, it} from 'vitest'
 import {mount} from '@vue/test-utils'
 import HeavyJobStatusPanel from './HeavyJobStatusPanel.vue'
+import type {HeavyJobProgress, HeavyJobResult} from '../composables/useHeavyJob'
 
-const BASE_PROPS = {
+interface PanelProps {
+    jobId: string | null
+    progress: HeavyJobProgress | null
+    reconnecting: boolean
+    sseFailed: boolean
+    result: HeavyJobResult | null
+    uploadError: string | null
+    idlePrompt: string
+}
+
+const BASE_PROPS: Omit<PanelProps, 'idlePrompt'> = {
     jobId: null,
     progress: null,
     reconnecting: false,
@@ -11,7 +22,7 @@ const BASE_PROPS = {
     uploadError: null,
 }
 
-function mountPanel(props: Partial<typeof BASE_PROPS & {idlePrompt: string}> = {}) {
+function mountPanel(props: Partial<PanelProps> = {}) {
     return mount(HeavyJobStatusPanel, {
         props: {...BASE_PROPS, ...props},
         global: {stubs: {FileResultPanel: true}},

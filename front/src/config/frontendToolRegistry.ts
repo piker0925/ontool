@@ -52,6 +52,11 @@ export const FRONTEND_TOOL_COMPONENTS: Record<string, FrontendToolEntry> = {
     'gitignore-generator': {load: () => import('../components/tools/GitignoreGeneratorTool.vue'), layout: 'narrow'},
     'faker-ko': {load: () => import('../components/tools/FakerKoTool.vue'), layout: 'narrow'},
     'svg-optimizer': {load: () => import('../components/tools/SvgOptimizerTool.vue'), layout: 'narrow'},
+    'image-crop-social': {load: () => import('../components/tools/ImageCropSocialTool.vue'), layout: 'narrow'},
+    'image-diff': {load: () => import('../components/tools/ImageDiffTool.vue'), layout: 'narrow'},
+    'colorblind-simulator': {load: () => import('../components/tools/ColorblindSimulatorTool.vue'), layout: 'narrow'},
+    'favicon-generator': {load: () => import('../components/tools/FaviconGeneratorTool.vue'), layout: 'narrow'},
+    'image-to-ascii': {load: () => import('../components/tools/ImageToAsciiTool.vue'), layout: 'narrow'},
 
     'json-formatter': {load: () => import('../components/UnifiedJsonPage.vue'), layout: 'wide'},
     'data-convert': {load: () => import('../components/UnifiedConvertPage.vue'), layout: 'wide'},
@@ -65,4 +70,5 @@ export const FRONTEND_TOOL_COMPONENTS: Record<string, FrontendToolEntry> = {
     'css-tools': {load: () => import('../components/UnifiedCssPage.vue'), layout: 'wide'},
     'document-generator': {load: () => import('../components/DocumentGeneratorPage.vue'), layout: 'wide'},
     'wordcloud': {load: () => import('../components/WordcloudPage.vue'), layout: 'wide'},
+    'document-viewer': {load: () => import('../components/tools/DocumentViewerTool.vue'), layout: 'wide'},
 }

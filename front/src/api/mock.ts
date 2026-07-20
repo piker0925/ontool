@@ -431,4 +431,44 @@ export const MOCK_MODULES: Module[] = [
         description: '작업/휴식 사이클을 반복하는 뽀모도로 타이머·스톱워치',
         zones: ['life'],
     },
+
+    // 이미지 유틸 (프론트 로컬, 캔버스 기반)
+    {
+        id: 'image-crop-social', name: '소셜 이미지 크롭', category: '이미지', isHeavy: false, isFrontendOnly: true,
+        description: '플랫폼별 비율 프리셋으로 이미지 크롭',
+        keywords: ['crop', '크롭', '인스타그램', 'instagram', '유튜브 썸네일'],
+        zones: ['files'],
+    },
+    {
+        id: 'image-diff', name: '이미지 Diff 비교', category: '이미지', isHeavy: false, isFrontendOnly: true,
+        description: '두 이미지의 픽셀 단위 차이를 히트맵으로 시각화',
+        keywords: ['diff', '비교', 'compare', '이미지 비교'],
+        zones: ['files', 'dev'],
+    },
+    {
+        id: 'colorblind-simulator', name: '색약 시뮬레이터', category: '이미지', isHeavy: false, isFrontendOnly: true,
+        description: '적색맹·녹색맹·청색맹 시야로 이미지 미리보기',
+        keywords: ['색약', 'colorblind', '색맹', 'protanopia', 'deuteranopia'],
+        zones: ['files', 'dev'],
+    },
+    {
+        id: 'favicon-generator', name: 'Favicon 생성기', category: '이미지', isHeavy: false, isFrontendOnly: true,
+        description: '이미지 하나로 다중 사이즈 favicon.ico + PNG 세트 생성',
+        keywords: ['favicon', '파비콘', 'ico'],
+        zones: ['files'],
+    },
+    {
+        id: 'image-to-ascii', name: '이미지 → 아스키 아트', category: '이미지', isHeavy: false, isFrontendOnly: true,
+        description: '이미지를 그레이스케일 문자 아트로 변환',
+        keywords: ['ascii', '아스키', 'ascii art'],
+        zones: ['files', 'fun'],
+    },
+
+    // 문서 뷰어 (프론트 로컬, 서버 전송 없이 브라우저에서 렌더)
+    {
+        id: 'document-viewer', name: '문서 뷰어', category: '문서', isHeavy: false, isFrontendOnly: true, kind: 'viewer',
+        description: 'DOCX·XLSX 파일을 업로드 없이 브라우저에서 바로 미리보기',
+        keywords: ['docx', 'xlsx', '워드', '엑셀', '문서 미리보기', 'viewer'],
+        zones: ['files'],
+    },
 ]

@@ -43,6 +43,16 @@ jobs:
       - name: Install FFmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
+      # 오피스 문서 변환기(094, ADR-0029)가 CI에서도 soffice를 찾아야 테스트가 통과한다.
+      - name: Install LibreOffice + H2Orestart
+        run: |
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends \
+            libreoffice-writer libreoffice-calc libreoffice-impress libreoffice-java-common \
+            fonts-noto-cjk
+          curl -fsSL -o /tmp/H2Orestart.oxt \
+            https://github.com/ebandal/H2Orestart/releases/download/v0.7.13/H2Orestart.oxt
+          unopkg add --shared /tmp/H2Orestart.oxt
+
       - name: Run tests with coverage
         run: ./gradlew check
 

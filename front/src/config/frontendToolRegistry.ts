@@ -71,4 +71,5 @@ export const FRONTEND_TOOL_COMPONENTS: Record<string, FrontendToolEntry> = {
     'document-generator': {load: () => import('../components/DocumentGeneratorPage.vue'), layout: 'wide'},
     'wordcloud': {load: () => import('../components/WordcloudPage.vue'), layout: 'wide'},
     'document-viewer': {load: () => import('../components/tools/DocumentViewerTool.vue'), layout: 'wide'},
+    'office-document-convert': {load: () => import('../components/OfficeDocumentConvertPage.vue'), layout: 'wide'},
 }

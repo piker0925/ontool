@@ -480,4 +480,13 @@ export const MOCK_MODULES: Module[] = [
         keywords: ['docx', 'xlsx', '워드', '엑셀', '문서 미리보기', 'viewer'],
         zones: ['files'],
     },
+
+    // 오피스 문서 변환기 (094, ADR-0029) — 백엔드 Heavy(LibreOffice+H2Orestart)로 PDF 변환,
+    // 커스텀 컴포넌트가 useHeavyJob으로 직접 배선(pdf-header-footer와 동일 패턴)
+    {
+        id: 'office-document-convert', name: '오피스 문서 변환기', category: '문서', isHeavy: false, isFrontendOnly: true,
+        description: 'HWP·HWPX·PPTX·레거시 DOC·XLS·PPT를 PDF로 변환(베타)',
+        keywords: ['hwp', 'hwpx', 'ppt', 'pptx', 'doc', 'xls', '한글', '한컴', '문서 변환'],
+        zones: ['files'],
+    },
 ]

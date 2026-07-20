@@ -43,6 +43,11 @@ export const FRONTEND_TOOL_COMPONENTS: Record<string, FrontendToolEntry> = {
     'age-calculator': {load: () => import('../components/tools/AgeCalculatorTool.vue'), layout: 'narrow'},
     'baby-age-calculator': {load: () => import('../components/tools/BabyAgeCalculatorTool.vue'), layout: 'narrow'},
     'due-date-calculator': {load: () => import('../components/tools/DueDateCalculatorTool.vue'), layout: 'narrow'},
+    'lotto-number': {load: () => import('../components/tools/LottoNumberTool.vue'), layout: 'narrow'},
+    'lotto-simulator': {load: () => import('../components/tools/LottoSimulatorTool.vue'), layout: 'wide'},
+    'random-team-ladder': {load: () => import('../components/tools/RandomTeamLadderTool.vue'), layout: 'narrow'},
+    'random-nickname': {load: () => import('../components/tools/RandomNicknameTool.vue'), layout: 'narrow'},
+    'random-palette': {load: () => import('../components/tools/RandomPaletteTool.vue'), layout: 'narrow'},
 
     'data-convert': {load: () => import('../components/UnifiedConvertPage.vue'), layout: 'wide'},
     'encoder': {load: () => import('../components/UnifiedEncoderPage.vue'), layout: 'wide'},
@@ -52,4 +57,5 @@ export const FRONTEND_TOOL_COMPONENTS: Record<string, FrontendToolEntry> = {
     'pdf-password': {load: () => import('../components/PdfPasswordPage.vue'), layout: 'wide'},
     'pdf-header-footer': {load: () => import('../components/PdfHeaderFooterPage.vue'), layout: 'wide'},
     'document-generator': {load: () => import('../components/DocumentGeneratorPage.vue'), layout: 'wide'},
+    'wordcloud': {load: () => import('../components/WordcloudPage.vue'), layout: 'wide'},
 }

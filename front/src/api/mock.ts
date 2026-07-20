@@ -263,4 +263,48 @@ export const MOCK_MODULES: Module[] = [
         keywords: ['출산예정일', '임신 주수', '임신 계산기'],
         zones: ['life'],
     },
+
+    // 재미
+    {
+        id: 'lotto-number', name: '로또 번호 생성기', category: '재미', isHeavy: false, isFrontendOnly: true,
+        description: '1~45 중 중복 없는 로또 번호 6개 무작위 생성',
+        keywords: ['로또', 'lotto'],
+        zones: ['fun'],
+    },
+    {
+        id: 'lotto-simulator', name: '로또 시뮬레이터', category: '재미', isHeavy: false, isFrontendOnly: true,
+        description: '목표 번호를 정해두고 무작위 구매를 반복해 당첨 확률을 체감하는 시뮬레이터',
+        keywords: ['로또 시뮬레이터', 'lotto simulator', '확률'],
+        zones: ['fun'],
+    },
+    {
+        id: 'random-team-ladder', name: '랜덤 팀 나누기·사다리타기', category: '재미', isHeavy: false, isFrontendOnly: true,
+        description: '참가자 무작위 팀 분배 또는 사다리타기 경로 배정',
+        keywords: ['팀 나누기', '사다리타기', '사다리', 'ladder'],
+        zones: ['fun'],
+    },
+    {
+        id: 'random-nickname', name: '랜덤 닉네임 생성기', category: '재미', isHeavy: false, isFrontendOnly: true,
+        description: '형용사+명사 조합 무작위 한국어 닉네임 생성',
+        keywords: ['닉네임', 'nickname'],
+        zones: ['fun'],
+    },
+    {
+        id: 'random-palette', name: '색상 팔레트 생성기', category: '재미', isHeavy: false, isFrontendOnly: true,
+        description: '보색·유사색 등 규칙 기반 무작위 색상 팔레트 생성',
+        keywords: ['팔레트', 'palette', '색상 조합'],
+        zones: ['dev', 'fun'],
+    },
+    {
+        id: 'wordcloud', name: '워드클라우드', category: '재미', isHeavy: false, isFrontendOnly: true,
+        description: '텍스트 빈도 분석 — 워드클라우드 시각화 · 빈도표',
+        keywords: [
+            {keyword: '워드클라우드', query: 'tab=cloud'},
+            {keyword: 'wordcloud', query: 'tab=cloud'},
+            {keyword: '텍스트 빈도', query: 'tab=table'},
+            {keyword: '단어 빈도', query: 'tab=table'},
+            {keyword: '빈도 분석', query: 'tab=table'},
+        ],
+        zones: ['fun', 'dev'],
+    },
 ]

@@ -1,7 +1,7 @@
 import type {Component} from 'vue'
 import {
     AlignLeft, Calendar, FileText, Globe, HeartPulse, Image, Landmark,
-    Ruler, ShieldCheck, Terminal, Type, Wallet, Wrench, Zap,
+    PartyPopper, Ruler, ShieldCheck, Terminal, Type, Wallet, Wrench, Zap,
 } from 'lucide-vue-next'
 
 export interface CategoryConfig {
@@ -25,11 +25,12 @@ export const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
     '날짜·나이': {icon: Calendar as Component, bg: 'bg-lime-50', color: 'text-lime-600', thumbBg: 'bg-lime-600'},
     '건강': {icon: HeartPulse as Component, bg: 'bg-rose-50', color: 'text-rose-600', thumbBg: 'bg-rose-600'},
     '단위·변환': {icon: Ruler as Component, bg: 'bg-yellow-50', color: 'text-yellow-600', thumbBg: 'bg-yellow-600'},
+    '재미': {icon: PartyPopper as Component, bg: 'bg-fuchsia-50', color: 'text-fuchsia-600', thumbBg: 'bg-fuchsia-600'},
 }
 
 export const CATEGORY_ORDER = [
     'PDF', '이미지', '생성기', '보안·암호화', '포맷터', '텍스트', '네트워크', 'DevOps',
-    '급여·근로', '금융', '날짜·나이', '건강', '단위·변환',
+    '급여·근로', '금융', '날짜·나이', '건강', '단위·변환', '재미',
 ]
 
 // 매핑되지 않은 카테고리용 기본 설정

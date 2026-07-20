@@ -4,22 +4,25 @@ import {createMemoryHistory, createRouter} from 'vue-router'
 import {ref} from 'vue'
 import ZoneHomePage from './ZoneHomePage.vue'
 import {apiClient} from '../api/client'
+import type {Module} from '../types'
 
 vi.mock('../api/client', () => ({
     apiClient: {get: vi.fn()},
 }))
 
-// 실제 MOCK_MODULES는 계속 늘어나므로(예: life·fun 구역에 새 프론트 전용 도구 추가) 이 테스트 파일은
-// "구역에 프론트 전용 도구가 몇 개 있는지"에 의존하지 않는 최소 고정 픽스처로 격리한다.
-vi.mock('../api/mock', () => ({
-    MOCK_MODULES: [
-        {id: 'net-pay-calculator', name: '연봉 실수령액 계산기', category: '급여·근로', isHeavy: false, isFrontendOnly: true, zones: ['life']},
-    ],
-}))
-
 const favoriteIds = ref<string[]>([])
 vi.mock('../composables/useFavorites', () => ({
     useFavorites: () => ({favoriteIds, isFavorite: (id: string) => favoriteIds.value.includes(id), toggle: vi.fn()}),
+}))
+
+// 실제 카탈로그(MOCK_MODULES)는 구역이 계속 채워지므로 여기 의존하면 새 도구가 추가될 때마다 깨진다 —
+// 테스트별로 필요한 프론트 전용 모듈만 명시적으로 고정한다.
+// vi.mock은 import보다 먼저 호이스팅되므로, 팩토리가 참조하는 상태는 vi.hoisted로 만들어야 TDZ 에러가 안 난다.
+const {mockFrontendModules} = vi.hoisted(() => ({mockFrontendModules: {value: [] as Module[]}}))
+vi.mock('../api/mock', () => ({
+    get MOCK_MODULES() {
+        return mockFrontendModules.value
+    },
 }))
 
 const mockGet = apiClient.get as ReturnType<typeof vi.fn>
@@ -32,6 +35,7 @@ const router = createRouter({
 beforeEach(() => {
     vi.clearAllMocks()
     favoriteIds.value = []
+    mockFrontendModules.value = []
 })
 
 describe('ZoneHomePage', () => {
@@ -52,6 +56,12 @@ describe('ZoneHomePage', () => {
 
     it('프론트 전용 모듈(백엔드 응답에 없는 모듈)이 구역 홈 카테고리 섹션에 실제로 렌더링된다(카테고리가 CATEGORY_ORDER에 등록돼 있어야 함)', async () => {
         mockGet.mockResolvedValueOnce({data: []})
+        mockFrontendModules.value = [
+            {
+                id: 'net-pay-calculator', name: '연봉 실수령액 계산기', category: '급여·근로', isHeavy: false,
+                isFrontendOnly: true, zones: ['life'],
+            },
+        ]
 
         const wrapper = mount(ZoneHomePage, {props: {zoneId: 'life'}, global: {plugins: [router]}})
         await flushPromises()
@@ -73,7 +83,6 @@ describe('ZoneHomePage', () => {
     })
 
     it('해당 구역에 도구가 없으면 준비 중 안내 문구를 보여준다', async () => {
-        // 위 vi.mock('../api/mock')로 고정한 픽스처엔 life 구역 도구만 있으므로 fun 구역은 항상 비어 있음
         mockGet.mockResolvedValueOnce({
             data: [
                 {id: 'pdf-merge', name: 'PDF 병합', category: 'PDF', isHeavy: true, zones: ['files']},

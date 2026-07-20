@@ -1,5 +1,15 @@
 <template>
-  <div class="flex flex-col gap-4 max-w-lg mx-auto w-full">
+  <div class="flex flex-col gap-4">
+    <div class="mx-auto flex w-fit gap-0.5 rounded-lg bg-muted p-0.5">
+      <button v-for="m in COLOR_MODES" :key="m.id"
+              :class="colorMode === m.id ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+              class="rounded-md px-4 py-1.5 text-[12px] font-medium transition-colors"
+              @click="colorMode = m.id">
+        {{ m.label }}
+      </button>
+    </div>
+
+  <div v-if="colorMode === 'single'" class="flex flex-col gap-4 max-w-lg mx-auto w-full">
     <div class="flex flex-col gap-1.5">
       <label class="text-[11px] font-medium text-muted-foreground">색상 (HEX / RGB / HSL)</label>
       <div class="flex items-center gap-2">
@@ -69,14 +79,83 @@
 
     <p v-if="colorError" class="text-[11px] text-destructive/70">{{ colorError }}</p>
   </div>
+
+  <!-- 팔레트 대비 체커 -->
+  <div v-else class="flex flex-col gap-3 max-w-2xl mx-auto w-full">
+    <div class="flex flex-col gap-2">
+      <label class="text-[11px] font-medium text-muted-foreground">팔레트 색상</label>
+      <div v-for="(_, i) in paletteInputs" :key="i" class="flex items-center gap-2">
+        <input v-model="paletteInputs[i]"
+               class="flex-1 rounded-xl border border-border bg-card px-4 py-2.5 font-mono text-[13px] text-foreground outline-none focus:border-ring"
+               placeholder="#ff0000, rgb(255, 0, 0), hsl(0, 100%, 50%)" type="text"/>
+        <button v-if="paletteInputs.length > 2"
+                class="rounded p-1 text-muted-foreground/50 transition-colors hover:text-destructive"
+                @click="paletteInputs.splice(i, 1)">
+          <X class="size-3.5"/>
+        </button>
+      </div>
+      <button class="self-start text-[11px] text-primary transition-colors hover:underline" @click="paletteInputs.push('#888888')">
+        + 색상 추가
+      </button>
+    </div>
+
+    <div v-if="paletteErrors.length" class="flex flex-col gap-1">
+      <p v-for="(e, i) in paletteErrors" :key="i" class="text-[11px] text-destructive/70">{{ e }}</p>
+    </div>
+
+    <div v-if="palettePairs.length" class="overflow-x-auto rounded-xl border border-border bg-card">
+      <table class="w-full text-[12px]">
+        <thead>
+        <tr class="border-b border-border text-muted-foreground">
+          <th class="px-3 py-2 text-left font-medium">조합</th>
+          <th class="px-3 py-2 text-left font-medium">대비</th>
+          <th class="px-3 py-2 text-left font-medium">AA</th>
+          <th class="px-3 py-2 text-left font-medium">AAA</th>
+          <th class="px-3 py-2 text-left font-medium">AA-Large</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr v-for="p in palettePairs" :key="`${p.a}-${p.b}`" class="border-b border-border last:border-0">
+          <td class="px-3 py-2">
+            <div class="flex items-center gap-1.5">
+              <span :style="{ backgroundColor: paletteCss(p.a) }" class="size-4 shrink-0 rounded border border-border"/>
+              <span :style="{ backgroundColor: paletteCss(p.b) }" class="size-4 shrink-0 rounded border border-border"/>
+            </div>
+          </td>
+          <td class="px-3 py-2 font-mono text-foreground">{{ p.ratio }}:1</td>
+          <td class="px-3 py-2">
+            <span :class="p.levels.aa ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'"
+                  class="rounded-full px-2 py-0.5 text-[10px] font-semibold">
+              {{ p.levels.aa ? '✓' : '✗' }}
+            </span>
+          </td>
+          <td class="px-3 py-2">
+            <span :class="p.levels.aaa ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'"
+                  class="rounded-full px-2 py-0.5 text-[10px] font-semibold">
+              {{ p.levels.aaa ? '✓' : '✗' }}
+            </span>
+          </td>
+          <td class="px-3 py-2">
+            <span :class="p.levels.aaLarge ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'"
+                  class="rounded-full px-2 py-0.5 text-[10px] font-semibold">
+              {{ p.levels.aaLarge ? '✓' : '✗' }}
+            </span>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  </div>
 </template>
 
 <script lang="ts" setup>
 import {computed, ref} from 'vue'
-import {Copy} from 'lucide-vue-next'
+import {Copy, X} from 'lucide-vue-next'
 import {
   compositeOnBackground,
   contrastRatio,
+  paletteContrastPairs,
   parseColor,
   type Rgba,
   rgbaToHex,
@@ -85,6 +164,12 @@ import {
   rgbToHsv,
   wcagLevels,
 } from '../../utils/colorCode'
+
+const COLOR_MODES = [
+  {id: 'single', label: '단일 색상'},
+  {id: 'palette', label: '팔레트 대비 체커'},
+] as const
+const colorMode = ref<'single' | 'palette'>('single')
 
 const colorInput = ref('')
 const colorError = ref('')
@@ -174,6 +259,32 @@ function onAlphaInput() {
 
 async function copyText(text: string) {
   await navigator.clipboard.writeText(text)
+}
+
+// ── 팔레트 대비 체커 ───────────────────────────────────────────────────────────
+const paletteInputs = ref<string[]>(['#ffffff', '#000000', '#ff0000'])
+
+const paletteParsed = computed(() => paletteInputs.value.map(v => {
+  try {
+    return {color: parseColor(v), error: null}
+  } catch (e) {
+    return {color: null, error: e instanceof Error ? e.message : '올바른 색상이 아닙니다.'}
+  }
+}))
+
+const paletteErrors = computed(() => paletteParsed.value
+    .map((p, i) => p.error ? `${i + 1}번째 색상: ${p.error}` : null)
+    .filter((e): e is string => e !== null))
+
+const paletteColors = computed(() => paletteParsed.value
+    .map(p => p.color)
+    .filter((c): c is Rgba => c !== null))
+
+const palettePairs = computed(() => paletteContrastPairs(paletteColors.value))
+
+function paletteCss(i: number) {
+  const c = paletteColors.value[i]
+  return c ? `rgba(${c.r}, ${c.g}, ${c.b}, ${c.a})` : 'transparent'
 }
 
 colorInput.value = '#6366f1'

@@ -1,5 +1,15 @@
 <template>
-  <div
+  <div class="flex flex-col gap-4">
+    <div class="flex w-fit gap-0.5 rounded-lg bg-muted p-0.5">
+      <button v-for="t in PAGE_TABS" :key="t.id"
+              :class="pageTab === t.id ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+              class="rounded-md px-4 py-1.5 text-[12px] font-medium transition-colors"
+              @click="pageTab = t.id">
+        {{ t.label }}
+      </button>
+    </div>
+
+  <div v-if="pageTab === 'text'"
       class="grid min-h-[420px] grid-cols-1 divide-y divide-border overflow-hidden rounded-xl border border-border bg-card lg:grid-cols-2 lg:divide-x lg:divide-y-0"
   >
     <!-- Input -->
@@ -77,12 +87,70 @@
       </div>
     </div>
   </div>
+
+  <!-- 이미지 ↔ Base64 -->
+  <div v-else class="flex flex-col gap-4">
+    <div class="rounded-xl border border-border bg-card overflow-hidden">
+      <div class="flex h-10 items-center border-b border-border px-4">
+        <span class="font-mono text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          이미지 → Base64
+        </span>
+      </div>
+      <div class="grid grid-cols-1 gap-4 p-4 lg:grid-cols-2">
+        <div class="flex flex-col gap-2">
+          <input ref="imageFileInput" accept="image/*" class="hidden" type="file" @change="onImageFileChange"/>
+          <button
+              class="flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border py-8 text-[12px] text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+              type="button" @click="imageFileInput?.click()">
+            <Upload class="size-4"/>
+            이미지 선택
+          </button>
+          <img v-if="uploadedDataUri" :src="uploadedDataUri" alt="업로드된 이미지 미리보기"
+               class="max-h-40 w-full rounded-lg border border-border bg-muted/40 object-contain"/>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-medium text-muted-foreground">Data URI</span>
+            <button v-if="uploadedDataUri"
+                    :class="uploadedCopied ? 'text-emerald-500' : 'text-muted-foreground/60 hover:text-foreground'"
+                    class="rounded p-0.5 transition-colors" type="button" @click="copyUploadedUri">
+              <Check v-if="uploadedCopied" class="size-3.5"/>
+              <Copy v-else class="size-3.5"/>
+            </button>
+          </div>
+          <textarea :value="uploadedDataUri" readonly
+                    class="h-40 w-full resize-none rounded-lg bg-muted/40 p-3 font-mono text-[11px] text-foreground outline-none placeholder:text-muted-foreground/40"
+                    placeholder="이미지를 선택하면 여기 표시됩니다"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="rounded-xl border border-border bg-card overflow-hidden">
+      <div class="flex h-10 items-center border-b border-border px-4">
+        <span class="font-mono text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          Base64 → 이미지
+        </span>
+      </div>
+      <div class="grid grid-cols-1 gap-4 p-4 lg:grid-cols-2">
+        <textarea v-model="base64Input"
+                  class="h-40 w-full resize-none rounded-lg bg-muted/40 p-3 font-mono text-[11px] text-foreground outline-none placeholder:text-muted-foreground/40"
+                  placeholder="data:image/png;base64,... 또는 순수 base64 문자열"/>
+        <div class="flex flex-col gap-2">
+          <img v-if="previewSrc" :src="previewSrc" alt="미리보기"
+               class="max-h-40 w-full rounded-lg border border-border bg-muted/40 object-contain"
+               @error="onPreviewError" @load="previewError = ''"/>
+          <p v-if="previewError" class="text-[11px] text-destructive">{{ previewError }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
 </template>
 
 <script lang="ts" setup>
 import {computed, ref, watch} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
-import {AlertCircle, ArrowRight, Check, Copy, Wand2} from 'lucide-vue-next'
+import {AlertCircle, ArrowRight, Check, Copy, Upload, Wand2} from 'lucide-vue-next'
 import {decodeHtmlEntities, encodeHtmlEntities} from '../utils/htmlEntity'
 import {
   decodeBase64,
@@ -101,6 +169,7 @@ import {
   encodeUnicode,
   rot13,
 } from './encoderUtils'
+import {fileToDataUri, normalizeToDataUri} from '../utils/imageBase64'
 import {Button} from '@/components/ui/button'
 
 interface EncoderMode {
@@ -200,5 +269,45 @@ async function copyOutput() {
   setTimeout(() => {
     copied.value = false
   }, 2000)
+}
+
+// ── 상위 탭 (텍스트 변환 / 이미지 ↔ Base64) ────────────────────────────────────
+// MODES는 textarea-in/textarea-out 순수 함수로 균일한데, 이미지↔Base64는 파일 업로드 +
+// 미리보기가 필요해 그 패턴에 안 맞는다(ADR-0017 흡수 이슈 참고) — 별도 탭으로 분리.
+const PAGE_TABS = [
+  {id: 'text', label: '텍스트 변환'},
+  {id: 'image', label: '이미지 ↔ Base64'},
+] as const
+const pageTab = ref<'text' | 'image'>('text')
+
+// ── 이미지 → Base64 ───────────────────────────────────────────────────────────
+const imageFileInput = ref<HTMLInputElement | null>(null)
+const uploadedDataUri = ref('')
+const uploadedCopied = ref(false)
+
+async function onImageFileChange(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  uploadedDataUri.value = await fileToDataUri(file)
+}
+
+async function copyUploadedUri() {
+  if (!uploadedDataUri.value) return
+  await navigator.clipboard.writeText(uploadedDataUri.value)
+  uploadedCopied.value = true
+  setTimeout(() => {
+    uploadedCopied.value = false
+  }, 2000)
+}
+
+// ── Base64 → 이미지 ───────────────────────────────────────────────────────────
+const base64Input = ref('')
+const previewError = ref('')
+const previewSrc = computed(() => base64Input.value.trim() ? normalizeToDataUri(base64Input.value) : '')
+
+function onPreviewError() {
+  if (previewSrc.value) previewError.value = '이미지로 표시할 수 없습니다. data URI 또는 base64 문자열을 확인하세요.'
 }
 </script>

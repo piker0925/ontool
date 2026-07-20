@@ -74,6 +74,47 @@
           </select>
         </div>
 
+        <!-- 텍스트 라인 도구: 정렬/중복제거/구분자 옵션 -->
+        <div v-if="tab === 'lines'" class="flex flex-col gap-2.5 border-b border-border p-4">
+          <div class="flex gap-2">
+            <div class="flex flex-1 flex-col gap-1.5">
+              <label class="text-[11px] font-medium text-muted-foreground">정렬</label>
+              <select
+                  v-model="lineSort"
+                  class="rounded-md border border-input bg-background px-3 py-2 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+              >
+                <option value="none">정렬 안 함</option>
+                <option value="alpha">가나다순</option>
+                <option value="numeric">숫자순</option>
+              </select>
+            </div>
+            <label class="flex items-end gap-1.5 pb-2.5 text-[12px] text-foreground">
+              <input v-model="lineDedupe" class="accent-primary" type="checkbox"/>
+              중복 줄 제거
+            </label>
+          </div>
+          <div class="flex gap-2">
+            <div class="flex flex-1 flex-col gap-1.5">
+              <label class="text-[11px] font-medium text-muted-foreground">구분자</label>
+              <input
+                  v-model="lineSeparator"
+                  class="rounded-md border border-input bg-background px-3 py-2 font-mono text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+                  placeholder="줄바꿈 (기본값)" type="text"
+              />
+            </div>
+            <div class="flex flex-1 flex-col gap-1.5">
+              <label class="text-[11px] font-medium text-muted-foreground">구분자 용도</label>
+              <select
+                  v-model="lineSeparatorMode"
+                  class="rounded-md border border-input bg-background px-3 py-2 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+              >
+                <option value="join">출력을 합칠 때 (join)</option>
+                <option value="split">입력을 나눌 때 (split)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
         <textarea
             v-model="input"
             :placeholder="currentTab.placeholder"
@@ -147,9 +188,10 @@ import {useRoute, useRouter} from 'vue-router'
 import {ArrowRight, Check, Copy, Eraser, Wand2} from 'lucide-vue-next'
 import {convertKeyboard, countChars, normalizeWhitespace} from '../utils/textUtils'
 import {type CaseFormat, convertCase} from '../utils/caseConvert'
+import {type LineSeparatorMode, type LineSortMode, processTextLines} from '../utils/textLines'
 import {Button} from '@/components/ui/button'
 
-type TabId = 'case' | 'count' | 'keyboard' | 'whitespace'
+type TabId = 'case' | 'count' | 'keyboard' | 'whitespace' | 'lines'
 
 const TABS: Array<{ id: TabId; label: string; placeholder: string; sample: string }> = [
   {id: 'case', label: '케이스 변환', placeholder: 'myVariableName', sample: 'myVariableName'},
@@ -160,6 +202,12 @@ const TABS: Array<{ id: TabId; label: string; placeholder: string; sample: strin
     label: '공백 정규화',
     placeholder: '연속   공백과\t탭이  섞인   텍스트',
     sample: '연속   공백과\t탭이  섞인   텍스트\n\n\n그리고 빈 줄'
+  },
+  {
+    id: 'lines',
+    label: '텍스트 라인 도구',
+    placeholder: '한 줄에 하나씩...',
+    sample: '바나나\n사과\n가지\n사과\n바나나'
   },
 ]
 
@@ -182,7 +230,7 @@ const initialTab = typeof route.query.tab === 'string' && TABS.some(t => t.id ==
 
 const tab = ref<TabId>(initialTab)
 // 탭별 입력을 따로 보존한다 — 탭을 오가도 작성 내용이 사라지지 않는다
-const inputs = ref<Record<TabId, string>>({case: '', count: '', keyboard: '', whitespace: ''})
+const inputs = ref<Record<TabId, string>>({case: '', count: '', keyboard: '', whitespace: '', lines: ''})
 const input = computed({
   get: () => inputs.value[tab.value],
   set: v => {
@@ -194,6 +242,10 @@ const copied = ref(false)
 const caseFrom = ref<CaseFormat>('camel')
 const caseTo = ref<CaseFormat>('snake')
 const keyboardDirection = ref<'en-ko' | 'ko-en'>('en-ko')
+const lineSort = ref<LineSortMode>('none')
+const lineDedupe = ref(false)
+const lineSeparator = ref('')
+const lineSeparatorMode = ref<LineSeparatorMode>('join')
 
 const currentTab = computed(() => TABS.find(t => t.id === tab.value) ?? TABS[0])
 const charStats = computed(() => tab.value === 'count' && input.value ? countChars(input.value) : null)
@@ -226,11 +278,22 @@ function recompute() {
       return
     case 'case':
       output.value = convertCase(input.value, caseFrom.value, caseTo.value)
+      return
+    case 'lines':
+      output.value = processTextLines(input.value, {
+        sort: lineSort.value,
+        dedupe: lineDedupe.value,
+        separator: lineSeparator.value,
+        separatorMode: lineSeparatorMode.value,
+      })
   }
 }
 
 // 탭 전환 시에도 초기화하지 않고 보존된 입력으로 결과를 다시 계산한다
-watch([tab, input, caseFrom, caseTo, keyboardDirection], recompute)
+watch(
+    [tab, input, caseFrom, caseTo, keyboardDirection, lineSort, lineDedupe, lineSeparator, lineSeparatorMode],
+    recompute,
+)
 
 function applySample() {
   input.value = currentTab.value.sample

@@ -31,6 +31,10 @@ export function base64ToBytes(s: string): Uint8Array {
     return Uint8Array.from(atob(s.trim()), c => c.charCodeAt(0))
 }
 
+export function bytesToBase64Url(b: Uint8Array): string {
+    return bytesToBase64(b).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+}
+
 /** Uint8Array를 정확히 그 바이트만 담은 ArrayBuffer로 (Web Crypto/spark-md5 입력용). */
 export function toArrayBuffer(b: Uint8Array): ArrayBuffer {
     return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer

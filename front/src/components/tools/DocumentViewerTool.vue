@@ -7,7 +7,7 @@
             @click="fileInput?.click()">DOCX 또는 XLSX 파일을 선택하세요
     </button>
 
-    <template v-if="docType">
+    <div v-show="!!docType" class="flex flex-col gap-3">
       <div class="flex items-center justify-between">
         <span class="truncate text-[12px] text-muted-foreground">{{ fileName }}</span>
         <button class="shrink-0 rounded-lg border border-border bg-card px-3 py-1.5 text-[12px] text-foreground transition-colors hover:border-ring"
@@ -40,7 +40,7 @@
           </table>
         </div>
       </div>
-    </template>
+    </div>
 
     <p v-if="error" class="text-[11px] text-destructive/70">{{ error }}</p>
   </div>

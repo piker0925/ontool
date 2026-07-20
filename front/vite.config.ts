@@ -47,6 +47,16 @@ export default defineConfig(({mode}) => {
             // globalThis.localStorage.getItem이 undefined라 jsdom의 localStorage와 충돌한다. 워커 프로세스에서
             // 꺼서 jsdom이 제공하는 localStorage만 쓰도록 한다.
             execArgv: ['--no-experimental-webstorage'],
+            // v8 커버리지 계측이 켜지면 전체 스위트가 무거워져 mount 등 렌더링 비중이 큰 테스트가
+            // 5000ms 기본값을 넘기는 경우가 실행마다 다른 테스트에서 산발적으로 발생한다 — 개별
+            // 테스트를 하나씩 늘리는 대신 전역 기본값을 올려 근본 원인(계측 오버헤드)에 맞춘다.
+            testTimeout: 10000,
+            // 임계값(게이트) 없이 리포트만 생성 — 프론트는 아직 커버리지 실측치가 없어서 강제 기준을
+            // 먼저 정하기보다 숫자를 몇 차례 지켜본 뒤 도입 여부를 재검토한다.
+            coverage: {
+                provider: 'v8',
+                reporter: ['text', 'html'],
+            },
         },
         server: {
             host: true,

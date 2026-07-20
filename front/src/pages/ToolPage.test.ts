@@ -167,6 +167,17 @@ describe('ToolPage 파라미터 필드 (024)', () => {
 
         expect(delay?.value).toBe('500')
     })
+
+    it('color 타입 파라미터는 텍스트 입력이 아니라 네이티브 색상 선택기로 렌더링되고 기본값이 채워진다', async () => {
+        const wrapper = await mountAt('gif-create', [
+            {id: 'gif-create', name: 'GIF 생성', category: '이미지', isHeavy: true, zones: ['files']},
+        ])
+
+        const captionColor = inputForLabel(wrapper, '자막 글자 색상')
+
+        expect(captionColor?.type).toBe('color')
+        expect(captionColor?.value).toBe('#ffffff')
+    })
 })
 
 describe('ToolPage 이미지 리사이즈 크기 입력 UI', () => {
@@ -471,6 +482,23 @@ describe('ToolPage 단건 SSE 재연결 (042)', () => {
         await flushPromises()
 
         expect(wrapper.text()).toContain('상태를 확인할 수 없습니다')
+    })
+})
+
+describe('ToolPage — component 필드 (kind: game)', () => {
+    it('mod.component가 있으면 그 컴포넌트를 렌더링하고, 기본 도구 헤더(즐겨찾기 등)는 렌더링하지 않는다', async () => {
+        const StubGame = {template: '<div data-testid="stub-game">GAME CONTENT</div>'}
+        const wrapper = await mountAt('game-2048', [
+            {
+                id: 'game-2048', name: '2048', category: '게임', isHeavy: false, isFrontendOnly: true,
+                kind: 'game', zones: ['fun'], component: () => Promise.resolve(StubGame),
+            },
+        ])
+
+        await vi.waitFor(() => expect(wrapper.find('[data-testid="stub-game"]').exists()).toBe(true))
+
+        expect(wrapper.find('[data-testid="stub-game"]').text()).toBe('GAME CONTENT')
+        expect(wrapper.text()).not.toContain('즐겨찾기')
     })
 })
 

@@ -18,20 +18,36 @@ import java.io.InputStream;
  */
 final class KoreanFontSupport {
 
-    private static final String FONT_RESOURCE = "fonts/Pretendard-Regular.ttf";
+    /** 번들된 Pretendard 굵기 — node_modules/pretendard의 static/alternative TTF에서 복사(OFL). */
+    enum FontWeight {
+        REGULAR("fonts/Pretendard-Regular.ttf"),
+        MEDIUM("fonts/Pretendard-Medium.ttf"),
+        BOLD("fonts/Pretendard-Bold.ttf"),
+        BLACK("fonts/Pretendard-Black.ttf");
+
+        final String resource;
+
+        FontWeight(String resource) {
+            this.resource = resource;
+        }
+    }
 
     private KoreanFontSupport() {}
 
     static PDFont pdType0Font(PDDocument document) {
-        try (InputStream is = new ClassPathResource(FONT_RESOURCE).getInputStream()) {
+        return pdType0Font(document, FontWeight.REGULAR);
+    }
+
+    static PDFont pdType0Font(PDDocument document, FontWeight weight) {
+        try (InputStream is = new ClassPathResource(weight.resource).getInputStream()) {
             return PDType0Font.load(document, is);
         } catch (IOException e) {
             throw new ToolProcessingException("한글 폰트 로드 실패: " + e.getMessage(), e);
         }
     }
 
-    static Font awtFont(float size) {
-        try (InputStream is = new ClassPathResource(FONT_RESOURCE).getInputStream()) {
+    static Font awtFont(float size, FontWeight weight) {
+        try (InputStream is = new ClassPathResource(weight.resource).getInputStream()) {
             return Font.createFont(Font.TRUETYPE_FONT, is).deriveFont(size);
         } catch (IOException | FontFormatException e) {
             throw new ToolProcessingException("한글 폰트 로드 실패: " + e.getMessage(), e);

@@ -5,7 +5,7 @@
     <!-- Left: 입력 -->
     <div class="flex flex-col overflow-hidden">
       <div class="flex h-10 shrink-0 items-center border-b border-border px-4">
-        <span class="font-mono text-[11px] font-medium uppercase tracking-wider text-muted-foreground">인보이스</span>
+        <span class="font-mono text-[11px] font-medium uppercase tracking-wider text-muted-foreground">청구서</span>
       </div>
 
       <div class="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
@@ -27,7 +27,7 @@
             <input v-model="recipientAddress" class="rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20" type="text"/>
           </div>
           <div class="flex flex-col gap-1.5">
-            <label class="text-[11px] text-muted-foreground">인보이스 번호</label>
+            <label class="text-[11px] text-muted-foreground">청구서 번호</label>
             <input v-model="invoiceNumber" class="rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20" type="text"/>
           </div>
           <div class="flex flex-col gap-1.5">
@@ -55,6 +55,10 @@
             ><X class="size-3.5"/>
             </button>
           </div>
+          <div class="flex items-center justify-between border-t border-border pt-2 text-[12px] text-muted-foreground">
+            <span>합계</span>
+            <span class="font-medium text-foreground" data-testid="invoice-total">{{ invoiceTotal.toLocaleString() }}</span>
+          </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
@@ -70,7 +74,7 @@
           </div>
         </div>
 
-        <Button :disabled="!invoiceValid" class="h-8 text-[12px]" @click="generateInvoice">인보이스 PDF 생성</Button>
+        <Button :disabled="!invoiceValid" class="h-8 text-[12px]" @click="generateInvoice">청구서 PDF 생성</Button>
       </div>
     </div>
 
@@ -94,6 +98,7 @@ import HeavyJobStatusPanel from './HeavyJobStatusPanel.vue'
 import {useHeavyJob} from '../composables/useHeavyJob'
 import {apiClient} from '../api/client'
 import {uploadErrorMessage} from '../utils/uploadError'
+import {todayDateString} from '../utils/todayDateString'
 import {isBatchResult, type UploadResult} from '../types'
 
 const PAPER_SIZES = ['A4', 'LETTER', 'A5']
@@ -103,7 +108,7 @@ const issuerAddress = ref('')
 const recipient = ref('')
 const recipientAddress = ref('')
 const invoiceNumber = ref('')
-const issueDate = ref('')
+const issueDate = ref(todayDateString())
 const items = ref([{description: '', quantity: '', unitPrice: ''}])
 const paperSize = ref<typeof PAPER_SIZES[number]>('A4')
 const margin = ref('20')
@@ -114,6 +119,16 @@ function isCompleteItem(i: {description: string, quantity: string, unitPrice: st
 
 const invoiceValid = computed(() =>
     issuer.value.trim() !== '' && recipient.value.trim() !== '' && items.value.some(isCompleteItem))
+
+// 실제 제출 시 필터링되는 완전한 품목만 합산한다 — 그래야 여기 보이는 합계가 실제 생성될
+// PDF의 합계와 항상 일치한다. 수량·단가가 숫자가 아니면(백엔드가 결국 막을 값) 그 행은 0으로
+// 취급해 합계 전체가 NaN으로 오염되지 않게 한다.
+const invoiceTotal = computed(() =>
+    items.value.filter(isCompleteItem).reduce((sum, i) => {
+      const qty = parseFloat(i.quantity)
+      const unitPrice = parseFloat(i.unitPrice)
+      return isNaN(qty) || isNaN(unitPrice) ? sum : sum + qty * unitPrice
+    }, 0))
 
 function addItem() {
   items.value.push({description: '', quantity: '', unitPrice: ''})

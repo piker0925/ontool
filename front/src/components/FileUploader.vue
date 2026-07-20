@@ -86,6 +86,7 @@ const emit = defineEmits<{
   uploaded: [result: UploadResult]
   error: [message: string]
   dimensions: [dims: PixelSize | null]
+  staged: [files: File[]]
 }>()
 
 const dragging = ref(false)
@@ -100,6 +101,9 @@ const singleFileDims = computed<PixelSize | null>(() =>
     staged.value.length === 1 ? imageDims.value.get(staged.value[0]) ?? null : null)
 
 watch(singleFileDims, dims => emit('dimensions', dims), {immediate: true})
+// 워터마크 편집기처럼 업로드 전 스테이징된 원본 파일이 필요한 소비자를 위한 훅 — deep이어야
+// splice/moveItem 같은 제자리 변경도 감지한다.
+watch(staged, files => emit('staged', [...files]), {immediate: true, deep: true})
 
 async function loadImageDimensions(file: File) {
   const dims = await readImageDimensions(file)

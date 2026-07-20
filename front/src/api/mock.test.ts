@@ -35,4 +35,12 @@ describe('MOCK_MODULES', () => {
             expect(m.zones).toContain('dev')
         }
     })
+
+    it('kind가 game인 모듈은 fun 구역을 포함한다 (ADR-0026)', () => {
+        const games = MOCK_MODULES.filter(m => m.kind === 'game')
+        expect(games.length).toBeGreaterThan(0)
+        for (const m of games) {
+            expect(m.zones).toContain('fun')
+        }
+    })
 })

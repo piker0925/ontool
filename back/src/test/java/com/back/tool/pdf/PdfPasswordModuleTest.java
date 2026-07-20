@@ -105,6 +105,18 @@ class PdfPasswordModuleTest {
     }
 
     @Test
+    void 이미_비밀번호가_걸린_PDF에_다시_설정을_시도하면_명확한_에러() throws Exception {
+        Path pdf = createPdf("plain.pdf", "P1");
+        ToolResult protectedResult = module.process(new ToolInput(List.of(pdf),
+                Map.of("mode", "SET", "password", "secret123")));
+
+        assertThatThrownBy(() -> module.process(new ToolInput(List.of(protectedResult.outputFile()),
+                Map.of("mode", "SET", "password", "another-password"))))
+                .isInstanceOf(ToolProcessingException.class)
+                .hasMessageContaining("이미 비밀번호가 설정된 PDF입니다");
+    }
+
+    @Test
     void PDF가_아닌_파일이면_명확한_에러() throws Exception {
         Path textFile = tempDir.resolve("notes.txt");
         Files.writeString(textFile, "hello");

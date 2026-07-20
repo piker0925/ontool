@@ -1,7 +1,7 @@
 export interface ParamDef {
     key: string
     label: string
-    type: 'textarea' | 'text' | 'select' | 'checkbox' | 'number'
+    type: 'textarea' | 'text' | 'select' | 'checkbox' | 'number' | 'color'
     placeholder?: string
     options?: string[]
     default?: string

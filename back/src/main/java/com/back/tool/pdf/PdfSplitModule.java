@@ -81,10 +81,7 @@ public class PdfSplitModule implements ToolModule {
      * 위험 문자를 제거하는 것은 {@link com.back.job.service.ZipEntryNamer}와 동일한 기존 관례를 따른다.
      */
     static String baseNameOf(Path inputPdf) {
-        String sanitized = FilenameSanitizer.sanitize(inputPdf.getFileName().toString());
-        int dot = sanitized.lastIndexOf('.');
-        String base = dot > 0 ? sanitized.substring(0, dot) : sanitized;
-        return base.isEmpty() ? "split" : base;
+        return FilenameSanitizer.baseName(inputPdf.getFileName().toString(), "split");
     }
 
     /** 페이지별 1파일: {원본이름}-004.pdf 처럼 원본 페이지 번호를 이어붙인다 (중복 페이지는 1회만) */

@@ -8,7 +8,12 @@
 
   <template v-else>
 
-    <div class="mx-auto w-full max-w-[1440px] px-4 pb-10 sm:px-6">
+    <!-- component 지정 모듈(게임 등): 자체 셸(GamePage 등)이 있으므로 기본 도구 헤더/레이아웃을 건너뛴다 (ADR-0026) -->
+    <div v-if="modComponent" class="mx-auto w-full max-w-[1440px] px-4 pb-10 sm:px-6">
+      <component :is="modComponent"/>
+    </div>
+
+    <div v-else class="mx-auto w-full max-w-[1440px] px-4 pb-10 sm:px-6">
 
       <!-- Title -->
       <div class="flex flex-wrap items-center gap-x-3 gap-y-2 pb-4 pt-6">
@@ -212,6 +217,12 @@
               >
                 <option v-for="opt in p.options" :key="opt" :value="opt">{{ opt }}</option>
               </select>
+              <input
+                  v-else-if="p.type === 'color'"
+                  v-model="heavyFormValues[p.key]"
+                  class="h-8 w-16 rounded-md border border-input bg-background p-0.5"
+                  type="color"
+              />
             </div>
           </div>
 
@@ -437,6 +448,12 @@
               >
                 <option v-for="opt in p.options" :key="opt" :value="opt">{{ opt }}</option>
               </select>
+              <input
+                  v-else-if="p.type === 'color'"
+                  v-model="formValues[p.key]"
+                  class="h-8 w-16 rounded-md border border-input bg-background p-0.5"
+                  type="color"
+              />
             </div>
           </div>
 
@@ -577,8 +594,7 @@ import {
   X,
 } from 'lucide-vue-next'
 import {apiClient} from '../api/client'
-import {MOCK_MODULES} from '../api/mock'
-import {normalizeApiModules} from '../api/modules'
+import {normalizeApiModules, resolveMockModule} from '../api/modules'
 import {buildFallbackParams} from '../utils/lightParams'
 import {uploadErrorMessage} from '../utils/uploadError'
 import {clearPreviousRun, type RunResult} from '../utils/runState'
@@ -802,6 +818,7 @@ const resizePreviewInfo = computed(() => {
 const frontendToolComponent = computed(() =>
     frontendToolEntry.value ? defineAsyncComponent(frontendToolEntry.value.load) : null,
 )
+const modComponent = computed(() => mod.value?.component ? defineAsyncComponent(mod.value.component) : null)
 const frontendToolLayoutClass = computed(() =>
     frontendToolEntry.value?.layout === 'narrow' ? 'px-6 py-8 max-w-5xl mx-auto' : '',
 )
@@ -876,7 +893,7 @@ async function loadModule(moduleId: string) {
     const allModules = normalizeApiModules(data)
     mod.value = allModules.find(m => m.id === moduleId) ?? null
   } catch {
-    mod.value = MOCK_MODULES.find(m => m.id === moduleId) ?? null
+    mod.value = resolveMockModule(moduleId)
   } finally {
     loading.value = false
     initForm()

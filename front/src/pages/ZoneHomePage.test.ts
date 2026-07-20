@@ -10,20 +10,20 @@ vi.mock('../api/client', () => ({
     apiClient: {get: vi.fn()},
 }))
 
-// MOCK_MODULES(isFrontendOnly 도구 목록)는 백엔드 응답과 무관하게 항상 병합되므로, "구역에 도구가
-// 전혀 없는" 상태는 실제 카탈로그로는 재현할 수 없다(모든 구역에 프론트 전용 도구가 최소 1개씩
-// 있음, 예: life=급여 계산기, files=오디오 도구 5종(074/075, zones는 files만)). getter로 감싸 이 파일 안에서만 테스트별로
-// 내용을 갈아끼울 수 있게 한다 — 준비 중 문구 테스트에서만 빈 배열로 교체한다.
-const mockModulesState = vi.hoisted(() => ({modules: [] as Module[]}))
-vi.mock('../api/mock', () => ({
-    get MOCK_MODULES() {
-        return mockModulesState.modules
-    },
-}))
-
 const favoriteIds = ref<string[]>([])
 vi.mock('../composables/useFavorites', () => ({
     useFavorites: () => ({favoriteIds, isFavorite: (id: string) => favoriteIds.value.includes(id), toggle: vi.fn()}),
+}))
+
+// 실제 카탈로그(MOCK_MODULES)는 구역이 계속 채워지므로 여기 의존하면 새 도구가 추가될 때마다 깨진다
+// (예: 078에서 fun 구역에 게임이, life에서 life 구역에 도구가 채워짐) — 테스트별로 필요한
+// 프론트 전용 모듈만 명시적으로 고정한다.
+// vi.mock은 import보다 먼저 호이스팅되므로, 팩토리가 참조하는 상태는 vi.hoisted로 만들어야 TDZ 에러가 안 난다.
+const {mockFrontendModules} = vi.hoisted(() => ({mockFrontendModules: {value: [] as Module[]}}))
+vi.mock('../api/mock', () => ({
+    get MOCK_MODULES() {
+        return mockFrontendModules.value
+    },
 }))
 
 const mockGet = apiClient.get as ReturnType<typeof vi.fn>
@@ -33,11 +33,10 @@ const router = createRouter({
     routes: [{path: '/dev', component: ZoneHomePage}],
 })
 
-beforeEach(async () => {
+beforeEach(() => {
     vi.clearAllMocks()
     favoriteIds.value = []
-    const actual = await vi.importActual<{MOCK_MODULES: Module[]}>('../api/mock')
-    mockModulesState.modules = actual.MOCK_MODULES
+    mockFrontendModules.value = []
 })
 
 describe('ZoneHomePage', () => {
@@ -56,13 +55,19 @@ describe('ZoneHomePage', () => {
         expect(wrapper.text()).not.toContain('PDF 병합')
     })
 
-    it('프론트 전용 모듈은 카테고리가 CATEGORY_ORDER에 없어도(예: 생활) 구역 홈 그리드에 실제로 렌더링된다', async () => {
+    it('프론트 전용 모듈(백엔드 응답에 없는 모듈)이 구역 홈 카테고리 섹션에 실제로 렌더링된다(카테고리가 CATEGORY_ORDER에 등록돼 있어야 함)', async () => {
         mockGet.mockResolvedValueOnce({data: []})
+        mockFrontendModules.value = [
+            {
+                id: 'net-pay-calculator', name: '연봉 실수령액 계산기', category: '급여·근로', isHeavy: false,
+                isFrontendOnly: true, zones: ['life'],
+            },
+        ]
 
         const wrapper = mount(ZoneHomePage, {props: {zoneId: 'life'}, global: {plugins: [router]}})
         await flushPromises()
 
-        expect(wrapper.text()).toContain('급여 계산기')
+        expect(wrapper.text()).toContain('연봉 실수령액 계산기')
     })
 
     it.each(['dev', 'files'] as const)('복수 구역 모듈은 %s 구역 홈에도 노출된다 (양쪽 다 확인)', async (zoneId) => {
@@ -79,10 +84,8 @@ describe('ZoneHomePage', () => {
     })
 
     it('해당 구역에 도구가 없으면 준비 중 안내 문구를 보여준다', async () => {
-        // 이제 모든 구역에 프론트 전용 도구가 최소 1개씩 있어(life=급여 계산기, fun=미니게임 등)
-        // 실제 카탈로그로는 빈 구역을 재현할 수 없다 — MOCK_MODULES를 이 테스트에서만 빈 배열로
-        // 갈아끼워 "도구가 0개일 때" 방어 로직 자체를 검증한다.
-        mockModulesState.modules = []
+        // 이 테스트 파일은 프론트 전용 카탈로그를 직접 통제하므로(mockFrontendModules 기본값 []),
+        // 실제 MOCK_MODULES에 어떤 구역이 채워지든(예: 078의 fun 구역 게임, 오디오 도구 5종 등) 이 테스트는 영향받지 않는다.
         mockGet.mockResolvedValueOnce({
             data: [
                 {id: 'pdf-merge', name: 'PDF 병합', category: 'PDF', isHeavy: true, zones: ['files']},

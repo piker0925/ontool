@@ -8,6 +8,7 @@ import {NETWORK_CONFIGS} from './network'
 import {DEVOPS_CONFIGS} from './devops'
 import {IMAGE_HEAVY_CONFIGS} from './image'
 import {PDF_HEAVY_CONFIGS} from './pdf'
+import {VIDEO_HEAVY_CONFIGS} from './video'
 
 export type {ModuleConfig, ParamDef} from './types'
 
@@ -28,4 +29,5 @@ export const HEAVY_CONFIGS: Record<string, ModuleConfig> = {
     ...PDF_HEAVY_CONFIGS,
     ...GENERATOR_HEAVY_CONFIGS,
     ...SECURITY_HEAVY_CONFIGS,
+    ...VIDEO_HEAVY_CONFIGS,
 }

@@ -10,6 +10,9 @@ on:
     paths:
       - 'front/**'
 
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Test & Build

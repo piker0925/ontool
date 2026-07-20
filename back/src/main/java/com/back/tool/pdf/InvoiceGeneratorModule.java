@@ -15,7 +15,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * 인보이스(청구서) 데이터(JSON 문자열, 단일 파라미터) → PDF.
+ * 청구서 데이터(JSON 문자열, 단일 파라미터) → PDF.
  * 품목 합계는 항상 서버가 품목(수량×단가)을 다시 계산해서 채운다 — 클라이언트가 보낸 합계값은 신뢰하지 않는다.
  */
 @Component
@@ -29,7 +29,7 @@ public class InvoiceGeneratorModule implements ToolModule {
     public String getId() { return "invoice-generator"; }
 
     @Override
-    public String getName() { return "인보이스 생성기"; }
+    public String getName() { return "청구서 생성기"; }
 
     @Override
     public String getCategory() { return "pdf"; }
@@ -49,7 +49,7 @@ public class InvoiceGeneratorModule implements ToolModule {
             Path output = HtmlToPdfRenderer.renderToTempFile(html, "invoice-");
             return ToolResult.ofFile(output);
         } catch (Exception e) {
-            throw new ToolProcessingException("인보이스 PDF 생성 실패: " + e.getMessage(), e);
+            throw new ToolProcessingException("청구서 PDF 생성 실패: " + e.getMessage(), e);
         }
     }
 
@@ -58,10 +58,10 @@ public class InvoiceGeneratorModule implements ToolModule {
         try {
             invoice = JSON.readValue(json, InvoiceData.class);
         } catch (Exception e) {
-            throw new ToolProcessingException("인보이스 데이터 형식이 올바르지 않습니다: " + e.getMessage(), e);
+            throw new ToolProcessingException("청구서 데이터 형식이 올바르지 않습니다: " + e.getMessage(), e);
         }
         if (invoice == null) {
-            throw new ToolProcessingException("인보이스 데이터가 비어 있습니다.");
+            throw new ToolProcessingException("청구서 데이터가 비어 있습니다.");
         }
         if (isBlank(invoice.issuer())) {
             throw new ToolProcessingException("발행자(issuer)는 필수입니다.");

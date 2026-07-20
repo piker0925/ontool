@@ -157,6 +157,16 @@ class HtmlFetchModuleTest {
     }
 
     @Test
+    void rejectsUnresolvableHost() {
+        // RFC 2606 예약 TLD(.invalid)라 실제 네트워크 환경과 무관하게 항상 DNS 해석에 실패한다.
+        // SSRF 방어가 "해석 실패 시 진행"이 아니라 "거부"로 fail-closed인지 검증한다.
+        assertThatThrownBy(() -> localModule().process(new ToolInput(List.of(),
+                Map.of("url", "http://dns-pinning-fetch-test.invalid/"))))
+                .isInstanceOf(ToolProcessingException.class)
+                .hasMessageContaining("호스트를 찾을 수 없습니다");
+    }
+
+    @Test
     void rejectsNonHttpScheme() {
         assertThatThrownBy(() -> localModule().process(new ToolInput(List.of(),
                 Map.of("url", "file:///etc/passwd"))))

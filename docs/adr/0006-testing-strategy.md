@@ -78,3 +78,14 @@ void pendingJobShouldBecomeCompleted() {
 - 우선순위: ToolModule → Repository → Worker 통합 → (선택) Controller
 - Testcontainers 의존성 추가 필요 (`testcontainers-mysql`)
 - Awaitility 의존성 추가 필요
+
+## 추가 — 커버리지 게이트와 제외 정책 (2026-07-20)
+
+이후 백엔드에 JaCoCo가 도입되어 `check`에 라인 커버리지 최소 80% 검증이 물렸다(실측 92%). 이 임계값을 유지하되, 다음 두 부류는 리포트·게이트 계산에서 제외한다 — "테스트가 없다"가 아니라 "이 방식으로는 측정 자체가 안 된다"는 뜻이라 숫자에 남기면 오히려 오해를 부른다.
+
+- **프레임워크 진입점** (`*Application.class` 등): `main()`은 모든 `@SpringBootTest`가 부트스트랩 과정에서 암묵적으로 검증. 스프링 부트 프로젝트의 일반적 관례.
+- **도구가 구조적으로 계측 못 하는 클래스** (예: JEP 418 DNS 리졸버 SPI처럼 JVM 부트스트랩 단계에서 로드되는 클래스): 테스트는 실제로 존재하고 통과해야 하며, 제외 이유는 반드시 `build.gradle.kts`에 인라인 주석으로 남긴다. 패키지 단위가 아니라 클래스를 하나씩 나열 — 와일드카드는 그 패키지의 진짜 미검증 클래스까지 가릴 수 있다.
+
+프론트엔드(`front/`)에는 `@vitest/coverage-v8`로 리포트만 도입했고 게이트는 아직 없다 — 실측치를 몇 차례 지켜본 뒤 임계값 도입 여부를 재검토한다. 계측 오버헤드로 타이밍에 민감한 테스트가 산발적으로 기본 타임아웃(5000ms)을 넘겨 `test.testTimeout`을 10000ms로 올렸다 — vitest에 `--coverage` 전용 타임아웃 훅이 없어 coverage 없는 일반 `pnpm test`에도 같이 적용된다. 로컬에서 2회 연속 통과를 확인했지만 표본이 적어 완전히 배제된 건 아니다 — CI 도입 시 재확인 필요.
+
+세부 구현: `.scratch/issues/092-coverage-gate-cleanup.md`

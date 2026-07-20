@@ -1,5 +1,15 @@
 <template>
-  <div class="grid grid-cols-2 gap-4 max-w-5xl mx-auto w-full">
+  <div class="flex flex-col gap-3 max-w-5xl mx-auto w-full">
+    <div class="flex w-fit gap-0.5 rounded-lg bg-muted p-0.5">
+      <button v-for="m in JWT_MODES" :key="m.id"
+              :class="jwtMode === m.id ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+              class="rounded-md px-4 py-1.5 text-[12px] font-medium transition-colors"
+              @click="jwtMode = m.id">
+        {{ m.label }}
+      </button>
+    </div>
+
+  <div v-if="jwtMode === 'decode'" class="grid grid-cols-2 gap-4">
     <!-- 왼쪽: 입력 + 옵션 -->
     <div class="flex flex-col gap-3">
       <div class="rounded-xl border border-border bg-card overflow-hidden">
@@ -27,6 +37,21 @@
             </div>
           </label>
         </div>
+      </div>
+      <div class="rounded-xl border border-border bg-card p-4">
+        <p class="mb-2 text-[11px] font-medium text-muted-foreground">서명 검증 (선택)</p>
+        <input v-model="decodeSecret"
+               class="w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-[12px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+               placeholder="HS256 서명 키(secret)" type="text"/>
+        <p v-if="signatureVerify !== null"
+           :class="signatureVerify ? 'text-emerald-600' : 'text-destructive'"
+           class="mt-2 text-[11px] font-medium">
+          {{ signatureVerify ? '✓ 서명 일치' : '✗ 서명 불일치' }}
+        </p>
+        <p v-else-if="decodeSecret && jwtResult && summary && summary.alg.label !== 'HS256'"
+           class="mt-2 text-[11px] text-muted-foreground">
+          HS256 토큰만 이 화면에서 검증할 수 있습니다.
+        </p>
       </div>
     </div>
 
@@ -125,12 +150,68 @@
       </div>
     </div>
   </div>
+
+  <!-- 생성 모드 -->
+  <div v-else class="grid grid-cols-2 gap-4">
+    <div class="flex flex-col gap-3">
+      <div class="rounded-xl border border-border bg-card overflow-hidden">
+        <div class="flex h-9 items-center justify-between border-b border-border px-3">
+          <span class="text-[11px] font-medium text-muted-foreground">페이로드 (JSON)</span>
+          <button class="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-muted-foreground/70 transition-colors hover:text-primary"
+                  @click="applyGenSample">
+            <Wand2 class="size-3"/>
+            예시
+          </button>
+        </div>
+        <textarea v-model="genPayload"
+                  class="h-44 w-full resize-none bg-muted/40 p-3 font-mono text-[11px] text-foreground outline-none placeholder:text-muted-foreground/40"
+                  placeholder='{"sub": "1234567890"}'/>
+      </div>
+      <div class="rounded-xl border border-border bg-card p-4">
+        <label class="mb-2 block text-[11px] font-medium text-muted-foreground">서명 키 (secret, HS256)</label>
+        <input v-model="genSecret"
+               class="w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-[12px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+               placeholder="secret" type="text"/>
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-3">
+      <div v-if="genError" class="rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3">
+        <p class="text-[12px] text-destructive">{{ genError }}</p>
+      </div>
+
+      <template v-else-if="genToken">
+        <div class="flex flex-col gap-2.5 rounded-xl border border-border bg-card p-3.5">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-medium text-muted-foreground">생성된 토큰</span>
+            <button class="rounded p-0.5 text-muted-foreground/50 transition-colors hover:text-foreground"
+                    @click="copyGenToken">
+              <Check v-if="genCopied" class="size-3 text-emerald-500"/>
+              <Copy v-else class="size-3"/>
+            </button>
+          </div>
+          <p class="break-all font-mono text-[11px] text-foreground">{{ genToken }}</p>
+        </div>
+        <button class="self-start rounded-md border border-border px-3 py-1.5 text-[12px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                @click="tryInDecodeTab">
+          디코드 탭에서 검증 →
+        </button>
+      </template>
+
+      <div v-else class="flex flex-col items-center justify-center gap-2 py-16 text-center">
+        <ArrowRight class="size-4 text-muted-foreground/40"/>
+        <p class="text-[11px] text-muted-foreground/50">페이로드와 서명 키를 입력하세요</p>
+      </div>
+    </div>
+  </div>
+  </div>
 </template>
 
 <script lang="ts" setup>
-import {computed, defineComponent, h, onUnmounted, reactive, ref} from 'vue'
-import {ArrowRight, Check, Copy, X} from 'lucide-vue-next'
+import {computed, defineComponent, h, onUnmounted, reactive, ref, watch} from 'vue'
+import {ArrowRight, Check, Copy, Wand2, X} from 'lucide-vue-next'
 import {decodeJwt} from '../../utils/jwtDecode'
+import {signJwt, verifyJwtSignature} from '../../utils/jwtSign'
 import {
   claimCopyText,
   formatDuration,
@@ -278,6 +359,77 @@ function decodeJwtInput() {
   } catch (e: unknown) {
     jwtError.value = e instanceof Error ? e.message : '유효하지 않은 JWT입니다.'
   }
+}
+
+// ── 모드 (디코드/생성) ────────────────────────────────────────────────────────
+const JWT_MODES = [
+  {id: 'decode', label: '디코드'},
+  {id: 'generate', label: '생성'},
+] as const
+const jwtMode = ref<'decode' | 'generate'>('decode')
+
+// ── 서명 검증 (디코드 탭, HS256 전용) ──────────────────────────────────────────
+const decodeSecret = ref('')
+const signatureVerify = ref<boolean | null>(null)
+
+// 빠른 연속 입력 시 먼저 시작된 검증이 나중에 끝나 최신 결과를 덮어쓰지 않도록 요청 순번으로 가드.
+let verifyRequestId = 0
+watch([decodeSecret, jwtResult], async () => {
+  const requestId = ++verifyRequestId
+  if (!decodeSecret.value || !jwtResult.value || !jwtInput.value.trim()) {
+    signatureVerify.value = null
+    return
+  }
+  const result = await verifyJwtSignature(jwtInput.value.trim(), decodeSecret.value)
+  if (requestId === verifyRequestId) signatureVerify.value = result
+})
+
+// ── 생성 ─────────────────────────────────────────────────────────────────────
+const genPayload = ref('')
+const genSecret = ref('')
+const genToken = ref('')
+const genError = ref('')
+const genCopied = ref(false)
+
+const GEN_EXAMPLE_PAYLOAD = '{\n  "sub": "1234567890",\n  "name": "Hong Gildong",\n  "role": "admin"\n}'
+const GEN_EXAMPLE_SECRET = 'my-secret-key'
+
+function applyGenSample() {
+  genPayload.value = GEN_EXAMPLE_PAYLOAD
+  genSecret.value = GEN_EXAMPLE_SECRET
+}
+
+// 빠른 연속 입력 시 먼저 시작된 생성이 나중에 끝나 최신 결과를 덮어쓰지 않도록 요청 순번으로 가드.
+let genRequestId = 0
+watch([genPayload, genSecret], async () => {
+  const requestId = ++genRequestId
+  genError.value = ''
+  genToken.value = ''
+  if (!genPayload.value.trim() || !genSecret.value) return
+  try {
+    const token = await signJwt(genPayload.value, genSecret.value)
+    if (requestId === genRequestId) genToken.value = token
+  } catch (e: unknown) {
+    if (requestId === genRequestId) genError.value = e instanceof Error ? e.message : '토큰을 생성할 수 없습니다.'
+  }
+})
+
+async function copyGenToken() {
+  if (!genToken.value) return
+  await navigator.clipboard.writeText(genToken.value)
+  genCopied.value = true
+  setTimeout(() => {
+    genCopied.value = false
+  }, 1500)
+}
+
+/** 생성한 토큰 + secret을 디코드 탭에 그대로 옮겨 라운드트립을 즉시 확인할 수 있게 한다. */
+function tryInDecodeTab() {
+  if (!genToken.value) return
+  jwtInput.value = genToken.value
+  decodeSecret.value = genSecret.value
+  jwtMode.value = 'decode'
+  decodeJwtInput()
 }
 
 // ── 실시간 시계 (만료 카운트다운용, 1초 갱신) ─────────────────────────────────

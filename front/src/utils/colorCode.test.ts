@@ -4,7 +4,9 @@ import {
     contrastRatio,
     hexToRgb,
     hslToRgb,
+    paletteContrastPairs,
     parseColor,
+    type Rgba,
     rgbaToHex,
     rgbToHex,
     rgbToHsl,
@@ -120,5 +122,47 @@ describe('WCAG 대비', () => {
     it('알파 합성: 완전 불투명이면 배경 무시', () => {
         const result = compositeOnBackground({r: 10, g: 20, b: 30, a: 1}, {r: 255, g: 255, b: 255})
         expect(result).toEqual({r: 10, g: 20, b: 30})
+    })
+})
+
+describe('paletteContrastPairs', () => {
+    const white: Rgba = {r: 255, g: 255, b: 255, a: 1}
+    const black: Rgba = {r: 0, g: 0, b: 0, a: 1}
+    const red: Rgba = {r: 255, g: 0, b: 0, a: 1}
+
+    it('N개 색상에서 중복 없는 쌍의 개수(C(N,2))만큼 결과가 나온다 (자기 자신과의 쌍 제외)', () => {
+        expect(paletteContrastPairs([white, black, red])).toHaveLength(3)
+        expect(paletteContrastPairs([white, black, red, red])).toHaveLength(6)
+    })
+
+    it('각 쌍의 대비 수치와 AA 판정이 임계값(4.5)과 정확히 일치한다 — 통과/실패가 표에서 구분되어야 함', () => {
+        const pairs = paletteContrastPairs([white, black, red])
+
+        const whiteBlack = pairs.find(p => p.a === 0 && p.b === 1)!
+        expect(whiteBlack.ratio).toBe(21)
+        expect(whiteBlack.levels.aa).toBe(true)
+
+        // 흰-빨강은 기존 'WCAG 대비' 스위트에서 검증된 ≈4:1 — 4.5 미만이라 AA 실패
+        const whiteRed = pairs.find(p => p.a === 0 && p.b === 2)!
+        expect(whiteRed.ratio).toBe(4)
+        expect(whiteRed.levels.aa).toBe(false)
+
+        const blackRed = pairs.find(p => p.a === 1 && p.b === 2)!
+        expect(blackRed.ratio).toBe(5.25)
+        expect(blackRed.levels.aa).toBe(true)
+        expect(blackRed.levels.aaa).toBe(false)
+    })
+
+    it('알파가 있는 색은 흰 배경에 합성한 뒤 대비를 계산한다 (불투명 검정 50% ≈ 회색과 동일 대비)', () => {
+        const translucentBlack: Rgba = {r: 0, g: 0, b: 0, a: 0.5}
+        const gray: Rgba = {r: 128, g: 128, b: 128, a: 1}
+        const pairsTranslucent = paletteContrastPairs([white, translucentBlack])
+        const pairsOpaqueGray = paletteContrastPairs([white, gray])
+        expect(pairsTranslucent[0].ratio).toBe(pairsOpaqueGray[0].ratio)
+    })
+
+    it('색상이 2개 미만이면 빈 배열', () => {
+        expect(paletteContrastPairs([white])).toEqual([])
+        expect(paletteContrastPairs([])).toEqual([])
     })
 })

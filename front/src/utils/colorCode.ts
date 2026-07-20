@@ -163,3 +163,25 @@ export interface WcagLevels {
 export function wcagLevels(ratio: number): WcagLevels {
     return {aa: ratio >= 4.5, aaa: ratio >= 7, aaLarge: ratio >= 3}
 }
+
+export interface PaletteContrastPair {
+    /** colors 배열의 인덱스 */
+    a: number
+    b: number
+    ratio: number
+    levels: WcagLevels
+}
+
+/** 팔레트의 모든 색상 조합(중복 없는 쌍)의 WCAG 대비를 계산한다. 알파는 흰 배경에 합성해 불투명화한다. */
+export function paletteContrastPairs(colors: Rgba[]): PaletteContrastPair[] {
+    const white = {r: 255, g: 255, b: 255}
+    const opaque = colors.map(c => compositeOnBackground(c, white))
+    const pairs: PaletteContrastPair[] = []
+    for (let i = 0; i < colors.length; i++) {
+        for (let j = i + 1; j < colors.length; j++) {
+            const ratio = contrastRatio(opaque[i], opaque[j])
+            pairs.push({a: i, b: j, ratio, levels: wcagLevels(ratio)})
+        }
+    }
+    return pairs
+}

@@ -65,4 +65,12 @@ public final class FilenameSanitizer {
         }
         return name;
     }
+
+    /** {@link #sanitize}한 이름에서 확장자를 뗀 base name. 안전한 이름이 남지 않으면 fallback. */
+    public static String baseName(String rawName, String fallback) {
+        String sanitized = sanitize(rawName);
+        int dot = sanitized.lastIndexOf('.');
+        String base = dot > 0 ? sanitized.substring(0, dot) : sanitized;
+        return base.isEmpty() ? fallback : base;
+    }
 }

@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -58,6 +59,25 @@ public interface JobRepository extends JpaRepository<Job, String> {
     @Modifying
     @Query("UPDATE Job j SET j.userId = null WHERE j.userId = :userId")
     void anonymizeByUserId(@Param("userId") Long userId);
+
+    /**
+     * status만 갱신하는 부분 업데이트(037). dispatchLane이 잡은 job 스냅샷은 poll()의 트랜잭션이
+     * 커밋되기 전에 워커 스레드가 먼저 findById로 같은 행을 읽어갈 수 있어(REPEATABLE READ 하에서
+     * 서로 다른 스냅샷), 전체 엔티티 save()를 쓰면 어느 한쪽이 상대의 갱신을 덮어쓸 위험이 있다.
+     */
+    @Modifying
+    @Transactional
+    @Query("UPDATE Job j SET j.status = :status WHERE j.id = :id")
+    void updateStatus(@Param("id") String id, @Param("status") JobStatus status);
+
+    /**
+     * progress만 갱신하는 부분 업데이트(037) — 같은 이유로 status 등 다른 필드를 스냅샷째 덮어쓰지 않는다.
+     * 워커 스레드(processJob)는 열린 트랜잭션 없이 이 메서드를 부르므로 자체 @Transactional이 필요하다.
+     */
+    @Modifying
+    @Transactional
+    @Query("UPDATE Job j SET j.progress = :progress WHERE j.id = :id")
+    void updateProgress(@Param("id") String id, @Param("progress") int progress);
 
     @Query(value = "SELECT COUNT(*) as total, " +
             "COALESCE(SUM(status = 'DONE'), 0) as done_count, " +

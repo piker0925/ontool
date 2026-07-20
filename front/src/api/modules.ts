@@ -14,6 +14,7 @@ const CATEGORY_MAP: Record<string, string> = {
     network: '네트워크',
     devops: 'DevOps',
     util: '보안·암호화',
+    video: '영상',
 }
 
 const META_BY_ID = new Map(MOCK_MODULES.map(m => [m.id, m]))

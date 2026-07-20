@@ -16,6 +16,15 @@ export const MOCK_MODULES: Module[] = [
     {id: 'exif-remove', name: 'EXIF 제거', category: '이미지', isHeavy: true, description: '이미지의 촬영 위치·기기 등 EXIF 메타데이터를 무손실로 제거', zones: ['files']},
     {id: 'image-collage', name: '이미지 콜라주', category: '이미지', isHeavy: true, description: '여러 이미지를 격자로 합성', zones: ['files']},
 
+    // 영상 (Heavy, VIDEO 레인)
+    {id: 'video-trim-convert', name: '영상 트리밍/변환', category: '영상', isHeavy: true, description: '구간 자르기, 컨테이너/해상도/비트레이트 변환', zones: ['files']},
+    {id: 'video-to-gif', name: '영상 → GIF', category: '영상', isHeavy: true, description: '영상 구간을 고품질 팔레트 GIF로 변환', zones: ['files']},
+    {id: 'video-frame-extract', name: '프레임 추출', category: '영상', isHeavy: true, description: 'N초 간격 또는 총 N장 균등으로 정지 프레임 추출', zones: ['files']},
+    {id: 'video-metadata', name: '영상 메타데이터', category: '영상', isHeavy: true, description: '해상도·코덱·길이·비트레이트·프레임레이트·크기 조회', zones: ['files']},
+    {id: 'video-to-audio', name: '영상 → 오디오 추출', category: '영상', isHeavy: true, description: '영상 파일에서 오디오 트랙만 mp3/wav로 추출', zones: ['files']},
+    {id: 'video-merge', name: '영상 병합', category: '영상', isHeavy: true, description: '여러 영상 클립을 순서대로 하나로 합치기', zones: ['files']},
+    {id: 'video-watermark', name: '영상 워터마크', category: '영상', isHeavy: true, description: '이미지 또는 텍스트 워터마크를 영상에 삽입', zones: ['files']},
+
     // 생성기
     {id: 'json-schema-to-dto', name: 'JSON Schema → DTO', category: '생성기', isHeavy: true, description: 'JSON Schema로 Java DTO 클래스 생성', zones: ['dev']},
     {id: 'openapi-to-code', name: 'OpenAPI → 코드', category: '생성기', isHeavy: true, description: 'OpenAPI 스펙으로 클라이언트 코드 생성', zones: ['dev']},

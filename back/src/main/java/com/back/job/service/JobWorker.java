@@ -6,6 +6,7 @@ import com.back.job.entity.Job;
 import com.back.job.entity.JobStatus;
 import com.back.job.repository.JobRepository;
 import com.back.tool.model.Lane;
+import com.back.tool.model.ProgressReporter;
 import com.back.tool.model.ToolInput;
 import com.back.tool.model.ToolModule;
 import com.back.tool.model.ToolProcessingException;
@@ -28,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -72,15 +75,15 @@ public class JobWorker {
                 break; // 방어적: 여기까지 오면 permit 계산과 어긋난 것 — 남은 건 다음 틱에
             }
             String jobId = job.getId();
-            job.setStatus(JobStatus.RUNNING);
-            jobRepository.save(job);
+            // 부분 업데이트로 status만 바꾼다(037) — 워커 스레드가 poll()의 커밋 전에 같은 행을
+            // findById로 먼저 읽어갈 수 있어, 전체 엔티티 save()면 서로의 갱신을 덮어쓸 위험이 있다.
+            jobRepository.updateStatus(jobId, JobStatus.RUNNING);
             try {
                 taskExecutor.execute(() -> processJob(jobId, lane));
             } catch (RejectedExecutionException e) {
                 // permit 설계상 발생하지 않아야 하지만, 발생하면 permit·상태를 되돌려 다음 틱 재시도
                 laneLimiter.release(lane);
-                job.setStatus(JobStatus.PENDING);
-                jobRepository.save(job);
+                jobRepository.updateStatus(jobId, JobStatus.PENDING);
                 log.warn("Job {} 실행 제출 거부 — PENDING 복원", jobId);
             }
         }
@@ -117,6 +120,9 @@ public class JobWorker {
         return chosen;
     }
 
+    /** 진행률→DB 저장 간 최소 간격(ms) — FFmpeg가 짧은 주기로 tick을 보고해도 DB를 매번 때리지 않게 스로틀링(037). */
+    private static final long PROGRESS_SAVE_MIN_INTERVAL_MS = 1000;
+
     void processJob(String jobId, Lane lane) {
         Job job = jobRepository.findById(jobId).orElseThrow();
         // startedAt은 poll이 아닌 여기(실행 스레드)서 찍는다 — poll이 잡은 행 잠금이 커밋될 때까지
@@ -130,7 +136,7 @@ public class JobWorker {
                     .stream().map(Path::of).toList();
             Map<String, String> params = Optional.ofNullable(job.getParams()).orElse(Map.of());
 
-            ToolResult result = module.process(new ToolInput(paths, params));
+            ToolResult result = module.process(new ToolInput(paths, params, progressReporterFor(jobId)));
 
             if (result.isFile()) {
                 String key = jobId + "/result." + ext(result.outputFile());
@@ -156,6 +162,29 @@ public class JobWorker {
     // 입력 임시파일은 처리 순간까지만 필요하다. 완료(DONE/FAILED) 후 즉시 삭제해 결과 TTL까지 방치되지 않게 한다.
     private void deleteInputs(Job job) {
         job.inputTempDirs().forEach(fileSweeper::deleteRecursively);
+    }
+
+    /**
+     * 모듈이 report()를 부를 때마다 job.progress를 부분 업데이트로 갱신하는 리포터. 같은 값 반복 보고나
+     * 너무 잦은 tick은 스로틀링해 DB에 부담을 주지 않는다(037 — ADR-0019 진행률 배관을 실제로 채움).
+     * 전체 엔티티 save()가 아니라 updateProgress()를 쓰는 이유는 dispatchLane 참조.
+     */
+    private ProgressReporter progressReporterFor(String jobId) {
+        AtomicInteger lastReported = new AtomicInteger(-1);
+        AtomicLong lastSavedAtMs = new AtomicLong(0);
+        return progress -> {
+            int clamped = Math.max(0, Math.min(99, progress)); // 100은 완료 시 이 메서드 밖에서 확정
+            if (clamped == lastReported.get()) {
+                return;
+            }
+            long now = System.currentTimeMillis();
+            if (now - lastSavedAtMs.get() < PROGRESS_SAVE_MIN_INTERVAL_MS) {
+                return;
+            }
+            lastReported.set(clamped);
+            lastSavedAtMs.set(now);
+            jobRepository.updateProgress(jobId, clamped);
+        };
     }
 
     private String ext(Path file) {

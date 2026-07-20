@@ -85,7 +85,7 @@ describe('ZoneHomePage', () => {
 
     it('해당 구역에 도구가 없으면 준비 중 안내 문구를 보여준다', async () => {
         // 이 테스트 파일은 프론트 전용 카탈로그를 직접 통제하므로(mockFrontendModules 기본값 []),
-        // 실제 MOCK_MODULES에 어떤 구역이 채워지든(예: 078의 fun 구역 게임) 이 테스트는 영향받지 않는다.
+        // 실제 MOCK_MODULES에 어떤 구역이 채워지든(예: 078의 fun 구역 게임, 오디오 도구 5종 등) 이 테스트는 영향받지 않는다.
         mockGet.mockResolvedValueOnce({
             data: [
                 {id: 'pdf-merge', name: 'PDF 병합', category: 'PDF', isHeavy: true, zones: ['files']},

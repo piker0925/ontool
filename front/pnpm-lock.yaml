@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@breezystack/lamejs':
+        specifier: ^1.2.7
+        version: 1.2.7
       '@fontsource-variable/jetbrains-mono':
         specifier: ^5.2.8
         version: 5.2.8
@@ -68,6 +71,9 @@ importers:
       shadcn-vue:
         specifier: ^2.7.4
         version: 2.7.4(eslint@10.6.0(jiti@2.7.0))(magicast@0.5.3)(vue@3.5.39(typescript@6.0.3))
+      soundtouchjs:
+        specifier: ^0.3.0
+        version: 0.3.0
       spark-md5:
         specifier: ^3.0.2
         version: 3.0.2
@@ -89,6 +95,9 @@ importers:
       vue-sonner:
         specifier: ^2.0.9
         version: 2.0.9
+      wavesurfer.js:
+        specifier: ^7.12.11
+        version: 7.12.11
       xlsx:
         specifier: ^0.18.5
         version: 0.18.5
@@ -288,6 +297,9 @@ packages:
   '@bramus/specificity@2.4.2':
     resolution: {integrity: sha512-ctxtJ/eA+t+6q2++vj5j7FYX3nRu311q1wfYH3xjlLOsczhlhxAg2FWNUXhpGvAw3BWo1xBcvOV6/YLc2r5FJw==}
     hasBin: true
+
+  '@breezystack/lamejs@1.2.7':
+    resolution: {integrity: sha512-6wc7ck65ctA75Hq7FYHTtTvGnYs6msgdxiSUICQ+A01nVOWg6rqouZB8IdyteRlfpYYiFovkf67dIeOgWIUzTA==}
 
   '@csstools/color-helpers@6.1.0':
     resolution: {integrity: sha512-064IFJdjTfUqnjpCVpMOdbr8FLQBhinbZj6yRv2An2E41O/pLEXqfFRWqGq/SxlE5PEUYTlvWsG2r8MswAVvkg==}
@@ -2655,6 +2667,9 @@ packages:
     resolution: {integrity: sha512-qMCMfhY040cVHT43K9BFygqYbUPFZKHOg7K73mtTWJRb8pyP3fzf4Ixd5SzdEJQ6MRUg/WBnOLxghZtKKurENQ==}
     engines: {node: '>=10'}
 
+  soundtouchjs@0.3.0:
+    resolution: {integrity: sha512-P/+SwnIE4BLrMbYK8aB8+GfXRfLv3+BV8HFMrEqOuF0F9BsI3sKEN1T+kY/JqiVURcCQgr50BC8D/uVzE/GozQ==}
+
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
     engines: {node: '>=0.10.0'}
@@ -3037,6 +3052,9 @@ packages:
     resolution: {integrity: sha512-o8qghlI8NZHU1lLPrpi2+Uq7abh4GGPpYANlalzWxyWteJOCsr/P+oPBA49TOLu5FTZO4d3F9MnWJfiMo4BkmA==}
     engines: {node: '>=18'}
 
+  wavesurfer.js@7.12.11:
+    resolution: {integrity: sha512-Sx0yZIz7jRJ9J9p7UL+pl9y0UQBB6UN/XNo+R7Gy4tCR5xZI9jMyA0dnt1R8TMVSQ4LZ10SeB2HJYQ+dV2dPSA==}
+
   web-worker@1.5.0:
     resolution: {integrity: sha512-RiMReJrTAiA+mBjGONMnjVDP2u3p9R1vkcGz6gDIrOMT3oGuYwX2WRMYI9ipkphSuE5XKEhydbhNEJh4NY9mlw==}
 
@@ -3347,6 +3365,8 @@ snapshots:
   '@bramus/specificity@2.4.2':
     dependencies:
       css-tree: 3.2.1
+
+  '@breezystack/lamejs@1.2.7': {}
 
   '@csstools/color-helpers@6.1.0': {}
 
@@ -5714,6 +5734,8 @@ snapshots:
       astral-regex: 2.0.0
       is-fullwidth-code-point: 3.0.0
 
+  soundtouchjs@0.3.0: {}
+
   source-map-js@1.2.1: {}
 
   source-map-resolve@0.6.0:
@@ -6050,6 +6072,8 @@ snapshots:
   w3c-xmlserializer@5.0.0:
     dependencies:
       xml-name-validator: 5.0.0
+
+  wavesurfer.js@7.12.11: {}
 
   web-worker@1.5.0: {}
 

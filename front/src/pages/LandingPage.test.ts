@@ -61,13 +61,14 @@ describe('LandingPage', () => {
         // normalizeApiModules는 백엔드 응답과 무관하게 MOCK_MODULES의 isFrontendOnly 항목을 항상
         // 덧붙인다. files 구역에는 pdf-watermark·pdf-password·pdf-header-footer(PDF 편집기가 개별
         // 페이지 3개로 분리됨)·document-generator, 072의 이미지 유틸 5종(image-crop-social·image-diff·
-        // colorblind-simulator·favicon-generator·image-to-ascii), 073의 document-viewer가 있으므로,
-        // 목(mock) 백엔드 응답의 pdf-merge 1개 + 이 10개 = 11개가 기대값이다.
+        // colorblind-simulator·favicon-generator·image-to-ascii), 073의 document-viewer, 그리고
+        // 074/075의 오디오 도구 5종(audio-pitch/speed/trim/convert/volume, zones가 files만)이
+        // 있으므로, 목(mock) 백엔드 응답의 pdf-merge 1개 + 이 15개 = 16개가 기대값이다.
         const wrapper = mount(LandingPage, {global: {plugins: [router]}})
         await flushPromises()
 
         const filesCard = wrapper.findAll('a').find(a => a.attributes('href') === '/files')
-        expect(filesCard?.text()).toContain('11 Tools')
+        expect(filesCard?.text()).toContain('16 Tools')
     })
 
     it('검색 트리거를 클릭하면 CommandPalette가 열린다', async () => {

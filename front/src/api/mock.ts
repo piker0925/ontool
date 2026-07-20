@@ -480,4 +480,34 @@ export const MOCK_MODULES: Module[] = [
         keywords: ['docx', 'xlsx', '워드', '엑셀', '문서 미리보기', 'viewer'],
         zones: ['files'],
     },
+    {
+        id: 'audio-pitch', name: '오디오 피치 조절', category: '오디오', isHeavy: false, isFrontendOnly: true,
+        description: '반음 단위로 오디오 피치를 조절합니다',
+        keywords: ['피치', 'pitch'],
+        zones: ['files'],
+    },
+    {
+        id: 'audio-speed', name: '오디오 배속 조절', category: '오디오', isHeavy: false, isFrontendOnly: true,
+        description: '피치 유지 여부를 선택해 오디오 재생 속도를 조절합니다',
+        keywords: ['배속', 'speed'],
+        zones: ['files'],
+    },
+    {
+        id: 'audio-trim', name: '오디오 자르기', category: '오디오', isHeavy: false, isFrontendOnly: true,
+        description: '구간을 지정해 오디오를 자릅니다',
+        keywords: ['트리밍', 'trim', '자르기'],
+        zones: ['files'],
+    },
+    {
+        id: 'audio-convert', name: '오디오 포맷 변환', category: '오디오', isHeavy: false, isFrontendOnly: true,
+        description: 'mp3/wav로 오디오를 재인코딩합니다',
+        keywords: ['포맷 변환', 'mp3', 'wav'],
+        zones: ['files'],
+    },
+    {
+        id: 'audio-volume', name: '오디오 음량 조절', category: '오디오', isHeavy: false, isFrontendOnly: true,
+        description: '소리 크기를 자동으로 맞추거나 직접 키우고 줄입니다',
+        keywords: ['볼륨', '음량', '정규화', '증폭'],
+        zones: ['files'],
+    },
 ]

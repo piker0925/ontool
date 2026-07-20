@@ -1,5 +1,6 @@
 import type {Module} from '../types'
 import {MOCK_MODULES} from './mock'
+import {GAME_COMPONENTS} from '../config/gameRegistry'
 
 const CATEGORY_MAP: Record<string, string> = {
     pdf: 'PDF',
@@ -39,8 +40,17 @@ export function normalizeApiModules(data: Module[]): Module[] {
             keywords: m.keywords ?? META_BY_ID.get(m.id)?.keywords,
             zones: m.zones ?? META_BY_ID.get(m.id)?.zones ?? [],
             kind: m.kind ?? META_BY_ID.get(m.id)?.kind,
-            component: m.component ?? META_BY_ID.get(m.id)?.component,
+            component: m.component ?? META_BY_ID.get(m.id)?.component ?? GAME_COMPONENTS[m.id],
         }))
     const frontendOnly = MOCK_MODULES.filter(m => m.isFrontendOnly)
+        .map(m => ({...m, component: m.component ?? GAME_COMPONENTS[m.id]}))
     return [...backendModules, ...frontendOnly]
+}
+
+// API 호출 자체가 실패했을 때(백엔드 다운)의 최종 폴백 경로 전용 — MOCK_MODULES를 그대로 쓰면
+// 게임 모듈의 component가 비어 렌더링할 화면이 없다(games는 mock.ts에 component를 두지 않음, gameRegistry.ts 참고).
+export function resolveMockModule(id: string): Module | null {
+    const m = MOCK_MODULES.find(m => m.id === id)
+    if (!m) return null
+    return {...m, component: m.component ?? GAME_COMPONENTS[id]}
 }

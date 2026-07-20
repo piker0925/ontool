@@ -307,4 +307,57 @@ export const MOCK_MODULES: Module[] = [
         ],
         zones: ['fun', 'dev'],
     },
+
+    // 미니게임 (프론트 전용, 상태는 컴포넌트 내부 — 서버 저장 없음, v3 이전 범위. ADR-0026)
+    // component 로더는 여기 두지 않는다 — config/gameRegistry.ts와 그 주석 참고.
+    {
+        id: 'game-reaction-time', name: '반응속도 테스트', category: '게임', isHeavy: false, isFrontendOnly: true,
+        description: '신호가 뜨면 최대한 빨리 클릭해 반응 속도를 측정',
+        kind: 'game', zones: ['fun'],
+    },
+    {
+        id: 'game-2048', name: '2048', category: '게임', isHeavy: false, isFrontendOnly: true,
+        description: '같은 숫자 타일을 합쳐 2048을 만드는 퍼즐',
+        kind: 'game', zones: ['fun'],
+    },
+    {
+        id: 'game-minesweeper', name: '지뢰찾기', category: '게임', isHeavy: false, isFrontendOnly: true,
+        description: '지뢰를 피해 안전한 칸을 모두 여는 클래식 퍼즐',
+        kind: 'game', zones: ['fun'],
+    },
+    {
+        id: 'game-memory-cards', name: '카드 짝맞추기', category: '게임', isHeavy: false, isFrontendOnly: true,
+        description: '카드 두 장을 뒤집어 같은 짝을 찾는 기억력 게임',
+        kind: 'game', zones: ['fun'],
+    },
+    {
+        id: 'game-snake', name: '스네이크', category: '게임', isHeavy: false, isFrontendOnly: true,
+        description: '방향키로 뱀을 조종해 먹이를 먹고 길이를 늘리는 클래식 게임',
+        kind: 'game', zones: ['fun'],
+    },
+    {
+        id: 'game-simon', name: '사이먼', category: '게임', isHeavy: false, isFrontendOnly: true,
+        description: '색상 순서를 기억해 그대로 따라 클릭하는 순서 기억 게임',
+        kind: 'game', zones: ['fun'],
+    },
+    {
+        id: 'game-baseball', name: '숫자야구', category: '게임', isHeavy: false, isFrontendOnly: true,
+        description: '중복 없는 숫자를 스트라이크·볼 힌트로 추리하는 게임',
+        kind: 'game', zones: ['fun'],
+    },
+    {
+        id: 'game-tictactoe', name: '틱택토', category: '게임', isHeavy: false, isFrontendOnly: true,
+        description: '컴퓨터를 상대로 3x3 판에서 한 줄을 먼저 만드는 삼목 게임',
+        kind: 'game', zones: ['fun'],
+    },
+    // 게임은 아니지만 078의 상주형 게임 페이지 모델(GamePage)을 그대로 재사용한다 — kind는 'tool'(생략)로
+    // 두어 게임 카테고리에 섞이지 않게 하고, 생산성 도구로 분류한다(component 로더는 여전히
+    // gameRegistry.ts를 거친다 — 렌더은 kind가 아니라 component로 결정되므로 무관, ADR-0026).
+    // '생활' 카테고리는 main 병합 시점(ADR-0028)에 급여·근로/금융/날짜·나이/건강/단위·변환으로
+    // 이미 세분화되어 있었고 뽀모도로에 맞는 게 없어 '생산성' 카테고리를 새로 만들었다.
+    {
+        id: 'pomodoro', name: '뽀모도로 타이머', category: '생산성', isHeavy: false, isFrontendOnly: true,
+        description: '작업/휴식 사이클을 반복하는 뽀모도로 타이머·스톱워치',
+        zones: ['life'],
+    },
 ]

@@ -20,9 +20,15 @@
     <!-- Name + Description -->
     <div class="min-w-0 flex-1 flex items-center gap-3">
       <div class="flex flex-col min-w-0" :class="mode === 'list' ? 'flex-row items-center gap-2' : ''">
-        <p class="truncate text-[14px] font-medium text-foreground group-hover:text-primary transition-colors">
-          {{ mod.name }}
-        </p>
+        <div class="flex items-center gap-1.5 min-w-0">
+          <p class="truncate text-[14px] font-medium text-foreground group-hover:text-primary transition-colors">
+            {{ mod.name }}
+          </p>
+          <span
+              v-if="mod.kind === 'game'"
+              class="shrink-0 rounded-full border border-border bg-secondary px-1.5 py-0.5 font-mono text-[9px] font-medium text-muted-foreground"
+          >게임</span>
+        </div>
         <p v-if="mod.description && mode !== 'list'" class="truncate mt-0.5 text-[12px] text-muted-foreground/80">
           {{ mod.description }}
         </p>

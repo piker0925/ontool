@@ -485,6 +485,23 @@ describe('ToolPage 단건 SSE 재연결 (042)', () => {
     })
 })
 
+describe('ToolPage — component 필드 (kind: game)', () => {
+    it('mod.component가 있으면 그 컴포넌트를 렌더링하고, 기본 도구 헤더(즐겨찾기 등)는 렌더링하지 않는다', async () => {
+        const StubGame = {template: '<div data-testid="stub-game">GAME CONTENT</div>'}
+        const wrapper = await mountAt('game-2048', [
+            {
+                id: 'game-2048', name: '2048', category: '게임', isHeavy: false, isFrontendOnly: true,
+                kind: 'game', zones: ['fun'], component: () => Promise.resolve(StubGame),
+            },
+        ])
+
+        await vi.waitFor(() => expect(wrapper.find('[data-testid="stub-game"]').exists()).toBe(true))
+
+        expect(wrapper.find('[data-testid="stub-game"]').text()).toBe('GAME CONTENT')
+        expect(wrapper.text()).not.toContain('즐겨찾기')
+    })
+})
+
 describe('ToolPage 배치 폴링 실패 (042)', () => {
     const imageResize: Module = {id: 'image-resize', name: '이미지 리사이즈', category: '이미지', isHeavy: true, zones: ['files']}
 

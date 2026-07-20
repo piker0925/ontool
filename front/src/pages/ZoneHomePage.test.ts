@@ -15,8 +15,9 @@ vi.mock('../composables/useFavorites', () => ({
     useFavorites: () => ({favoriteIds, isFavorite: (id: string) => favoriteIds.value.includes(id), toggle: vi.fn()}),
 }))
 
-// 실제 카탈로그(MOCK_MODULES)는 구역이 계속 채워지므로 여기 의존하면 새 도구가 추가될 때마다 깨진다 —
-// 테스트별로 필요한 프론트 전용 모듈만 명시적으로 고정한다.
+// 실제 카탈로그(MOCK_MODULES)는 구역이 계속 채워지므로 여기 의존하면 새 도구가 추가될 때마다 깨진다
+// (예: 078에서 fun 구역에 게임이, life에서 life 구역에 도구가 채워짐) — 테스트별로 필요한
+// 프론트 전용 모듈만 명시적으로 고정한다.
 // vi.mock은 import보다 먼저 호이스팅되므로, 팩토리가 참조하는 상태는 vi.hoisted로 만들어야 TDZ 에러가 안 난다.
 const {mockFrontendModules} = vi.hoisted(() => ({mockFrontendModules: {value: [] as Module[]}}))
 vi.mock('../api/mock', () => ({
@@ -83,6 +84,8 @@ describe('ZoneHomePage', () => {
     })
 
     it('해당 구역에 도구가 없으면 준비 중 안내 문구를 보여준다', async () => {
+        // 이 테스트 파일은 프론트 전용 카탈로그를 직접 통제하므로(mockFrontendModules 기본값 []),
+        // 실제 MOCK_MODULES에 어떤 구역이 채워지든(예: 078의 fun 구역 게임) 이 테스트는 영향받지 않는다.
         mockGet.mockResolvedValueOnce({
             data: [
                 {id: 'pdf-merge', name: 'PDF 병합', category: 'PDF', isHeavy: true, zones: ['files']},

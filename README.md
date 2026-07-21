@@ -299,7 +299,10 @@ Heavy 도구의 처리 단위인 `Job` 테이블이 큐의 핵심이다.
 ![JUnit5](https://img.shields.io/badge/JUnit_5-25A162?logo=junit5&logoColor=white)
 ![Testcontainers](https://img.shields.io/badge/Testcontainers-2496ED?logo=testcontainers&logoColor=white)
 
-**그 외** &nbsp; 파일 처리: PDFBox · Thumbnailator · TwelveMonkeys · flexmark+openhtmltopdf · ZXing · Bouncy Castle &nbsp;|&nbsp; 외부 바이너리: ffmpeg · LibreOffice+H2Orestart &nbsp;|&nbsp; API 문서·관측: springdoc-openapi · GA4 · Actuator
+**그 외** &nbsp;<br/>
+파일 처리: PDFBox · Thumbnailator · TwelveMonkeys · flexmark+openhtmltopdf · ZXing · Bouncy Castle<br/>
+외부 바이너리: ffmpeg · LibreOffice+H2Orestart<br/>
+API 문서·관측: springdoc-openapi · GA4 · Actuator
 
 ---
 

@@ -51,7 +51,7 @@ jobs:
             fonts-noto-cjk
           curl -fsSL -o /tmp/H2Orestart.oxt \
             https://github.com/ebandal/H2Orestart/releases/download/v0.7.13/H2Orestart.oxt
-          unopkg add --shared /tmp/H2Orestart.oxt
+          sudo unopkg add --shared /tmp/H2Orestart.oxt
 
       - name: Run tests with coverage
         run: ./gradlew check

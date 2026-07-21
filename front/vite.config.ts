@@ -43,6 +43,7 @@ export default defineConfig(({mode}) => {
         test: {
             environment: 'jsdom',
             globals: true,
+            setupFiles: ['./src/test/setup.ts'],
             // Node 22+의 네이티브 --experimental-webstorage가 기본 켜져 있으면 --localstorage-file 없이는
             // globalThis.localStorage.getItem이 undefined라 jsdom의 localStorage와 충돌한다. 워커 프로세스에서
             // 꺼서 jsdom이 제공하는 localStorage만 쓰도록 한다.

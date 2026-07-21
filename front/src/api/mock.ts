@@ -461,6 +461,12 @@ export const MOCK_MODULES: Module[] = [
         zones: ['files', 'dev'],
     },
     {
+        id: 'exif-viewer', name: 'EXIF 뷰어', category: '이미지', isHeavy: false, isFrontendOnly: true,
+        description: '이미지의 촬영기기·GPS 위치·촬영일시 등 EXIF 메타데이터 열람 (읽기 전용)',
+        keywords: ['exif', '메타데이터', 'metadata', 'gps', '촬영정보'],
+        zones: ['files'],
+    },
+    {
         id: 'favicon-generator', name: 'Favicon 생성기', category: '이미지', isHeavy: false, isFrontendOnly: true,
         description: '이미지 하나로 다중 사이즈 favicon.ico + PNG 세트 생성',
         keywords: ['favicon', '파비콘', 'ico'],

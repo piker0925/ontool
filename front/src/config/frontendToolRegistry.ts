@@ -62,6 +62,7 @@ export const FRONTEND_TOOL_COMPONENTS: Record<string, FrontendToolEntry> = {
     'colorblind-simulator': {load: () => import('../components/tools/ColorblindSimulatorTool.vue'), layout: 'narrow'},
     'favicon-generator': {load: () => import('../components/tools/FaviconGeneratorTool.vue'), layout: 'narrow'},
     'image-to-ascii': {load: () => import('../components/tools/ImageToAsciiTool.vue'), layout: 'narrow'},
+    'exif-viewer': {load: () => import('../components/tools/ExifViewerTool.vue'), layout: 'narrow'},
 
     'json-formatter': {load: () => import('../components/UnifiedJsonPage.vue'), layout: 'wide'},
     'data-convert': {load: () => import('../components/UnifiedConvertPage.vue'), layout: 'wide'},

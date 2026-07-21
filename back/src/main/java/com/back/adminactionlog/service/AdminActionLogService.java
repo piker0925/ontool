@@ -5,7 +5,9 @@ import com.back.adminactionlog.entity.AdminActionType;
 import com.back.adminactionlog.repository.AdminActionLogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,8 +42,13 @@ public class AdminActionLogService {
         adminActionLogRepository.save(new AdminActionLog(actionType, targetId, LocalDateTime.now(clock)));
     }
 
+    // 최신순(performedAt desc, id desc tie-break) 정렬은 이 서비스가 보장하는 계약의 일부다 —
+    // 호출부(컨트롤러)가 매번 Sort를 다시 조립하게 하면 "시간순으로 보인다"는 AC가 호출부마다
+    // 따로 지켜야 하는 약속이 되어버린다. UserService.search와 동일한 패턴.
     @Transactional(readOnly = true)
-    public Page<AdminActionLog> findAll(Pageable pageable) {
+    public Page<AdminActionLog> findRecent(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size,
+                Sort.by(Sort.Direction.DESC, "performedAt").and(Sort.by(Sort.Direction.DESC, "id")));
         return adminActionLogRepository.findAll(pageable);
     }
 }

@@ -11,8 +11,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -66,14 +66,36 @@ class AdminActionLogServiceTest {
     }
 
     @Test
-    void findAll_repository_조회_결과를_그대로_위임한다() {
-        Pageable pageable = PageRequest.of(0, 20);
+    void findRecent_repository_조회_결과를_그대로_위임한다() {
         AdminActionLog log = new AdminActionLog(AdminActionType.FORCE_LOGOUT, 1L, NOW);
         Page<AdminActionLog> page = new PageImpl<>(java.util.List.of(log));
         when(adminActionLogRepository.findAll(any(Pageable.class))).thenReturn(page);
 
-        Page<AdminActionLog> result = adminActionLogService.findAll(pageable);
+        Page<AdminActionLog> result = adminActionLogService.findRecent(0, 20);
 
         assertThat(result.getContent()).containsExactly(log);
+    }
+
+    @Test
+    void findRecent_performedAt_내림차순_정렬을_직접_조립해서_repository에_넘긴다() {
+        // 정렬 규칙(최신순)은 이 서비스의 계약이다 — 호출부(컨트롤러)가 Sort를 다시 조립하게
+        // 두면 "시간순으로 보인다"는 AC가 호출부마다 따로 지켜야 하는 약속이 되어버린다.
+        // 그래서 서비스가 만든 Pageable에 실제로 올바른 Sort가 들어있는지까지 검증한다.
+        when(adminActionLogRepository.findAll(any(Pageable.class))).thenReturn(Page.empty());
+
+        adminActionLogService.findRecent(1, 10);
+
+        ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+        verify(adminActionLogRepository).findAll(captor.capture());
+
+        Pageable used = captor.getValue();
+        assertThat(used.getPageNumber()).isEqualTo(1);
+        assertThat(used.getPageSize()).isEqualTo(10);
+        Sort.Order performedAtOrder = used.getSort().getOrderFor("performedAt");
+        Sort.Order idOrder = used.getSort().getOrderFor("id");
+        assertThat(performedAtOrder).isNotNull();
+        assertThat(performedAtOrder.getDirection()).isEqualTo(Sort.Direction.DESC);
+        assertThat(idOrder).isNotNull();
+        assertThat(idOrder.getDirection()).isEqualTo(Sort.Direction.DESC);
     }
 }

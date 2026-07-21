@@ -47,7 +47,8 @@ class ToolControllerAdmissionTest {
 
         ToolController controller = new ToolController(
                 toolService, jobService, mock(ToolStatsService.class), admissionControl, rateLimiter,
-                "build/test-uploads-admission");
+                "build/test-uploads-admission",
+                50L * 1024 * 1024, 100L * 1024 * 1024, 1024L * 1024 * 1024, 2048L * 1024 * 1024);
 
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())

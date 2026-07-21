@@ -49,7 +49,8 @@ class ToolControllerPathTraversalTest {
 
         ToolController controller = new ToolController(
                 toolService, jobService, mock(ToolStatsService.class), admissionControl, rateLimiter,
-                UPLOAD_DIR);
+                UPLOAD_DIR,
+                50L * 1024 * 1024, 100L * 1024 * 1024, 1024L * 1024 * 1024, 2048L * 1024 * 1024);
 
         return MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())

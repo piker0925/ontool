@@ -55,19 +55,21 @@
       <p class="break-all font-mono text-[11px] text-foreground/80">{{ splitPreview.join(', ') }}</p>
     </div>
 
-    <Button class="h-7 text-[12px]" data-testid="confirm-upload" @click="upload(staged)">
-      {{ staged.length >= 2 ? `${staged.length}개 파일 실행` : '실행' }}
+    <Button :disabled="uploading" class="h-7 gap-1.5 text-[12px]" data-testid="confirm-upload" @click="upload(staged)">
+      <Loader2 v-if="uploading" class="size-3 animate-spin"/>
+      {{ uploading ? `업로드 중… ${uploadProgress}%` : (staged.length >= 2 ? `${staged.length}개 파일 실행` : '실행') }}
     </Button>
   </div>
 </template>
 
 <script lang="ts" setup>
 import {computed, ref, watch} from 'vue'
-import {ChevronDown, ChevronUp, X} from 'lucide-vue-next'
+import {ChevronDown, ChevronUp, Loader2, X} from 'lucide-vue-next'
 import {apiClient} from '../api/client'
 import type {UploadResult} from '../types'
 import {moveItem} from '../utils/fileOrder'
 import {uploadErrorMessage} from '../utils/uploadError'
+import {isOversizedFile, oversizedFileMessage} from '../utils/fileSizeLimit'
 import {previewSplitFileNames} from '../utils/pdfSplitPreview'
 import {readImageDimensions, type PixelSize} from '../utils/imageDimensions'
 import {Button} from '@/components/ui/button'
@@ -78,9 +80,12 @@ const props = withDefaults(defineProps<{
   accept?: string
   multiple?: boolean
   reorderable?: boolean
+  /** 서버(/api/v1/modules)가 내려주는 이 모듈의 실제 업로드 한도(106). 0/미지정이면 사전검증을 건너뛴다. */
+  maxFileSizeBytes?: number
 }>(), {
   multiple: true,
   reorderable: false,
+  maxFileSizeBytes: 0,
 })
 const emit = defineEmits<{
   uploaded: [result: UploadResult]
@@ -94,6 +99,8 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const staged = ref<File[]>([])
 const pageCounts = ref(new Map<File, number>())
 const imageDims = ref(new Map<File, PixelSize>())
+const uploading = ref(false)
+const uploadProgress = ref(0)
 
 // 파일이 정확히 1장일 때만 "이 파일의 실제 크기"가 의미 있다 — 여러 장이면 어느 걸 기준으로
 // 삼을지 애매해서 null로 둔다(소비 측에서 배치용 안내 문구로 대체).
@@ -145,13 +152,23 @@ async function upload(files: File[]) {
       if (v !== '' && v !== undefined) form.append(k, v)
     })
   }
+  // 업로드가 오래 걸리는 파일(용량이 크거나 회선이 느림)에서도 클릭이 씹힌 게 아니라
+  // 실제로 진행 중임을 보여주기 위해 버튼을 비활성화하고 실제 전송률을 보여준다(정적 스피너 대신).
+  uploading.value = true
+  uploadProgress.value = 0
   try {
-    const {data} = await apiClient.post<UploadResult>(`/api/v1/tools/${props.moduleId}/upload`, form)
+    const {data} = await apiClient.post<UploadResult>(`/api/v1/tools/${props.moduleId}/upload`, form, {
+      onUploadProgress: e => {
+        if (e.total) uploadProgress.value = Math.round((e.loaded / e.total) * 100)
+      },
+    })
     staged.value = []
     emit('uploaded', data)
   } catch (e) {
     // 실패 시 staged를 비우지 않아 사용자가 그대로 재시도할 수 있게 둔다.
     emit('error', uploadErrorMessage(e))
+  } finally {
+    uploading.value = false
   }
 }
 
@@ -160,10 +177,19 @@ function handleFiles(files: File[]) {
   // 파일 업로드하는 모든 모듈은 즉시 실행하지 않고 스테이징한다(034). 사용자가 파라미터를
   // 조정하거나 잘못 올린 파일을 취소·교체한 뒤 '실행' 버튼을 눌러야 그 시점 값으로 실행된다.
   const selected = props.multiple ? files : files.slice(0, 1)
+
+  // 서버 업로드 한도를 넘는 파일은 스테이징하지 않고 선택 즉시 거른다. 안 그러면 전송이
+  // 다 끝날 때까지 기다렸다가 413을 받게 되어, 큰 파일일수록 "입력이 된 건지" 알 수 없는
+  // 채로 한참 방치된다.
+  const oversized = selected.filter(f => isOversizedFile(f, props.maxFileSizeBytes))
+  oversized.forEach(f => emit('error', oversizedFileMessage(f, props.maxFileSizeBytes)))
+  const valid = selected.filter(f => !isOversizedFile(f, props.maxFileSizeBytes))
+  if (!valid.length) return
+
   // multiple이면 여러 번 나눠 담을 수 있게 누적, 단일 모듈이면 새 선택으로 교체한다.
-  staged.value = props.multiple ? [...staged.value, ...selected] : selected
-  selected.forEach(loadPageCount)
-  selected.forEach(loadImageDimensions)
+  staged.value = props.multiple ? [...staged.value, ...valid] : valid
+  valid.forEach(loadPageCount)
+  valid.forEach(loadImageDimensions)
 }
 
 function onDrop(e: DragEvent) {

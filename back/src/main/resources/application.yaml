@@ -5,10 +5,10 @@ spring:
     active: local
   servlet:
     multipart:
-      # 업로드 한도(모든 프로파일 공통). 값 근거: 결과는 아직 in-memory로 처리되므로(진짜 대용량 스트리밍은 036)
-      # 힙 안전선 기준으로 파일 단건 50MB, 요청 전체(배치 합산) 100MB로 둔다. 초과분은 앞단에서 413으로 거부.
-      max-file-size: 50MB
-      max-request-size: 100MB
+      # 컨테이너(서블릿) 레벨 한도 — 모든 레인 중 가장 큰 값(VIDEO, 아래 upload.* 참조)을 기준으로 연다.
+      # 레인별 실제 한도는 여기서 다 거르지 않고 ToolController가 module.getLane() 기준으로 재검증한다(106).
+      max-file-size: 1GB
+      max-request-size: 2GB
   # 소셜 로그인(구글·카카오, ADR-0024). client-id/secret 미설정 시에도(더미 기본값) 앱은 정상 기동한다 —
   # 실제 로그인 시도만 실패한다. 로컬에서 실로그인을 테스트하려면 GOOGLE_CLIENT_ID 등을 환경변수로 export할 것.
   security:
@@ -48,12 +48,28 @@ storage:
   # uploads+results 누적 사용량 상한. 초과 시 507 STORAGE_FULL로 거부.
   # 기본 10GB — ⚠ prod 실제 블록 스토리지 용량(df -h) 확인 후 값 확정할 것.
   disk-budget-bytes: 10737418240
+  # 디스크 조기청소 상한선(106/ADR-0033). 넘으면 완료 작업을 오래된 순으로 강제 만료시켜 다음 틱에
+  # 회수한다. 기본 8GB(80%) = 예산(10GB) - 청소 주기(60초) 동안의 최악 동시 유입을 흡수할 버퍼(2GB).
+  high-water-mark-bytes: 8589934592
+  # 한 틱에 몇 건씩 조기 만료시킬지 — 래칫 방식(모자라면 다음 틱에 재확인해 더 처리).
+  eviction-batch-size: 20
 queue:
   # 레인별 PENDING 대기 상한. 초과 시 503 QUEUE_FULL로 거부.
   # VIDEO는 코어를 오래 점유해(ADR-0019) 소수만 쌓여도 대기가 길므로 좁게 둔다.
   max-pending:
     heavy: 200
     video: 10
+
+# 레인별 업로드 한도(파일당/요청당, bytes). 근거: 106.
+# VIDEO(ffmpeg 서브프로세스, Path 기반 I/O)는 JVM 힙에 올라가지 않아 크게 둔다.
+# HEAVY(이미지·PDF)는 디코드가 힙을 쓰므로(PDFBox 기본 스크래치 방식이 MemoryUsageSetting.setupMainMemoryOnly) 좁게 둔다 — 상향하려면 107 선행.
+upload:
+  max-file-size-bytes:
+    heavy: 52428800    # 50MB
+    video: 1073741824  # 1GB — 1080p(~8Mbps) 약 17분 분량
+  max-request-size-bytes:
+    heavy: 104857600   # 100MB
+    video: 2147483648  # 2GB — video-merge/watermark 배치(파일당 값의 2배)
 
 # 영상 처리(037) — FFmpeg/FFprobe 바이너리 경로. 기본값은 PATH에서 찾는다(로컬 homebrew, prod Docker apt 설치본).
 ffmpeg:

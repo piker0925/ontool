@@ -276,6 +276,100 @@ describe('FileUploader', () => {
         expect(wrapper.emitted('dimensions')!.at(-1)).toEqual([null])
     })
 
+    it('서버가 내려준 한도를 초과하는 파일은 스테이징하지 않고 선택 즉시 error를 emit한다', async () => {
+        const big = new File(['x'], 'huge.mp4')
+        Object.defineProperty(big, 'size', {value: 50 * 1024 * 1024 + 1})
+
+        const wrapper = mount(FileUploader, {
+            props: {moduleId: 'video-metadata', maxFileSizeBytes: 50 * 1024 * 1024},
+        })
+
+        await selectFiles(wrapper, [big])
+
+        // 왕복 없이 즉시 걸러야 하므로 서버 호출 자체가 없어야 한다.
+        expect(mockPost).not.toHaveBeenCalled()
+        expect(wrapper.text()).not.toContain('huge.mp4')
+        expect(wrapper.emitted('error')).toBeTruthy()
+        expect((wrapper.emitted('error')![0][0] as string)).toContain('huge.mp4')
+    })
+
+    it('maxFileSizeBytes를 안 주면(모듈 정보 로딩 전 등) 클라이언트 사전검증을 건너뛰고 정상 스테이징한다', async () => {
+        const big = new File(['x'], 'huge.mp4')
+        Object.defineProperty(big, 'size', {value: 999 * 1024 * 1024})
+
+        const wrapper = mount(FileUploader, {
+            props: {moduleId: 'video-metadata'},
+        })
+
+        await selectFiles(wrapper, [big])
+
+        expect(wrapper.text()).toContain('huge.mp4')
+        expect(wrapper.emitted('error')).toBeFalsy()
+    })
+
+    it('여러 파일 중 한도 초과분만 걸러내고 나머지는 정상 스테이징한다', async () => {
+        const ok = new File(['a'], 'ok.mp4')
+        const big = new File(['x'], 'huge.mp4')
+        Object.defineProperty(big, 'size', {value: 50 * 1024 * 1024 + 1})
+
+        const wrapper = mount(FileUploader, {
+            props: {moduleId: 'video-merge', multiple: true, maxFileSizeBytes: 50 * 1024 * 1024},
+        })
+
+        await selectFiles(wrapper, [ok, big])
+
+        expect(wrapper.text()).toContain('ok.mp4')
+        expect(wrapper.text()).not.toContain('huge.mp4')
+        expect(wrapper.emitted('error')).toBeTruthy()
+    })
+
+    it('업로드 중에는 실행 버튼이 비활성화되고 문구가 바뀐다', async () => {
+        let resolvePost: (v: unknown) => void
+        mockPost.mockReturnValueOnce(new Promise(resolve => {
+            resolvePost = resolve
+        }))
+
+        const wrapper = mount(FileUploader, {
+            props: {moduleId: 'video-metadata'},
+        })
+
+        await selectFiles(wrapper, [new File(['data'], 'clip.mp4')])
+        await wrapper.find('[data-testid="confirm-upload"]').trigger('click')
+        await flushPromises()
+
+        const button = wrapper.find('[data-testid="confirm-upload"]')
+        expect(button.attributes('disabled')).toBeDefined()
+        expect(button.text()).toContain('업로드 중')
+
+        resolvePost!({data: {jobId: 'job-1'}})
+        await flushPromises()
+
+        expect(wrapper.emitted('uploaded')![0]).toEqual([{jobId: 'job-1'}])
+    })
+
+    it('업로드 진행 중에는 실제 전송률(%)을 버튼에 표시한다', async () => {
+        let capturedOnProgress: ((e: {loaded: number; total?: number}) => void) | undefined
+        mockPost.mockImplementationOnce((_url, _form, config) => {
+            capturedOnProgress = config?.onUploadProgress
+            return new Promise(() => {
+            }) // 이 테스트는 진행 중 상태만 관찰하므로 끝까지 resolve하지 않는다.
+        })
+
+        const wrapper = mount(FileUploader, {
+            props: {moduleId: 'video-metadata'},
+        })
+
+        await selectFiles(wrapper, [new File(['data'], 'clip.mp4')])
+        await wrapper.find('[data-testid="confirm-upload"]').trigger('click')
+        await flushPromises()
+
+        expect(capturedOnProgress).toBeTypeOf('function')
+        capturedOnProgress!({loaded: 42, total: 100})
+        await flushPromises()
+
+        expect(wrapper.find('[data-testid="confirm-upload"]').text()).toContain('42%')
+    })
+
     it('이미지가 아닌 파일(PDF)은 크기를 읽지 못해도 dimensions는 null로 유지된다', async () => {
         mockReadImageDimensions.mockResolvedValueOnce(null)
 

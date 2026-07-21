@@ -43,7 +43,8 @@ class ToolControllerRateLimitTest {
 
         ToolController controller = new ToolController(
                 toolService, jobService, mock(ToolStatsService.class), admissionControl, rateLimiter,
-                "build/test-uploads-ratelimit");
+                "build/test-uploads-ratelimit",
+                50L * 1024 * 1024, 100L * 1024 * 1024, 1024L * 1024 * 1024, 2048L * 1024 * 1024);
 
         return MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())

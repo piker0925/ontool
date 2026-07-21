@@ -261,6 +261,7 @@
           <div class="flex flex-1 flex-col overflow-auto p-6">
             <FileUploader
                 :accept="heavyConfig?.fileAccept"
+                :maxFileSizeBytes="mod.maxFileSizeBytes ?? 0"
                 :moduleId="mod.id"
                 :multiple="heavyConfig?.fileMultiple ?? true"
                 :params="heavyFormValues"

@@ -12,6 +12,9 @@ export interface Module {
     isHeavy: boolean
     isFrontendOnly?: boolean
     description?: string
+    /** 이 모듈(레인)의 실제 업로드 한도, bytes (106). 서버가 내려주며, light/mock 모듈은 없을 수 있다. */
+    maxFileSizeBytes?: number
+    maxRequestSizeBytes?: number
     /** 검색 별칭 (통합 도구가 흡수한 기존 도구명 등) */
     keywords?: ModuleKeyword[]
     /** 노출 구역. 소속이 아니라 탐색 컨텍스트 — 복수 허용. zones[0]이 기본 구역 (ADR-0023) */

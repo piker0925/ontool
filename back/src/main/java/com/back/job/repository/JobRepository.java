@@ -47,6 +47,9 @@ public interface JobRepository extends JpaRepository<Job, String> {
 
     List<Job> findAllByExpiresAtBefore(LocalDateTime now);
 
+    /** 디스크 조기청소(106/ADR-0033) — 완료된 작업을 오래된 순으로 배치 조회해 강제 만료 대상으로 삼는다. */
+    List<Job> findByStatusInOrderByCreatedAtAsc(Collection<JobStatus> statuses, Pageable pageable);
+
     List<Job> findAllByBatchId(String batchId);
 
     /** 관리자 큐 조회(060) — 상태별 현재 Job 목록. */

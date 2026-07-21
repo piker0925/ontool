@@ -104,4 +104,11 @@ class VideoMetadataModuleTest {
         assertThat(module.isHeavy()).isTrue();
         assertThat(module.getLane()).isEqualTo(Lane.HEAVY);
     }
+
+    @Test
+    void 처리_레인은_HEAVY지만_업로드_크기_기준은_VIDEO다() {
+        // ffprobe만 쓰는 메타데이터 조회라 동시성은 HEAVY 레인으로 충분하지만(위 테스트), 힙 위험이
+        // 없는 것도 다른 영상 모듈과 같으므로 업로드 크기 한도는 VIDEO 기준이어야 한다(106 회귀).
+        assertThat(module.getUploadSizeLane()).isEqualTo(Lane.VIDEO);
+    }
 }

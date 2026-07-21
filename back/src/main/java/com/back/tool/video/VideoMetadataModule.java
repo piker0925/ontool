@@ -1,5 +1,6 @@
 package com.back.tool.video;
 
+import com.back.tool.model.Lane;
 import com.back.tool.model.ToolInput;
 import com.back.tool.model.ToolModule;
 import com.back.tool.model.ToolResult;
@@ -36,6 +37,11 @@ public class VideoMetadataModule implements ToolModule {
 
     @Override
     public boolean isHeavy() { return true; }
+
+    // ffprobe만 써서 동시성은 기본 HEAVY 레인으로 충분하지만(getLane, 위 클래스 코멘트), 힙 위험이
+    // 없는 건 다른 영상 모듈과 같으므로 업로드 크기 한도는 VIDEO 기준을 따른다(106).
+    @Override
+    public Lane getUploadSizeLane() { return Lane.VIDEO; }
 
     @Override
     public ToolResult process(ToolInput input) {

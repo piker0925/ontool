@@ -43,24 +43,42 @@ public class ToolController {
     private final AdmissionControl admissionControl;
     private final RateLimiter rateLimiter;
     private final Path uploadDir;
+    private final long heavyMaxFileSizeBytes;
+    private final long heavyMaxRequestSizeBytes;
+    private final long videoMaxFileSizeBytes;
+    private final long videoMaxRequestSizeBytes;
 
     public ToolController(ToolService toolService, JobService jobService,
                           ToolStatsService toolStatsService,
                           AdmissionControl admissionControl,
                           RateLimiter rateLimiter,
-                          @Value("${storage.upload-dir:uploads}") String uploadDir) {
+                          @Value("${storage.upload-dir:uploads}") String uploadDir,
+                          @Value("${upload.max-file-size-bytes.heavy}") long heavyMaxFileSizeBytes,
+                          @Value("${upload.max-request-size-bytes.heavy}") long heavyMaxRequestSizeBytes,
+                          @Value("${upload.max-file-size-bytes.video}") long videoMaxFileSizeBytes,
+                          @Value("${upload.max-request-size-bytes.video}") long videoMaxRequestSizeBytes) {
         this.toolService = toolService;
         this.jobService = jobService;
         this.toolStatsService = toolStatsService;
         this.admissionControl = admissionControl;
         this.rateLimiter = rateLimiter;
         this.uploadDir = Path.of(uploadDir);
+        this.heavyMaxFileSizeBytes = heavyMaxFileSizeBytes;
+        this.heavyMaxRequestSizeBytes = heavyMaxRequestSizeBytes;
+        this.videoMaxFileSizeBytes = videoMaxFileSizeBytes;
+        this.videoMaxRequestSizeBytes = videoMaxRequestSizeBytes;
     }
 
     @GetMapping("/modules")
     public List<ModuleResponse> listModules() {
         return toolService.listModules().stream()
-                .map(m -> new ModuleResponse(m.getId(), m.getName(), m.getCategory(), m.isHeavy()))
+                .map(m -> new ModuleResponse(m.getId(), m.getName(), m.getCategory(), m.isHeavy(),
+                        // Light 모듈은 업로드 경로가 없어 한도가 의미 없으므로 0 — 프론트는 heavy 모듈에서만 이 값을 쓴다.
+                        // 크기 판정은 getLane()이 아니라 getUploadSizeLane()(106) — 동시성 레인과 다를 수 있다.
+                        m.isHeavy() && m.getUploadSizeLane() == Lane.VIDEO ? videoMaxFileSizeBytes
+                                : m.isHeavy() ? heavyMaxFileSizeBytes : 0,
+                        m.isHeavy() && m.getUploadSizeLane() == Lane.VIDEO ? videoMaxRequestSizeBytes
+                                : m.isHeavy() ? heavyMaxRequestSizeBytes : 0))
                 .toList();
     }
 
@@ -94,6 +112,12 @@ public class ToolController {
         String ownerToken = request.getHeader("X-Client-Id");
         Lane lane = module.getLane();
 
+        // 레인별 업로드 한도 재검증(106): 컨테이너(서블릿) 레벨 한도는 모든 레인 중 가장 큰 값(VIDEO)
+        // 기준이라, 이미지·PDF 같은 HEAVY 레인은 여기서 좁은 한도로 다시 거른다. 디스크 I/O 전이라 가장 싸다.
+        // getLane()(동시성)이 아니라 getUploadSizeLane()(힙 위험 기준)으로 판정한다 — video-metadata처럼
+        // 처리는 HEAVY 레인이어도 크기 한도는 VIDEO를 따르는 모듈이 있다.
+        assertWithinLaneSizeLimit(module.getUploadSizeLane(), files);
+
         // IP당 요청 빈도 앞단 거부(040): 배치든 단건이든 루프 전에 한 번만 검사한다.
         rateLimiter.assertNotLimited(ClientIpResolver.resolve(request));
 
@@ -119,6 +143,22 @@ public class ToolController {
         }).toList();
         List<String> jobIds = jobs.stream().map(Job::getId).toList();
         return ResponseEntity.accepted().body(new BatchCreateResponse(batchId, jobIds));
+    }
+
+    private void assertWithinLaneSizeLimit(Lane lane, List<MultipartFile> files) {
+        long maxFileSize = lane == Lane.VIDEO ? videoMaxFileSizeBytes : heavyMaxFileSizeBytes;
+        long maxRequestSize = lane == Lane.VIDEO ? videoMaxRequestSizeBytes : heavyMaxRequestSizeBytes;
+
+        long total = 0;
+        for (MultipartFile file : files) {
+            if (file.getSize() > maxFileSize) {
+                throw new AppException(ErrorCode.FILE_TOO_LARGE);
+            }
+            total += file.getSize();
+        }
+        if (total > maxRequestSize) {
+            throw new AppException(ErrorCode.FILE_TOO_LARGE);
+        }
     }
 
     private List<String> saveFiles(String tempId, List<MultipartFile> files) {

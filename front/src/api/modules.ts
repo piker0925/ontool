@@ -33,6 +33,19 @@ const HIDDEN_MODULE_IDS = new Set([
     'office-document-convert',
 ])
 
+// isFrontendOnly=true지만 내부적으로 useHeavyJob 등을 통해 백엔드를 직접 호출해 이미 useCount가
+// 오르는 도구. 진입 시 사용 감지 ping(markFrontendToolUsed)을 또 보내면 중복 카운트된다.
+const BACKEND_WIRED_FRONTEND_TOOL_IDS = new Set([
+    'pdf-watermark', 'pdf-password', 'pdf-header-footer', 'office-document-convert',
+    'data-convert', 'code-gen', 'document-generator',
+])
+
+// 순수 클라이언트 계산 도구(로또 번호 생성기 등)는 백엔드 실행 API를 아예 타지 않아
+// useCount가 영원히 0으로 고정된다 — 이런 도구만 진입 시 사용 감지 ping을 보내야 한다.
+export function needsUsagePing(mod: Module): boolean {
+    return !!mod.isFrontendOnly && !BACKEND_WIRED_FRONTEND_TOOL_IDS.has(mod.id)
+}
+
 export function normalizeApiModules(data: Module[]): Module[] {
     const backendModules = data
         .filter(m => !HIDDEN_MODULE_IDS.has(m.id))

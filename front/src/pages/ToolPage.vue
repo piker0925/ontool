@@ -51,7 +51,16 @@
       </div>
 
       <!-- Frontend-only (단일 컴포넌트 도구 / 통합 페이지 도구 모두 registry에서 조회) -->
-      <div v-if="mod.isFrontendOnly" :class="frontendToolLayoutClass">
+      <!-- 자식 컴포넌트마다 "실행됨" 이벤트를 심는 대신, 도구 영역 안에서의 실질적 조작(버튼 클릭,
+           입력 확정, 파일 드롭)을 캡처 단계에서 감지해 사용 감지 ping을 보낸다 — 페이지 진입만 하거나
+           입력 중 키 하나만 눌러도 집계되지 않는다 (pingFrontendToolUseOnce 참고). -->
+      <div
+          v-if="mod.isFrontendOnly"
+          :class="frontendToolLayoutClass"
+          @change.capture="pingFrontendToolUseOnce"
+          @click.capture="pingFrontendToolUseOnce"
+          @drop.capture="pingFrontendToolUseOnce"
+      >
         <component :is="frontendToolComponent" v-if="frontendToolComponent"/>
       </div>
 
@@ -594,7 +603,7 @@ import {
   X,
 } from 'lucide-vue-next'
 import {apiClient} from '../api/client'
-import {normalizeApiModules, resolveMockModule} from '../api/modules'
+import {needsUsagePing, normalizeApiModules, resolveMockModule} from '../api/modules'
 import {buildFallbackParams} from '../utils/lightParams'
 import {uploadErrorMessage} from '../utils/uploadError'
 import {clearPreviousRun, type RunResult} from '../utils/runState'
@@ -860,6 +869,25 @@ async function loadStats(moduleId: string) {
   }
 }
 
+// 순수 프론트 도구는 백엔드 실행 API를 타지 않아 useCount가 오를 방법이 없다 —
+// 도구 내부에서 실제로 조작(클릭·입력 등)이 처음 일어난 시점에 1회 사용 감지 ping을 보낸다.
+// 페이지에 들어오기만 하고 아무것도 안 누르면 집계하지 않는다 (같은 진입 내 그 이후 조작은 추가 집계하지 않음).
+const frontendToolUsePinged = ref(false)
+
+async function pingFrontendToolUseOnce(event: Event) {
+  if (frontendToolUsePinged.value || !mod.value || !needsUsagePing(mod.value)) return
+  // click은 실수로 텍스트 영역을 포커스하는 것만으로도 발생한다 — 버튼을 눌렀을 때만 "실행"으로 인정한다.
+  // change/input 중 change만 쓴다: input은 키 하나하나마다 발화해 오타 한 글자로도 집계돼버린다.
+  if (event.type === 'click' && !(event.target as HTMLElement | null)?.closest('button')) return
+  frontendToolUsePinged.value = true
+  try {
+    const {data} = await apiClient.post<ToolStats>(`/api/v1/tools/${mod.value.id}/use`)
+    stats.value = data
+  } catch {
+    // 집계 실패는 조용히 무시 — 도구 사용 자체를 막지 않는다
+  }
+}
+
 async function toggleLike() {
   const moduleId = route.params.moduleId as string
   if (likePending.value) return
@@ -887,6 +915,7 @@ async function loadModule(moduleId: string) {
   loading.value = true
   mod.value = null
   stats.value = null
+  frontendToolUsePinged.value = false
   showComments.value = true
   commentCount.value = null
   resetAll()

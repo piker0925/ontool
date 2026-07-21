@@ -104,4 +104,15 @@ class ToolStatsControllerTest extends AbstractMySQLIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.likeCount").value(2));
     }
+
+    @Test
+    void 프론트_전용_도구는_use_호출로_비로그인_상태에서도_사용횟수가_오른다() throws Exception {
+        mockMvc.perform(post("/api/v1/tools/lotto-number/use"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.moduleId").value("lotto-number"))
+                .andExpect(jsonPath("$.useCount").value(1));
+        mockMvc.perform(post("/api/v1/tools/lotto-number/use"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.useCount").value(2));
+    }
 }

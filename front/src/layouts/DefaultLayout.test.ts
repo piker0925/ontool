@@ -18,6 +18,9 @@ vi.mock('../composables/useTheme', () => ({
 vi.mock('../composables/useFavorites', () => ({
     useFavorites: () => ({favoriteIds: ref([]), isFavorite: () => false, toggle: vi.fn()}),
 }))
+vi.mock('../composables/useActiveJobs', () => ({
+    useActiveJobs: () => ({jobs: ref([]), track: vi.fn(), dismiss: vi.fn()}),
+}))
 
 const mockGet = apiClient.get as ReturnType<typeof vi.fn>
 
@@ -103,6 +106,19 @@ describe('DefaultLayout — 구역 스코프 사이드바', () => {
         const trigger = wrapper.find('[data-testid="workspace-switcher-trigger"]')
         expect(trigger.exists()).toBe(true)
         expect(aside.element.contains(trigger.element)).toBe(true)
+    })
+})
+
+describe('DefaultLayout — 내 작업 패널 (043)', () => {
+    it('사이드바(aside) 안에 내 작업 패널이 상시 렌더링된다', async () => {
+        await router.push('/dev')
+        const wrapper = mount(DefaultLayout, {global: {plugins: [router]}})
+        await flushPromises()
+
+        const aside = wrapper.find('aside')
+        const panel = wrapper.find('[data-testid="active-jobs-panel"]')
+        expect(panel.exists()).toBe(true)
+        expect(aside.element.contains(panel.element)).toBe(true)
     })
 })
 

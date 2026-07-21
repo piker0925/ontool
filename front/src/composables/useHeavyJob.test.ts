@@ -8,6 +8,13 @@ vi.mock('../api/client', () => ({
     apiClient: {get: vi.fn(), post: vi.fn()},
 }))
 
+// 043: useHeavyJob은 moduleId/moduleName이 주어지면 전역 "내 작업" 추적 store에도 등록한다.
+// 이 파일의 관심사는 useHeavyJob 자체의 SSE/결과 로직이므로 store 호출 여부만 스텁으로 검증한다.
+const mockTrackActiveJob = vi.fn()
+vi.mock('./useActiveJobs', () => ({
+    useActiveJobs: () => ({jobs: {value: []}, track: mockTrackActiveJob, dismiss: vi.fn()}),
+}))
+
 const mockGet = apiClient.get as ReturnType<typeof vi.fn>
 
 // jsdom엔 EventSource가 없어 최소 mock을 직접 둔다 — ToolPage.test.ts의 MockEventSource와 동일 패턴.
@@ -153,5 +160,19 @@ describe('useHeavyJob', () => {
         expect(first.closeSpy).toHaveBeenCalled()
         expect(MockEventSource.instances).toHaveLength(2)
         expect(heavyJob.jobId.value).toBe('job-2')
+    })
+
+    describe('043: 전역 Job 추적 store 등록', () => {
+        it('moduleId·moduleName을 함께 넘기면 전역 store에도 등록한다', () => {
+            const {heavyJob} = mountHeavyJob()
+            heavyJob.track('job-1', 'pdf-password', 'PDF 비밀번호 설정/해제')
+            expect(mockTrackActiveJob).toHaveBeenCalledWith('job-1', 'pdf-password', 'PDF 비밀번호 설정/해제')
+        })
+
+        it('moduleId·moduleName 없이 호출하면(레거시 호출부) 전역 store를 건드리지 않는다', () => {
+            const {heavyJob} = mountHeavyJob()
+            heavyJob.track('job-1')
+            expect(mockTrackActiveJob).not.toHaveBeenCalled()
+        })
     })
 })

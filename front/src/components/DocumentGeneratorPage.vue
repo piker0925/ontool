@@ -157,7 +157,7 @@ async function generateInvoice() {
   form.append('margin', margin.value)
   try {
     const {data} = await apiClient.post<UploadResult>('/api/v1/tools/invoice-generator/upload', form)
-    if (!isBatchResult(data)) heavyJob.track(data.jobId)
+    if (!isBatchResult(data)) heavyJob.track(data.jobId, 'invoice-generator', '청구서 생성')
   } catch (e) {
     uploadError.value = uploadErrorMessage(e)
   }

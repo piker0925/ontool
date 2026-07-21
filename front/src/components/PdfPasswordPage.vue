@@ -83,7 +83,7 @@ const uploadError = ref<string | null>(null)
 function onUploaded(r: UploadResult) {
   uploadError.value = ''
   if (isBatchResult(r)) return
-  heavyJob.track(r.jobId)
+  heavyJob.track(r.jobId, 'pdf-password', 'PDF 비밀번호 설정/해제')
 }
 
 function onUploadError(message: string) {

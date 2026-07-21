@@ -67,7 +67,9 @@ describe('PdfHeaderFooterPage', () => {
         await wrapper.findComponent(FileUploader).vm.$emit('uploaded', {jobId: 'job-1'})
         const panel = wrapper.findComponent(HeavyJobStatusPanel)
         expect(panel.props('jobId')).toBe('job-1')
-        expect(MockEventSource.instances).toHaveLength(1)
+        // 043: 이 페이지 자신의 실시간 표시용 연결 1개 + 전역 "내 작업" 추적 store용 백그라운드
+        // 연결 1개, 총 2개 — 페이지를 벗어나도 추적이 끊기지 않도록 하는 의도된 트레이드오프.
+        expect(MockEventSource.instances).toHaveLength(2)
     })
 
     it('업로드 실패 시 에러 메시지가 HeavyJobStatusPanel로 전달된다', async () => {

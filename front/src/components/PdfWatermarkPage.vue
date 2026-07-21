@@ -100,7 +100,7 @@ const uploadError = ref<string | null>(null)
 function onUploaded(r: UploadResult) {
   uploadError.value = ''
   if (isBatchResult(r)) return // 워터마크는 항상 단건 job으로만 라우팅된다
-  heavyJob.track(r.jobId)
+  heavyJob.track(r.jobId, 'pdf-watermark', '워터마크 삽입')
 }
 
 function onUploadError(message: string) {

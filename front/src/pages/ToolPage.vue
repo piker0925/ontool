@@ -608,6 +608,7 @@ import {FRONTEND_TOOL_COMPONENTS} from '../config/frontendToolRegistry'
 import {useRecentTools} from '../composables/useRecentTools'
 import {useLikes} from '../composables/useLikes'
 import {useFavorites} from '../composables/useFavorites'
+import {useActiveJobs} from '../composables/useActiveJobs'
 
 import {parseStructuredResult} from '../utils/structuredResult'
 import StructuredResultView from '../components/StructuredResultView.vue'
@@ -646,6 +647,7 @@ const showComments = ref(true)
 const commentCount = ref<number | null>(null)
 
 const {record: recordRecent} = useRecentTools()
+const {track: trackActiveJob} = useActiveJobs()
 const {isFavorite, toggle: toggleFavorite} = useFavorites()
 const isFav = computed(() => mod.value ? isFavorite(mod.value.id) : false)
 function toggleFav() {
@@ -1013,6 +1015,11 @@ function onUploaded(r: UploadResult) {
     return
   }
   jobId.value = r.jobId
+  // 043: 페이지를 벗어나도 추적이 끊기지 않도록 전역 store에도 등록한다. Light 모듈은
+  // 이 분기(Heavy 전용 업로드 흐름)에 도달하지 않으므로 추적 대상에서 자연히 제외된다.
+  if (mod.value?.isHeavy) {
+    trackActiveJob(r.jobId, mod.value.id, mod.value.name)
+  }
 }
 
 // ETA 초 → 사람이 읽는 문자열 (예: "45초", "2분 10초")

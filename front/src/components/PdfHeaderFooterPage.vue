@@ -78,7 +78,7 @@ const uploadError = ref<string | null>(null)
 function onUploaded(r: UploadResult) {
   uploadError.value = ''
   if (isBatchResult(r)) return
-  heavyJob.track(r.jobId)
+  heavyJob.track(r.jobId, 'pdf-header-footer', '헤더/푸터/페이지번호')
 }
 
 function onUploadError(message: string) {

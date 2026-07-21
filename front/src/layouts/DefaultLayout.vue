@@ -121,6 +121,9 @@
         </div>
       </nav>
 
+      <!-- 내 작업: Heavy Job 백그라운드 추적 패널 (043) -->
+      <ActiveJobsPanel/>
+
       <!-- 사이드바 하단: 부가 링크 -->
       <div class="mt-auto flex items-center justify-between border-t border-white/60 dark:border-white/10 p-3">
         <router-link to="/suggestions" class="flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground">
@@ -227,6 +230,7 @@ import type {Module} from '../types'
 import {CATEGORY_CONFIG, CATEGORY_ORDER} from '../utils/categoryConfig'
 import {useToolFilter} from '../composables/useToolFilter'
 import {useFavorites} from '../composables/useFavorites'
+import ActiveJobsPanel from '../components/ActiveJobsPanel.vue'
 import BrandLogo from '../components/BrandLogo.vue'
 import CommandPalette from '../components/CommandPalette.vue'
 import ThemeToggleButton from '../components/ThemeToggleButton.vue'

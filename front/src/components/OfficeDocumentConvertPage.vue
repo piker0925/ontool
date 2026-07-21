@@ -65,7 +65,7 @@ function onStaged(files: File[]) {
 function onUploaded(r: UploadResult) {
   uploadError.value = ''
   if (isBatchResult(r)) return
-  heavyJob.track(r.jobId)
+  heavyJob.track(r.jobId, 'office-document-convert', '오피스 문서 변환기')
 }
 
 function onUploadError(message: string) {

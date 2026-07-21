@@ -1,5 +1,6 @@
 import {onUnmounted, ref} from 'vue'
 import {apiClient} from '../api/client'
+import {useActiveJobs} from './useActiveJobs'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
 const SSE_MAX_CONSECUTIVE_ERRORS = 5
@@ -21,6 +22,7 @@ export interface HeavyJobResult {
  * 남겨두고 건드리지 않으며, 이 composable은 isFrontendOnly 커스텀 페이지 전용으로만 쓴다.
  */
 export function useHeavyJob() {
+    const {track: trackActiveJob} = useActiveJobs()
     const jobId = ref<string | null>(null)
     const progress = ref<HeavyJobProgress | null>(null)
     const reconnecting = ref(false)
@@ -55,11 +57,21 @@ export function useHeavyJob() {
         }
     }
 
-    /** jobId를 받아 SSE 추적을 시작한다. jobId 출처(FileUploader 업로드든, 파라미터만 보내는 직접 호출이든)는 상관하지 않는다. */
-    function track(id: string) {
+    /**
+     * jobId를 받아 SSE 추적을 시작한다. jobId 출처(FileUploader 업로드든, 파라미터만 보내는 직접 호출이든)는 상관하지 않는다.
+     * moduleId·moduleName을 함께 넘기면 043 전역 Job 추적 store에도 등록해, 이 페이지를 벗어나도
+     * 사이드바 "내 작업" 패널에서 계속 진행 상황을 볼 수 있게 한다(호출부는 onUploaded와 동일한 지점).
+     * 이 페이지 자신의 실시간 표시(progress 등)는 이 함수가 여는 별도 SSE 연결로 그대로 처리한다 —
+     * 전역 store는 자신만의 연결을 독립적으로 열고 백그라운드에서 추적한다(ToolPage와 동일한 트레이드오프).
+     */
+    function track(id: string, moduleId?: string, moduleName?: string) {
         reset()
         jobId.value = id
         errorCount = 0
+
+        if (moduleId && moduleName) {
+            trackActiveJob(id, moduleId, moduleName)
+        }
 
         const es = new EventSource(`${API_BASE}/api/v1/jobs/${id}/stream`)
         eventSource = es

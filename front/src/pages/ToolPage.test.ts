@@ -11,6 +11,13 @@ vi.mock('../api/client', () => ({
     apiClient: {get: vi.fn(), post: vi.fn()},
 }))
 
+// 043: 전역 Job 추적 store는 ToolPage 밖(사이드바)의 관심사이므로, 여기서는
+// "Heavy 업로드 시 등록 호출이 나가는지 / Light 실행 시 나가지 않는지"만 확인한다.
+const mockTrackActiveJob = vi.fn()
+vi.mock('../composables/useActiveJobs', () => ({
+    useActiveJobs: () => ({jobs: {value: []}, track: mockTrackActiveJob, dismiss: vi.fn()}),
+}))
+
 const mockGet = apiClient.get as ReturnType<typeof vi.fn>
 const mockPost = apiClient.post as ReturnType<typeof vi.fn>
 
@@ -144,6 +151,34 @@ describe('ToolPage 업로드 실패 표시 (032)', () => {
         const text = wrapper.text()
         expect(text).toContain('처리 중인 작업')
         expect(text).not.toContain('파일 크기가 제한을 초과')
+    })
+})
+
+describe('ToolPage 전역 Job 추적 (043)', () => {
+    it('Heavy 모듈 업로드가 성공하면 전역 store에 Job을 등록한다', async () => {
+        const wrapper = await mountAt('img-heavy', [
+            {id: 'img-heavy', name: '이미지 도구', category: 'PDF', isHeavy: true, zones: ['files']},
+        ])
+
+        await uploadAndGetSse(wrapper, 'job-77')
+
+        expect(mockTrackActiveJob).toHaveBeenCalledWith('job-77', 'img-heavy', '이미지 도구')
+    })
+
+    it('Light 모듈 실행(/run)은 전역 store에 등록되지 않는다(회귀 없음)', async () => {
+        const wrapper = await mountAt('light-tool', [
+            {id: 'light-tool', name: '라이트 도구', category: '포맷터', isHeavy: false, zones: ['dev']},
+        ])
+        mockPost.mockResolvedValueOnce({data: {result: 'ok'}})
+
+        await wrapper.find('textarea').setValue('hello')
+        const runButton = wrapper.findAll('button').find(b => b.text() === '실행')
+        if (!runButton) throw new Error('실행 버튼을 찾지 못했다')
+        await runButton.trigger('click')
+        await flushPromises()
+
+        expect(mockPost).toHaveBeenCalledWith('/api/v1/tools/light-tool/run', expect.anything())
+        expect(mockTrackActiveJob).not.toHaveBeenCalled()
     })
 })
 

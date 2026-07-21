@@ -243,6 +243,37 @@
             </ul>
           </section>
 
+          <!-- 관리자 액션 감사로그 -->
+          <section class="rounded-xl border border-border bg-card shadow-sm">
+            <div class="flex items-center justify-between border-b border-border px-5 py-3">
+              <h2 class="text-sm font-medium text-foreground">관리자 액션 로그</h2>
+              <button class="text-xs text-muted-foreground hover:text-foreground" @click="loadActionLogs">새로고침</button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                <tr class="border-b border-border bg-muted/50 text-left text-xs text-muted-foreground">
+                  <th class="px-5 py-3 font-medium">시각</th>
+                  <th class="px-5 py-3 font-medium">액션</th>
+                  <th class="px-5 py-3 font-medium">대상 ID</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-if="actionLogs.length === 0">
+                  <td class="px-5 py-6 text-center text-muted-foreground" colspan="3">기록 없음</td>
+                </tr>
+                <tr v-for="log in actionLogs" :key="log.id" class="border-b border-border last:border-0 hover:bg-muted/20">
+                  <td class="px-5 py-3 text-muted-foreground">{{ formatDate(log.performedAt) }}</td>
+                  <td class="px-5 py-3">
+                    <span class="rounded bg-secondary/50 px-2 py-1 text-xs font-medium text-secondary-foreground">{{ log.actionType }}</span>
+                  </td>
+                  <td class="px-5 py-3 font-mono text-xs text-foreground/80">{{ log.targetId }}</td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
         </div>
       </div>
     </div>
@@ -305,6 +336,13 @@ interface CommentItem {
   createdAt: string
 }
 
+interface ActionLogItem {
+  id: number
+  actionType: string
+  targetId: number
+  performedAt: string
+}
+
 // --- 상태 변수 ---
 const stats = ref<StatItem[]>([])
 
@@ -318,6 +356,7 @@ const totalUsers = ref(0)
 const jobs = ref<JobItem[]>([])
 const suggestions = ref<SuggestionItem[]>([])
 const comments = ref<CommentItem[]>([])
+const actionLogs = ref<ActionLogItem[]>([])
 
 // --- 인증 ---
 async function login() {
@@ -389,16 +428,27 @@ async function forceLogoutUser(id: number, nickname: string) {
 async function loadOps() {
   const headers = {Authorization: authHeader}
   try {
-    const [jobsRes, sugRes, comRes] = await Promise.allSettled([
+    const [jobsRes, sugRes, comRes, logRes] = await Promise.allSettled([
       apiClient.get<JobItem[]>('/admin/jobs?status=PENDING,RUNNING', {headers}),
       apiClient.get<SuggestionItem[]>('/admin/suggestions', {headers}),
       apiClient.get<CommentItem[]>('/admin/comments', {headers}),
+      apiClient.get('/admin/action-logs', {headers}),
     ])
     if (jobsRes.status === 'fulfilled') jobs.value = jobsRes.value.data
     if (sugRes.status === 'fulfilled') suggestions.value = sugRes.value.data
     if (comRes.status === 'fulfilled') comments.value = comRes.value.data
+    if (logRes.status === 'fulfilled') actionLogs.value = logRes.value.data.content
   } catch (e) {
     console.error('Failed to load ops data', e)
+  }
+}
+
+async function loadActionLogs() {
+  try {
+    const res = await apiClient.get('/admin/action-logs', {headers: {Authorization: authHeader}})
+    actionLogs.value = res.data.content
+  } catch (e) {
+    console.error('Failed to load action logs', e)
   }
 }
 

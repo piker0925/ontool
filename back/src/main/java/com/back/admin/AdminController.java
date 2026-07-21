@@ -1,5 +1,7 @@
 package com.back.admin;
 
+import com.back.adminactionlog.entity.AdminActionType;
+import com.back.adminactionlog.service.AdminActionLogService;
 import com.back.comment.service.CommentService;
 import com.back.global.response.PageResponse;
 import com.back.job.entity.JobStatus;
@@ -11,6 +13,10 @@ import com.back.user.dto.UserResponse;
 import com.back.user.service.RefreshTokenService;
 import com.back.user.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,6 +36,7 @@ public class AdminController {
     private final UserService userService;
     private final RefreshTokenService refreshTokenService;
     private final JobService jobService;
+    private final AdminActionLogService adminActionLogService;
 
     @GetMapping("/stats")
     public ResponseEntity<List<AdminToolStatsResponse>> getStats() {
@@ -55,6 +62,7 @@ public class AdminController {
     @DeleteMapping("/comments/{id}")
     public ResponseEntity<Void> deleteComment(@PathVariable Long id) {
         commentService.deleteById(id);
+        adminActionLogService.record(AdminActionType.COMMENT_DELETE, id);
         return ResponseEntity.noContent().build();
     }
 
@@ -71,6 +79,7 @@ public class AdminController {
     public ResponseEntity<Void> forceLogout(@PathVariable Long id) {
         userService.getExistingById(id);
         refreshTokenService.forceLogout(id);
+        adminActionLogService.record(AdminActionType.FORCE_LOGOUT, id);
         return ResponseEntity.noContent().build();
     }
 
@@ -80,5 +89,14 @@ public class AdminController {
                 .map(AdminJobResponse::from)
                 .toList();
         return ResponseEntity.ok(jobs);
+    }
+
+    @GetMapping("/action-logs")
+    public ResponseEntity<PageResponse<AdminActionLogResponse>> getActionLogs(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "performedAt").and(Sort.by(Sort.Direction.DESC, "id")));
+        Page<AdminActionLogResponse> logs = adminActionLogService.findAll(pageable).map(AdminActionLogResponse::from);
+        return ResponseEntity.ok(PageResponse.of(logs));
     }
 }

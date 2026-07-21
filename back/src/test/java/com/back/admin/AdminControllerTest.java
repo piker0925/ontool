@@ -1,6 +1,9 @@
 package com.back.admin;
 
 import com.back.AbstractMySQLIntegrationTest;
+import com.back.adminactionlog.entity.AdminActionLog;
+import com.back.adminactionlog.entity.AdminActionType;
+import com.back.adminactionlog.repository.AdminActionLogRepository;
 import com.back.comment.entity.Comment;
 import com.back.comment.repository.CommentRepository;
 import com.back.global.security.jwt.JwtProvider;
@@ -28,6 +31,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -65,6 +71,8 @@ class AdminControllerTest extends AbstractMySQLIntegrationTest {
     RefreshTokenService refreshTokenService;
     @Autowired
     JobRepository jobRepository;
+    @Autowired
+    AdminActionLogRepository adminActionLogRepository;
 
     MockMvc mockMvc;
 
@@ -72,6 +80,7 @@ class AdminControllerTest extends AbstractMySQLIntegrationTest {
     void setup() {
         refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
+        adminActionLogRepository.deleteAll();
         mockMvc = MockMvcBuilders.webAppContextSetup(wac)
                 .apply(springSecurity())
                 .build();
@@ -119,6 +128,23 @@ class AdminControllerTest extends AbstractMySQLIntegrationTest {
         mockMvc.perform(delete("/admin/comments/" + saved.getId())
                         .with(httpBasic("admin", "1234")))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void deleteComment_관리자_액션_로그에_COMMENT_DELETE와_대상_댓글_id로_기록된다() throws Exception {
+        Comment comment = new Comment();
+        comment.setModuleId("test-module");
+        comment.setContent("test content");
+        Comment saved = commentRepository.save(comment);
+
+        mockMvc.perform(delete("/admin/comments/" + saved.getId())
+                        .with(httpBasic("admin", "1234")))
+                .andExpect(status().isNoContent());
+
+        List<AdminActionLog> logs = adminActionLogRepository.findAll();
+        assertThat(logs).hasSize(1);
+        assertThat(logs.get(0).getActionType()).isEqualTo(AdminActionType.COMMENT_DELETE);
+        assertThat(logs.get(0).getTargetId()).isEqualTo(saved.getId());
     }
 
     @Test
@@ -240,6 +266,106 @@ class AdminControllerTest extends AbstractMySQLIntegrationTest {
                         .with(httpBasic("admin", "1234")))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("USER_NOT_FOUND"));
+    }
+
+    @Test
+    void forceLogout_관리자_액션_로그에_FORCE_LOGOUT과_대상_유저_id로_기록된다() throws Exception {
+        User target = userRepository.save(new User(AuthProvider.GOOGLE, "force-logout-log-target", null, "강퇴대상2"));
+        refreshTokenService.issue(target.getId());
+
+        mockMvc.perform(post("/admin/users/" + target.getId() + "/force-logout")
+                        .with(httpBasic("admin", "1234")))
+                .andExpect(status().isNoContent());
+
+        List<AdminActionLog> logs = adminActionLogRepository.findAll();
+        assertThat(logs).hasSize(1);
+        assertThat(logs.get(0).getActionType()).isEqualTo(AdminActionType.FORCE_LOGOUT);
+        assertThat(logs.get(0).getTargetId()).isEqualTo(target.getId());
+    }
+
+    @Test
+    void forceLogout_존재하지_않는_유저면_액션_로그도_남기지_않는다() throws Exception {
+        mockMvc.perform(post("/admin/users/999999/force-logout")
+                        .with(httpBasic("admin", "1234")))
+                .andExpect(status().isNotFound());
+
+        assertThat(adminActionLogRepository.findAll()).isEmpty();
+    }
+
+    @Test
+    void forceLogout과_deleteComment를_모두_수행하면_각각_다른_actionType으로_구분되어_기록된다() throws Exception {
+        User target = userRepository.save(new User(AuthProvider.GOOGLE, "mixed-action-target", null, "혼합대상"));
+        Comment comment = new Comment();
+        comment.setModuleId("test-module");
+        comment.setContent("test content");
+        Comment savedComment = commentRepository.save(comment);
+
+        mockMvc.perform(post("/admin/users/" + target.getId() + "/force-logout")
+                        .with(httpBasic("admin", "1234")))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(delete("/admin/comments/" + savedComment.getId())
+                        .with(httpBasic("admin", "1234")))
+                .andExpect(status().isNoContent());
+
+        List<AdminActionLog> logs = adminActionLogRepository.findAll();
+        assertThat(logs).hasSize(2);
+        assertThat(logs).anySatisfy(log -> {
+            assertThat(log.getActionType()).isEqualTo(AdminActionType.FORCE_LOGOUT);
+            assertThat(log.getTargetId()).isEqualTo(target.getId());
+        });
+        assertThat(logs).anySatisfy(log -> {
+            assertThat(log.getActionType()).isEqualTo(AdminActionType.COMMENT_DELETE);
+            assertThat(log.getTargetId()).isEqualTo(savedComment.getId());
+        });
+    }
+
+    @Test
+    void getActionLogs_withoutAuth_returns401() throws Exception {
+        mockMvc.perform(get("/admin/action-logs"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void getActionLogs_withAuth_performedAt_내림차순으로_반환된다() throws Exception {
+        java.time.LocalDateTime oldest = java.time.LocalDateTime.now().minusDays(2);
+        java.time.LocalDateTime newest = java.time.LocalDateTime.now().minusDays(1);
+        // 삽입 순서와 시간순이 어긋나도록 일부러 최신 것을 먼저 저장한다.
+        adminActionLogRepository.save(new AdminActionLog(AdminActionType.COMMENT_DELETE, 100L, newest));
+        adminActionLogRepository.save(new AdminActionLog(AdminActionType.FORCE_LOGOUT, 200L, oldest));
+
+        mockMvc.perform(get("/admin/action-logs")
+                        .with(httpBasic("admin", "1234")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].targetId").value(100))
+                .andExpect(jsonPath("$.content[0].actionType").value("COMMENT_DELETE"))
+                .andExpect(jsonPath("$.content[1].targetId").value(200))
+                .andExpect(jsonPath("$.content[1].actionType").value("FORCE_LOGOUT"))
+                .andExpect(jsonPath("$.totalElements").value(2));
+    }
+
+    @Test
+    void getActionLogs_size로_페이지네이션이_적용된다() throws Exception {
+        java.time.LocalDateTime t1 = java.time.LocalDateTime.now().minusDays(3);
+        java.time.LocalDateTime t2 = java.time.LocalDateTime.now().minusDays(2);
+        java.time.LocalDateTime t3 = java.time.LocalDateTime.now().minusDays(1);
+        adminActionLogRepository.save(new AdminActionLog(AdminActionType.FORCE_LOGOUT, 1L, t1));
+        adminActionLogRepository.save(new AdminActionLog(AdminActionType.FORCE_LOGOUT, 2L, t2));
+        adminActionLogRepository.save(new AdminActionLog(AdminActionType.FORCE_LOGOUT, 3L, t3));
+
+        mockMvc.perform(get("/admin/action-logs").param("size", "2").param("page", "0")
+                        .with(httpBasic("admin", "1234")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.totalElements").value(3))
+                .andExpect(jsonPath("$.totalPages").value(2))
+                .andExpect(jsonPath("$.content[0].targetId").value(3))
+                .andExpect(jsonPath("$.content[1].targetId").value(2));
+
+        mockMvc.perform(get("/admin/action-logs").param("size", "2").param("page", "1")
+                        .with(httpBasic("admin", "1234")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].targetId").value(1));
     }
 
     @Test

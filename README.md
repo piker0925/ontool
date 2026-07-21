@@ -179,6 +179,7 @@ isHeavy() = false → 즉시 처리 → 바로 응답
 익명 기본 + 로그인은 부가 가치인 구조다 — 로그인 없이도 모든 도구를 쓸 수 있고, 로그인은 닉네임 표시·개인화 동기화·작업 이력 같은 혜택만 얹는다.
 
 - **로그인 시작**: 프론트가 `GET /oauth2/authorization/{google|kakao}`로 브라우저를 통째로 이동시킨다(fetch/axios 아님 — OAuth 인가 코드 흐름은 top-level navigation이 필요). Spring Security OAuth2 Client가 구글은 OIDC 프리셋으로, 카카오는 커스텀 provider(`authorization-uri`/`token-uri`/`user-info-uri`를 직접 등록)로 처리한다.
+- **다른 계정으로 로그인**: 기본 로그인 버튼은 브라우저에 provider 세션이 남아있으면 계정 선택 없이 조용히 재로그인된다(자동 로그인 유지). 로그인 모달의 "다른 구글/카카오 계정으로 로그인" 링크만 `?switch=true`를 붙여 요청하며, 커스텀 `OAuth2AuthorizationRequestResolver`가 이 경우에만 인가 요청에 `prompt=select_account`를 얹어 계정 선택 화면을 강제한다.
 - **로그인 성공 처리**: `OAuth2LoginSuccessHandler`가 구글(`sub`/`email`/`name`)과 카카오(`id`, 중첩된 `kakao_account.email`/`kakao_account.profile.nickname`)의 서로 다른 속성 구조를 통일된 `OAuth2UserAttributes`로 매핑하고, `(provider, providerId)` 기준으로 `User`를 upsert한다. **첫 로그인일 때만** 소셜 프로필명을 닉네임 기본값으로 쓰고(20자 초과 시 절단), 이미 있는 유저면 기존 닉네임을 그대로 둔다. 카카오는 이메일 동의항목을 안 쓰므로 `email`이 항상 `null`이며 스키마도 이를 반영해 nullable이다.
 - 로그인에 성공하면 서버가 JWT access/refresh 토큰쌍을 발급해 `{FRONTEND_URL}/auth/callback`으로 리다이렉트한다(실패 시 `#error=login_failed`). 토큰을 어디에 저장하고 탈취를 어떻게 감지·무효화하는지는 아래 [JWT 인증](#jwt-인증)에서 다룬다.
 

@@ -22,12 +22,16 @@ const isLoading = ref(false)
 export function useAuth() {
   const isLoggedIn = computed(() => !!accessToken.value)
 
-  function loginWithGoogle() {
-    window.location.href = `${apiClient.defaults.baseURL}/oauth2/authorization/google`
+  // switchAccount: true면 로그인 세션이 남아있어도 계정 선택 화면을 강제로 띄운다.
+  // 기본값(false)은 예전과 동일하게 자동 로그인을 유지한다.
+  function loginWithGoogle(switchAccount = false) {
+    const query = switchAccount ? '?switch=true' : ''
+    window.location.href = `${apiClient.defaults.baseURL}/oauth2/authorization/google${query}`
   }
 
-  function loginWithKakao() {
-    window.location.href = `${apiClient.defaults.baseURL}/oauth2/authorization/kakao`
+  function loginWithKakao(switchAccount = false) {
+    const query = switchAccount ? '?switch=true' : ''
+    window.location.href = `${apiClient.defaults.baseURL}/oauth2/authorization/kakao${query}`
   }
 
   function setTokens(access: string, refresh: string) {

@@ -7,6 +7,7 @@ import com.back.global.security.admin.AdminLoginLockoutFilter;
 import com.back.global.security.jwt.JwtAuthenticationFilter;
 import com.back.global.security.oauth2.OAuth2LoginFailureHandler;
 import com.back.global.security.oauth2.OAuth2LoginSuccessHandler;
+import com.back.global.security.oauth2.SelectAccountOAuth2AuthorizationRequestResolver;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,6 +16,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -36,6 +41,7 @@ public class SecurityConfig {
     private final AdminAuthenticationEntryPoint adminAuthenticationEntryPoint;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
+    private final ClientRegistrationRepository clientRegistrationRepository;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -59,6 +65,9 @@ public class SecurityConfig {
             )
             .httpBasic(basic -> basic.authenticationEntryPoint(adminAuthenticationEntryPoint))
             .oauth2Login(oauth2 -> oauth2
+                    .authorizationEndpoint(endpoint -> endpoint
+                            .authorizationRequestResolver(selectAccountOAuth2AuthorizationRequestResolver())
+                    )
                     .successHandler(oAuth2LoginSuccessHandler)
                     .failureHandler(oAuth2LoginFailureHandler)
             )
@@ -69,6 +78,14 @@ public class SecurityConfig {
     }
 
     private static final RequestMatcher API_REQUEST_MATCHER = PathPatternRequestMatcher.withDefaults().matcher("/api/v1/**");
+
+    @Bean
+    public OAuth2AuthorizationRequestResolver selectAccountOAuth2AuthorizationRequestResolver() {
+        return new SelectAccountOAuth2AuthorizationRequestResolver(
+                new DefaultOAuth2AuthorizationRequestResolver(
+                        clientRegistrationRepository,
+                        OAuth2AuthorizationRequestRedirectFilter.DEFAULT_AUTHORIZATION_REQUEST_BASE_URI));
+    }
 
     private AuthenticationEntryPoint jsonAuthenticationEntryPoint() {
         return (request, response, authException) -> {

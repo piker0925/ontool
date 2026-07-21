@@ -1,5 +1,7 @@
 package com.back.admin;
 
+import com.back.adminactionlog.entity.AdminActionType;
+import com.back.adminactionlog.service.AdminActionLogService;
 import com.back.comment.service.CommentService;
 import com.back.global.response.PageResponse;
 import com.back.job.entity.JobStatus;
@@ -32,6 +34,7 @@ public class AdminController {
     private final UserService userService;
     private final RefreshTokenService refreshTokenService;
     private final JobService jobService;
+    private final AdminActionLogService adminActionLogService;
 
     @GetMapping("/stats")
     public ResponseEntity<List<AdminToolStatsResponse>> getStats() {
@@ -57,6 +60,7 @@ public class AdminController {
     @DeleteMapping("/comments/{id}")
     public ResponseEntity<Void> deleteComment(@PathVariable Long id) {
         commentService.deleteById(id);
+        adminActionLogService.record(AdminActionType.COMMENT_DELETE, id);
         return ResponseEntity.noContent().build();
     }
 
@@ -78,6 +82,7 @@ public class AdminController {
     public ResponseEntity<Void> forceLogout(@PathVariable Long id) {
         userService.getExistingById(id);
         refreshTokenService.forceLogout(id);
+        adminActionLogService.record(AdminActionType.FORCE_LOGOUT, id);
         return ResponseEntity.noContent().build();
     }
 
@@ -87,5 +92,13 @@ public class AdminController {
                 .map(AdminJobResponse::from)
                 .toList();
         return ResponseEntity.ok(jobs);
+    }
+
+    @GetMapping("/action-logs")
+    public ResponseEntity<PageResponse<AdminActionLogResponse>> getActionLogs(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Page<AdminActionLogResponse> logs = adminActionLogService.findRecent(page, size).map(AdminActionLogResponse::from);
+        return ResponseEntity.ok(PageResponse.of(logs));
     }
 }

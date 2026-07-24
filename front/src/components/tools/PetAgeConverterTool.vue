@@ -9,8 +9,8 @@
     </div>
 
     <label class="flex flex-col gap-1.5 text-[13px]">
-      나이(년)
-      <input v-model.number="petAge" type="number" inputmode="decimal" min="0" step="0.5" class="rounded-md border border-input bg-background px-3 py-2"/>
+      나이(개월)
+      <input v-model.number="petAgeMonths" type="number" inputmode="numeric" min="0" step="1" class="rounded-md border border-input bg-background px-3 py-2"/>
     </label>
 
     <div class="rounded-lg border border-zone-accent-life/20 bg-zone-accent-life/10 px-4 py-4 text-center">
@@ -24,10 +24,10 @@
 
 <script lang="ts" setup>
 import {computed, ref} from 'vue'
-import {petAgeToHumanYears, type PetSpecies} from '../../utils/petAgeConvert'
+import {petAgeMonthsToHumanYears, type PetSpecies} from '../../utils/petAgeConvert'
 
 const species = ref<PetSpecies>('dog')
-const petAge = ref(3)
+const petAgeMonths = ref(36)
 
-const humanAge = computed(() => petAgeToHumanYears(species.value, petAge.value))
+const humanAge = computed(() => petAgeMonthsToHumanYears(species.value, petAgeMonths.value))
 </script>

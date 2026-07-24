@@ -202,6 +202,9 @@ html, body {
 @layer base {
     * {
         @apply border-border outline-ring/50;
+        /* 모바일 탭 시 브라우저 기본 회색 하이라이트 대신 아무것도 보이지 않게 한다 —
+           버튼/카드 등 인터랙티브 요소는 이미 자체 active/hover 상태를 갖고 있다 (DESIGN.md §7). */
+        -webkit-tap-highlight-color: transparent;
     }
 
     body {

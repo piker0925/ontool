@@ -77,3 +77,16 @@ describe('ToolCard — 모드별 회귀 없음', () => {
         expect(link.classes()).toEqual(expect.arrayContaining(['gap-3', 'px-3', 'py-2.5']))
     })
 })
+
+describe('ToolCard — 터치 인터랙션', () => {
+    it('카드 루트 요소에 touch-manipulation이 적용되어 더블탭 줌 지연이 없다', () => {
+        const wrapper = mount(ToolCard, {props: {mod: baseModule({})}, global: {plugins: [router]}})
+        expect(wrapper.classes()).toContain('touch-manipulation')
+    })
+
+    it('즐겨찾기 버튼에도 touch-manipulation이 적용된다', () => {
+        const wrapper = mount(ToolCard, {props: {mod: baseModule({})}, global: {plugins: [router]}})
+        const favButton = wrapper.find('button')
+        expect(favButton.classes()).toContain('touch-manipulation')
+    })
+})

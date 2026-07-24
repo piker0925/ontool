@@ -3,7 +3,7 @@
       :to="`/tools/${mod.id}`"
       :title="mod.description ?? mod.name"
       :class="[
-        'group relative flex cursor-pointer items-center rounded-xl border border-border bg-card transition-[background-color,border-color,box-shadow] duration-200 hover:border-primary/30 hover:bg-accent/50 hover:shadow-[0_4px_20px_rgb(0,0,0,0.03)] dark:hover:shadow-none',
+        'group relative flex cursor-pointer touch-manipulation items-center rounded-xl border border-border bg-card transition-[background-color,border-color,box-shadow] duration-200 hover:border-primary/30 hover:bg-accent/50 hover:shadow-[0_4px_20px_rgb(0,0,0,0.03)] dark:hover:shadow-none',
         mode === 'list' ? 'gap-3 px-3 py-2.5' : 'gap-3.5 px-4 py-4'
       ]"
   >
@@ -48,7 +48,7 @@
         ? 'opacity-100 text-amber-400'
         : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100 text-muted-foreground/30 hover:text-amber-400'"
         :title="isFav ? '즐겨찾기 해제' : '즐겨찾기 추가'"
-        class="flex size-7 shrink-0 items-center justify-center rounded-md transition-[background-color,color,opacity] hover:bg-background"
+        class="flex size-7 shrink-0 touch-manipulation items-center justify-center rounded-md transition-[background-color,color,opacity] hover:bg-background"
         @click.stop="toggle(mod.id)"
     >
       <Star :class="isFav ? 'fill-amber-400' : ''" class="size-3.5"/>

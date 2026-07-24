@@ -94,7 +94,7 @@
             </p>
             <div v-if="expiryProgress !== null" class="h-1 w-full overflow-hidden rounded-full bg-muted">
               <div :class="EXPIRY_TONE_BAR[expiryDisplay.tone]" :style="{ width: `${expiryProgress * 100}%` }"
-                   class="h-full transition-all duration-1000"/>
+                   class="h-full transition-[background-color,width] duration-1000"/>
             </div>
           </div>
 

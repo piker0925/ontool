@@ -365,7 +365,7 @@
                 <div class="h-1.5 w-full overflow-hidden rounded-full bg-muted">
                   <div
                       :style="{width: jobProgress.progress + '%'}"
-                      class="h-full rounded-full bg-primary transition-all"
+                      class="h-full rounded-full bg-primary transition-[width]"
                   ></div>
                 </div>
                 <p class="text-[13px] text-muted-foreground">

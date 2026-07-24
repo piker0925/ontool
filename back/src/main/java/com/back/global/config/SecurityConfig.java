@@ -57,6 +57,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/users/me/personalization/**").authenticated()
                 .requestMatchers("/api/v1/users/me/jobs").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/comments/*").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/v1/comments/*/report").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout").authenticated()
                 .anyRequest().permitAll()
             )

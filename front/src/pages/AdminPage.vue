@@ -260,6 +260,95 @@
             </ul>
           </section>
 
+          <!-- 댓글 신고 - 유저별 누적 집계 (056 정지 판단용) -->
+          <section class="rounded-xl border border-border bg-card shadow-sm">
+            <div class="flex items-center justify-between border-b border-border px-5 py-3">
+              <h2 class="text-sm font-medium text-foreground">댓글 신고 - 유저별 누적</h2>
+              <button class="text-xs text-muted-foreground hover:text-foreground" @click="loadReportUserAggregates">새로고침</button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                <tr class="border-b border-border bg-muted/50 text-left text-xs text-muted-foreground">
+                  <th class="px-5 py-3 font-medium">닉네임</th>
+                  <th class="px-5 py-3 font-medium text-right">누적 신고</th>
+                  <th class="px-5 py-3 font-medium">사유별 분포</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-if="reportUserAggregates.length === 0">
+                  <td class="px-5 py-6 text-center text-muted-foreground" colspan="3">신고 누적 유저가 없습니다.</td>
+                </tr>
+                <tr v-for="agg in reportUserAggregates" :key="agg.userId" class="border-b border-border last:border-0 hover:bg-muted/20">
+                  <td class="px-5 py-3 text-foreground">{{ agg.nickname }} <span class="text-xs text-muted-foreground">(ID:{{ agg.userId }})</span></td>
+                  <td class="px-5 py-3 text-right font-medium text-destructive">{{ agg.totalCount }}</td>
+                  <td class="px-5 py-3 text-xs text-muted-foreground">
+                    <span v-for="(cnt, reason) in agg.reasonCounts" :key="reason" class="mr-2">{{ reason }}: {{ cnt }}</span>
+                  </td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- 댓글 신고 - 개별 목록 -->
+          <section class="rounded-xl border border-border bg-card shadow-sm">
+            <div class="flex flex-col gap-3 border-b border-border px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <h2 class="text-sm font-medium text-foreground">댓글 신고 목록</h2>
+              <div class="flex items-center gap-2">
+                <select v-model="reportStatusFilter" class="rounded-md border border-border bg-background px-2 py-1 text-xs" @change="loadCommentReports">
+                  <option value="">전체 상태</option>
+                  <option value="PENDING">대기중</option>
+                  <option value="RESOLVED">확인완료</option>
+                  <option value="DISMISSED">기각</option>
+                </select>
+                <select v-model="reportReasonFilter" class="rounded-md border border-border bg-background px-2 py-1 text-xs" @change="loadCommentReports">
+                  <option value="">전체 사유</option>
+                  <option v-for="opt in COMMENT_REPORT_REASONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                </select>
+                <button class="text-xs text-muted-foreground hover:text-foreground" @click="loadCommentReports">새로고침</button>
+              </div>
+            </div>
+            <ul class="divide-y divide-border">
+              <li v-if="commentReports.length === 0" class="px-5 py-6 text-center text-sm text-muted-foreground">신고 내역 없음</li>
+              <li v-for="r in commentReports" :key="r.id" class="px-5 py-4 hover:bg-muted/10">
+                <div class="flex items-start justify-between gap-4">
+                  <div>
+                    <div class="mb-1 flex items-center gap-2">
+                      <span class="rounded bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">{{ r.reason }}</span>
+                      <span
+                          :class="r.status === 'PENDING' ? 'bg-yellow-500/10 text-yellow-600' : r.status === 'RESOLVED' ? 'bg-green-500/10 text-green-600' : 'bg-muted text-muted-foreground'"
+                          class="rounded px-2 py-0.5 text-xs font-medium"
+                      >{{ r.status }}</span>
+                    </div>
+                    <p class="text-sm text-foreground">{{ r.commentContent }}</p>
+                    <p class="mt-1 text-xs text-muted-foreground">
+                      신고자: {{ r.reporterNickname || '알수없음' }} (ID:{{ r.reporterId }}) · {{ formatDate(r.createdAt) }}
+                      <template v-if="r.detail"> · 상세: {{ r.detail }}</template>
+                    </p>
+                  </div>
+                  <div class="flex shrink-0 gap-1">
+                    <button
+                        :disabled="r.status === 'RESOLVED'"
+                        class="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted disabled:opacity-40"
+                        @click="updateReportStatus(r.id, 'RESOLVED')"
+                    >확인완료</button>
+                    <button
+                        :disabled="r.status === 'DISMISSED'"
+                        class="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted disabled:opacity-40"
+                        @click="updateReportStatus(r.id, 'DISMISSED')"
+                    >기각</button>
+                    <button
+                        class="rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-xs text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                        title="이 댓글을 삭제하고 신고를 확인완료 처리합니다"
+                        @click="deleteComment(r.commentId, r.id)"
+                    >댓글 삭제</button>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </section>
+
           <!-- 관리자 액션 감사로그 -->
           <section class="rounded-xl border border-border bg-card shadow-sm">
             <div class="flex items-center justify-between border-b border-border px-5 py-3">
@@ -298,8 +387,10 @@
 </template>
 
 <script lang="ts" setup>
-import {ref} from 'vue'
+import {ref, watch} from 'vue'
+import {useRoute, useRouter} from 'vue-router'
 import {apiClient} from '../api/client'
+import {COMMENT_REPORT_REASONS} from '../constants/commentReportReasons'
 
 const username = ref('')
 const password = ref('')
@@ -314,7 +405,25 @@ const tabs = [
   {id: 'users', name: '유저 관리'},
   {id: 'ops', name: '운영 (큐·피드백)'},
 ]
-const currentTab = ref<TabId>('stats')
+
+const route = useRoute()
+const router = useRouter()
+
+const initialTab = typeof route.query.tab === 'string' && tabs.some(t => t.id === route.query.tab)
+    ? route.query.tab as TabId
+    : 'stats'
+
+const currentTab = ref<TabId>(initialTab)
+
+// URL query 양방향 동기화(replace라 뒤로가기 이력을 쌓지 않음) — 새로고침해도 탭이 유지된다.
+watch(currentTab, id => {
+  if (route.query.tab === id) return
+  router.replace({query: {...route.query, tab: id}})
+})
+
+watch(() => route.query.tab, q => {
+  if (typeof q === 'string' && q !== currentTab.value && tabs.some(t => t.id === q)) currentTab.value = q as TabId
+})
 
 // --- 타입 정의 ---
 interface StatItem {
@@ -361,6 +470,25 @@ interface ActionLogItem {
   performedAt: string
 }
 
+interface CommentReportItem {
+  id: number
+  commentId: number
+  commentContent: string
+  reason: string
+  detail: string | null
+  status: string
+  reporterId: number
+  reporterNickname: string | null
+  createdAt: string
+}
+
+interface CommentReportUserAggregateItem {
+  userId: number
+  nickname: string
+  totalCount: number
+  reasonCounts: Record<string, number>
+}
+
 // --- 상태 변수 ---
 const stats = ref<StatItem[]>([])
 
@@ -376,6 +504,11 @@ const suggestions = ref<SuggestionItem[]>([])
 const comments = ref<CommentItem[]>([])
 const actionLogs = ref<ActionLogItem[]>([])
 
+const commentReports = ref<CommentReportItem[]>([])
+const reportStatusFilter = ref('')
+const reportReasonFilter = ref('')
+const reportUserAggregates = ref<CommentReportUserAggregateItem[]>([])
+
 // --- 인증 ---
 async function login() {
   loginError.value = ''
@@ -384,7 +517,7 @@ async function login() {
     await apiClient.get('/admin/stats', {headers: {Authorization: authHeader}})
     sessionStorage.setItem('admin_auth', authHeader)
     authed.value = true
-    loadStats()
+    switchTab(currentTab.value)
   } catch {
     loginError.value = '인증 실패. 사용자명과 비밀번호를 확인하세요.'
   }
@@ -459,6 +592,39 @@ async function loadOps() {
   } catch (e) {
     console.error('Failed to load ops data', e)
   }
+  await Promise.allSettled([loadCommentReports(), loadReportUserAggregates()])
+}
+
+// --- 댓글 신고(099) ---
+async function loadCommentReports() {
+  try {
+    const params = new URLSearchParams()
+    if (reportStatusFilter.value) params.set('status', reportStatusFilter.value)
+    if (reportReasonFilter.value) params.set('reason', reportReasonFilter.value)
+    const res = await apiClient.get(`/admin/comment-reports?${params.toString()}`, {headers: {Authorization: authHeader}})
+    commentReports.value = res.data.content
+  } catch (e) {
+    console.error('Failed to load comment reports', e)
+  }
+}
+
+async function loadReportUserAggregates() {
+  try {
+    const res = await apiClient.get<CommentReportUserAggregateItem[]>('/admin/comment-reports/users', {headers: {Authorization: authHeader}})
+    reportUserAggregates.value = res.data
+  } catch (e) {
+    console.error('Failed to load comment report user aggregates', e)
+  }
+}
+
+async function updateReportStatus(id: number, status: string) {
+  try {
+    await apiClient.patch(`/admin/comment-reports/${id}/status`, {status}, {headers: {Authorization: authHeader}})
+    await Promise.allSettled([loadCommentReports(), loadReportUserAggregates()])
+  } catch (e) {
+    alert('상태 변경에 실패했습니다.')
+    console.error('Failed to update comment report status', e)
+  }
 }
 
 async function loadActionLogs() {
@@ -470,13 +636,27 @@ async function loadActionLogs() {
   }
 }
 
-async function deleteComment(id: number) {
+// resolveReportId를 넘기면(댓글 신고 목록에서 호출), 삭제 성공 시 그 신고를 RESOLVED로 자동 전환한다 —
+// 관리자가 삭제 후 별도로 확인완료를 또 누를 필요가 없다. 삭제 실패 시에는 상태를 건드리지 않는다.
+async function deleteComment(id: number, resolveReportId?: number) {
   if (!confirm('정말 삭제하시겠습니까?')) return
   try {
     await apiClient.delete(`/admin/comments/${id}`, {headers: {Authorization: authHeader}})
     comments.value = comments.value.filter(c => c.id !== id)
   } catch {
     alert('삭제 실패')
+    return
+  }
+
+  if (resolveReportId != null) {
+    try {
+      await apiClient.patch(`/admin/comment-reports/${resolveReportId}/status`, {status: 'RESOLVED'}, {headers: {Authorization: authHeader}})
+    } catch (e) {
+      console.error('Failed to auto-resolve report status after comment delete', e)
+      // 댓글 삭제 자체는 이미 성공했으니 "삭제 실패"로 오인하지 않도록 별도 메시지로 알린다.
+      alert('댓글은 삭제됐으나 신고 상태 자동 처리에 실패했습니다 — 목록에서 직접 확인완료 처리해 주세요.')
+    }
+    await Promise.allSettled([loadCommentReports(), loadReportUserAggregates()])
   }
 }
 
@@ -491,7 +671,7 @@ if (authHeader) {
   apiClient.get('/admin/stats', {headers: {Authorization: authHeader}})
       .then(() => {
         authed.value = true
-        loadStats()
+        switchTab(currentTab.value)
       })
       .catch(() => {
         // 토큰이 유효하지 않으면 삭제

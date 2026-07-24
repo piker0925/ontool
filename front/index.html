@@ -4,6 +4,10 @@
     <meta charset="UTF-8"/>
     <link href="/favicon.svg" rel="icon" type="image/svg+xml"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <!-- src/style.css :root/.dark --background 토큰(oklch)과 동일한 색상의 hex 값.
+         모바일 브라우저 주소창/시스템 UI가 라이트/다크 배경과 어긋나지 않도록 한다. -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F7F6F3"/>
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#060606"/>
     <title>OnTool</title>
     <script>
         // 테마 FOUC 방지: 앱 로드 전에 저장된 테마(없으면 시스템)를 적용

@@ -37,6 +37,7 @@
             :params="currentParams"
             :reorderable="false"
             second-slot-accept=".jpg,.jpeg,.png"
+            second-slot-item-label="워터마크 이미지"
             second-slot-label="+ 이미지 워터마크 추가"
             @error="onUploadError"
             @staged="onStaged"

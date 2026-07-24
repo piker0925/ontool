@@ -23,10 +23,14 @@
        FileUploader의 소유권 구조(하나의 staged 배열·하나의 POST)는 그대로 두는 veneer다. -->
   <button
       v-if="showSecondSlotButton"
+      :class="{'dragging border-ring text-foreground': secondSlotDragging}"
       class="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-border px-3 py-2 text-[12px] text-muted-foreground transition-colors hover:border-ring hover:text-foreground"
       data-testid="add-second-slot"
       type="button"
       @click="secondSlotInput?.click()"
+      @dragleave="secondSlotDragging = false"
+      @dragover.prevent="secondSlotDragging = true"
+      @drop.prevent="onSecondSlotDrop"
   >{{ secondSlotLabel }}
   </button>
   <input
@@ -41,6 +45,11 @@
           v-for="(f, i) in staged" :key="f.name + i"
           class="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-[12px] text-foreground"
       >
+        <span
+            v-if="secondSlotLabel"
+            :data-testid="`staged-role-badge-${i}`"
+            class="shrink-0 rounded border border-border bg-background px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground"
+        >{{ i === 0 ? '대상 파일' : secondSlotItemLabel }}</span>
         <span class="flex-1 truncate font-mono">{{ f.name }}</span>
         <span v-if="pageCounts.get(f)" class="shrink-0 text-[11px] text-muted-foreground">
           {{ pageCounts.get(f) }}페이지
@@ -120,6 +129,13 @@ const props = withDefaults(defineProps<{
   secondSlotLabel?: string
   /** 두 번째 슬롯 전용 accept — 확장자 화이트리스트로도 함께 쓰여, 맞지 않는 파일은 스테이징 자체를 막는다. */
   secondSlotAccept?: string
+  /**
+   * (130) 스테이징 목록에서 두 번째 이후 항목에 붙일 역할 배지 문구. secondSlotLabel과 함께 줘야
+   * 의미가 있다 — 첫 번째 항목은 항상 "대상 파일"로 고정 표시하고, 이 값은 그 나머지(현재는
+   * 인덱스 1, 워터마크 이미지)에 쓰인다. 라벨 부재로 두 스테이징 항목을 구분 못해 사용자가
+   * 엉뚱한 X를 누르는 오조작을 막기 위한 배지 — secondSlotLabel이 없으면 렌더되지 않는다.
+   */
+  secondSlotItemLabel?: string
 }>(), {
   multiple: true,
   reorderable: false,
@@ -133,6 +149,7 @@ const emit = defineEmits<{
 }>()
 
 const dragging = ref(false)
+const secondSlotDragging = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 const secondSlotInput = ref<HTMLInputElement | null>(null)
 const staged = ref<File[]>([])
@@ -299,10 +316,11 @@ function fileExtension(file: File): string {
 
 // 두 번째 슬롯은 "이미지여야 한다" 같은 도구별 제약이 있을 수 있으므로, accept 속성만으로는
 // 부족하다(드래그, accept 무시 등으로 우회 가능) — 확장자 화이트리스트로 한 번 더 막는다.
-function onSecondSlotChange(e: Event) {
-  const input = e.target as HTMLInputElement
-  const files = Array.from(input.files ?? [])
-  input.value = ''
+// (130) 클릭(change)·드래그앤드롭(drop) 두 경로 모두 이 검증을 반드시 거치게 한다 — 이전에는
+// 클릭 경로만 있었는데 OS 파일 선택창의 accept 필터가 이미지 아닌 파일을 먼저 걸러버려서 이
+// 화이트리스트 자체가 사실상 도달 불가능한 코드였다. 드롭은 OS 필터를 거치지 않으므로 이 경로가
+// 생겨야 검증이 실제로 실행될 수 있다.
+function stageSecondSlotFile(files: File[]) {
   if (!files.length) return
   const file = files[0]
   const allowed = secondSlotExtensions()
@@ -311,5 +329,17 @@ function onSecondSlotChange(e: Event) {
     return
   }
   handleFiles([file])
+}
+
+function onSecondSlotChange(e: Event) {
+  const input = e.target as HTMLInputElement
+  const files = Array.from(input.files ?? [])
+  input.value = ''
+  stageSecondSlotFile(files)
+}
+
+function onSecondSlotDrop(e: DragEvent) {
+  secondSlotDragging.value = false
+  stageSecondSlotFile(Array.from(e.dataTransfer?.files ?? []))
 }
 </script>

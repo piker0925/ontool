@@ -489,6 +489,7 @@ describe('FileUploader 두 번째 업로드 슬롯 (113 확장 — 이미지 워
                 maxFiles: 2,
                 secondSlotLabel: '+ 이미지 워터마크 추가',
                 secondSlotAccept: '.jpg,.jpeg,.png',
+                secondSlotItemLabel: '워터마크 이미지',
             },
         })
     }
@@ -534,6 +535,43 @@ describe('FileUploader 두 번째 업로드 슬롯 (113 확장 — 이미지 워
         expect(wrapper.emitted('uploaded')![0]).toEqual([{jobId: 'job-wm'}])
     })
 
+    it('130: 두 번째 슬롯은 드래그오버 시 dragging 클래스가 붙어 드롭 가능 상태를 보여준다', async () => {
+        const wrapper = mountWithSecondSlot()
+        await selectFiles(wrapper, [new File(['a'], 'target.pdf')])
+
+        const slot = wrapper.find('[data-testid="add-second-slot"]')
+        await slot.trigger('dragover')
+
+        expect(slot.classes()).toContain('dragging')
+    })
+
+    it('130: 두 번째 슬롯에 드래그앤드롭으로 이미지 파일을 올리면 정상적으로 두 번째 파일로 담긴다', async () => {
+        const wrapper = mountWithSecondSlot()
+        await selectFiles(wrapper, [new File(['a'], 'target.pdf')])
+
+        const slot = wrapper.find('[data-testid="add-second-slot"]')
+        const file = new File(['b'], 'logo.png', {type: 'image/png'})
+        await slot.trigger('drop', {dataTransfer: {files: [file]}})
+
+        expect(wrapper.text()).toContain('target.pdf')
+        expect(wrapper.text()).toContain('logo.png')
+        expect(wrapper.emitted('error')).toBeFalsy()
+    })
+
+    it('130: 두 번째 슬롯에 드래그앤드롭으로 이미지가 아닌 파일(PDF)을 올리면 드롭 시점에 거부하고 에러를 emit한다(클릭 경로는 OS accept 필터에 막혀 검증이 도달 불가능했던 문제)', async () => {
+        const wrapper = mountWithSecondSlot()
+        await selectFiles(wrapper, [new File(['a'], 'target.pdf')])
+
+        const slot = wrapper.find('[data-testid="add-second-slot"]')
+        const file = new File(['b'], 'second-target.pdf')
+        await slot.trigger('drop', {dataTransfer: {files: [file]}})
+
+        expect(wrapper.text()).toContain('target.pdf')
+        expect(wrapper.text()).not.toContain('second-target.pdf')
+        expect(wrapper.emitted('error')).toBeTruthy()
+        expect((wrapper.emitted('error')!.at(-1)![0] as string)).toContain('이미지')
+    })
+
     it('두 번째 슬롯에 이미지가 아닌 파일(PDF)을 올리면 거부하고 에러를 emit한다(잔여 갭 차단)', async () => {
         const wrapper = mountWithSecondSlot()
         await selectFiles(wrapper, [new File(['a'], 'target.pdf')])
@@ -556,7 +594,7 @@ describe('FileUploader 두 번째 업로드 슬롯 (113 확장 — 이미지 워
         expect(wrapper.text()).not.toContain('+ 이미지 워터마크 추가')
     })
 
-    it('두 번째 파일을 제거하면 두 번째 슬롯 버튼이 다시 나타난다', async () => {
+    it('130: 두 번째 항목(1번, 워터마크 이미지)만 제거하면 대상 파일(0번)은 보존되고 두 번째 슬롯 버튼이 다시 나타난다', async () => {
         const wrapper = mountWithSecondSlot()
         await selectFiles(wrapper, [new File(['a'], 'target.pdf')])
         await selectSecondSlotFile(wrapper, new File(['b'], 'logo.png', {type: 'image/png'}))
@@ -565,11 +603,15 @@ describe('FileUploader 두 번째 업로드 슬롯 (113 확장 — 이미지 워
         await wrapper.find('[data-testid="remove-1"]').trigger('click')
         await flushPromises()
 
-        expect(wrapper.text()).toContain('+ 이미지 워터마크 추가')
+        // 좁게 맞는 결과(1번만 제거되어 logo.png는 사라지고 target.pdf는 남음)와 넓게 잘못된
+        // 결과("1번 제거"가 실제로는 전체 초기화처럼 동작해 target.pdf까지 사라짐)를 구분한다
+        // — 사용자가 실사용 중 의심했던 "삭제 시 대상 파일까지 롤백" 버그를 정확히 재현하는 assertion.
         expect(wrapper.text()).toContain('target.pdf')
+        expect(wrapper.text()).not.toContain('logo.png')
+        expect(wrapper.text()).toContain('+ 이미지 워터마크 추가')
     })
 
-    it('대상 파일(0번)을 제거하면 두 번째 슬롯에 담긴 이미지까지 함께 비워진다(인덱스 밀림 방지)', async () => {
+    it('130: 대상 파일(0번)을 제거하면 두 번째 슬롯에 담긴 이미지까지 함께 비워진다(인덱스 밀림 방지)', async () => {
         const wrapper = mountWithSecondSlot()
         await selectFiles(wrapper, [new File(['a'], 'target.pdf')])
         await selectSecondSlotFile(wrapper, new File(['b'], 'logo.png', {type: 'image/png'}))
@@ -582,6 +624,25 @@ describe('FileUploader 두 번째 업로드 슬롯 (113 확장 — 이미지 워
         expect(wrapper.text()).not.toContain('target.pdf')
         expect(wrapper.text()).not.toContain('logo.png')
         expect(wrapper.text()).toContain('파일을 드래그하거나 클릭하여 선택하세요')
+    })
+
+    it('130: secondSlotLabel 모드에서 스테이징 항목에 역할 배지가 붙어 대상 파일/워터마크 이미지를 구분할 수 있다', async () => {
+        const wrapper = mountWithSecondSlot()
+        await selectFiles(wrapper, [new File(['a'], 'target.pdf')])
+        await selectSecondSlotFile(wrapper, new File(['b'], 'logo.png', {type: 'image/png'}))
+
+        expect(wrapper.find('[data-testid="staged-role-badge-0"]').text()).toBe('대상 파일')
+        expect(wrapper.find('[data-testid="staged-role-badge-1"]').text()).toBe('워터마크 이미지')
+    })
+
+    it('130: secondSlotLabel이 없으면 역할 배지가 렌더되지 않는다(동질 모듈은 구분할 역할이 없음)', async () => {
+        const wrapper = mount(FileUploader, {
+            props: {moduleId: 'pdf-merge', reorderable: true},
+        })
+
+        await selectFiles(wrapper, [new File(['a'], 'a.pdf')])
+
+        expect(wrapper.find('[data-testid="staged-role-badge-0"]').exists()).toBe(false)
     })
 
     it('secondSlotLabel이 없으면 기존 모듈의 동작에 영향이 없다(회귀 없음)', async () => {

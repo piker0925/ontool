@@ -56,7 +56,8 @@
            입력 중 키 하나만 눌러도 집계되지 않는다 (pingFrontendToolUseOnce 참고). -->
       <div
           v-if="mod.isFrontendOnly"
-          :class="frontendToolLayoutClass"
+          :class="[frontendToolLayoutClass, frontendToolCardClass]"
+          data-testid="frontend-tool-wrapper"
           @change.capture="pingFrontendToolUseOnce"
           @click.capture="pingFrontendToolUseOnce"
           @drop.capture="pingFrontendToolUseOnce"
@@ -836,6 +837,30 @@ const frontendToolComponent = computed(() =>
 const modComponent = computed(() => mod.value?.component ? defineAsyncComponent(mod.value.component) : null)
 const frontendToolLayoutClass = computed(() =>
     frontendToolEntry.value?.layout === 'narrow' ? 'px-6 py-8 max-w-5xl mx-auto' : '',
+)
+
+// 139: 아래 두 그룹은 컴포넌트 루트가 이미 완결된 카드(Heavy 워크벤치와 동일한
+// rounded-xl border border-border bg-card 톤)를 스스로 그리므로 밖에서 또 카드를
+// 씌우면 이중 테두리가 되거나(오디오 업로드 전) 화면 끝까지 붙어있던 헤더바·분할선이
+// 안쪽으로 밀려 어색해진다(통합 도구들) — 둘 다 명시적으로 제외한다.
+// - 오디오 5개: 공유 셸(AudioToolShell.vue)이 자체 카드를 가짐.
+// - 아래 7개: UnifiedConvertPage 등, 루트가 Heavy 워크벤치와 동일한 분할 그리드 카드
+//   (rounded-xl border border-border bg-card lg:grid-cols-2 ...)를 직접 렌더링함.
+//   modules.ts의 BACKEND_WIRED_FRONTEND_TOOL_IDS와 현재 id 집합이 우연히 같지만
+//   그건 use_count 중복 집계 방지가 목적이라 의미가 다르다 — 재사용하지 않는다.
+const FRONTEND_TOOLS_WITH_OWN_CARD = new Set([
+    'audio-pitch', 'audio-speed', 'audio-trim', 'audio-convert', 'audio-volume',
+    'data-convert', 'code-gen', 'pdf-watermark', 'pdf-password', 'pdf-header-footer',
+    'document-generator', 'office-document-convert',
+])
+
+// 프론트 전용 도구는 각자 컴포넌트가 렌더링한 루트 div(폭은 max-w-lg~5xl로 제각각)를
+// 그대로 두고, 부모에서 자식 선택자로 카드(테두리·배경·패딩)만 덧씌운다 — Heavy 워크벤치
+// 카드(ToolPage.vue의 rounded-xl border border-border bg-card)와 톤을 맞춘다.
+const frontendToolCardClass = computed(() =>
+    mod.value?.isFrontendOnly && !FRONTEND_TOOLS_WITH_OWN_CARD.has(mod.value.id)
+        ? '[&>div]:rounded-xl [&>div]:border [&>div]:border-border [&>div]:bg-card [&>div]:p-6'
+        : '',
 )
 
 // Heavy 도구는 워크벤치(거의 풀 폭)가 좌측 정렬이라 댓글도 좌측 정렬 + 워크벤치 컬럼 폭(4xl)로 맞춘다.

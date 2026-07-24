@@ -537,6 +537,56 @@ describe('ToolPage — component 필드 (kind: game)', () => {
     })
 })
 
+// 139: 프론트 전용 도구는 (오디오 5개 모듈 제외) 배경 위에 그냥 떠 있지 않고
+// Heavy 워크벤치와 통일된 카드(테두리·배경·패딩)로 감싸여야 한다.
+describe('ToolPage 프론트 전용 도구 카드 래핑 (139)', () => {
+    const CARD_CLASSES = ['[&>div]:rounded-xl', '[&>div]:border', '[&>div]:border-border', '[&>div]:bg-card', '[&>div]:p-6']
+
+    it('오디오가 아닌 프론트 전용 도구는 래핑 div에 카드 스타일이 적용된다', async () => {
+        const wrapper = await mountAt('lotto-number', [
+            {id: 'lotto-number', name: '로또 번호 생성기', category: '재미', isHeavy: false, isFrontendOnly: true, zones: ['fun']},
+        ])
+
+        const cardWrapper = wrapper.find('[data-testid="frontend-tool-wrapper"]')
+        expect(cardWrapper.exists()).toBe(true)
+        expect(cardWrapper.classes()).toEqual(expect.arrayContaining(CARD_CLASSES))
+    })
+
+    it('넓은 프론트 전용 도구(regex-tester)도 동일하게 카드 스타일이 적용된다', async () => {
+        const wrapper = await mountAt('regex-tester', [
+            {id: 'regex-tester', name: 'Regex 테스터', category: '텍스트', isHeavy: false, isFrontendOnly: true, zones: ['dev']},
+        ])
+
+        const cardWrapper = wrapper.find('[data-testid="frontend-tool-wrapper"]')
+        expect(cardWrapper.exists()).toBe(true)
+        expect(cardWrapper.classes()).toEqual(expect.arrayContaining(CARD_CLASSES))
+    })
+
+    // 제외 대상은 두 그룹이다 — 둘 다 컴포넌트 루트가 이미 완결된 카드를 스스로 그린다:
+    // - 오디오 5개: 공유 셸(AudioToolShell.vue)이 자체 카드를 가짐(밖에서 씌우면 이중 테두리).
+    // - 통합 도구(data-convert 등): 루트가 Heavy 워크벤치와 동일한 분할 그리드 카드
+    //   (rounded-xl border border-border bg-card)를 직접 렌더링함(밖에서 p-6을 씌우면
+    //   화면 끝까지 붙어있던 헤더바·분할선이 안쪽으로 밀려 어색해진다).
+    // 하드코딩된 id 하나만 확인하면 "정확한 Set 멤버십 검사"와 "이 id 하나만 예외 처리"를
+    // 구분하지 못한다 — 그룹별로 서로 다른 2개씩 확인해 Set 전체를 대략 핀한다.
+    it.each([
+        ['audio-trim', '오디오 자르기', '오디오'],
+        ['audio-convert', '오디오 변환', '오디오'],
+        ['data-convert', '데이터 포맷 변환', '포맷터'],
+        ['office-document-convert', '오피스 문서 변환', 'PDF'],
+    ])('이미 자체 카드를 가진 도구(%s)는 카드 스타일에서 제외된다', async (id, name, category) => {
+        const wrapper = await mountAt(id, [
+            {id, name, category, isHeavy: false, isFrontendOnly: true, zones: ['files']},
+        ])
+
+        const cardWrapper = wrapper.find('[data-testid="frontend-tool-wrapper"]')
+        expect(cardWrapper.exists()).toBe(true)
+        for (const cls of CARD_CLASSES) {
+            expect(cardWrapper.classes()).not.toContain(cls)
+        }
+    })
+})
+
 describe('ToolPage 배치 폴링 실패 (042)', () => {
     const imageResize: Module = {id: 'image-resize', name: '이미지 리사이즈', category: '이미지', isHeavy: true, zones: ['files']}
 

@@ -75,6 +75,7 @@
             <span class="font-mono text-[11px] font-medium uppercase tracking-wider text-muted-foreground">파일 업로드</span>
             <button
                 v-if="jobId || batchId || result"
+                aria-label="초기화"
                 class="ml-auto rounded p-0.5 text-muted-foreground/60 transition-colors hover:text-foreground"
                 @click="resetAll"
             >
@@ -402,6 +403,7 @@
               </button>
               <button
                   v-if="hasInput"
+                  aria-label="초기화"
                   class="rounded p-0.5 text-muted-foreground/60 transition-colors hover:text-foreground"
                   @click="resetLight"
               >
@@ -499,6 +501,7 @@
             </span>
             <button
                 v-if="result?.text && moduleConfig?.resultType !== 'image'"
+                :aria-label="copied ? '복사 완료' : '결과 복사'"
                 :class="copied ? 'text-emerald-500' : 'text-muted-foreground/60 hover:text-foreground'"
                 class="rounded p-0.5 transition-colors"
                 @click="copyResult"

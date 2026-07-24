@@ -48,6 +48,7 @@
             <input v-model="item.quantity" class="w-16 rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20" placeholder="수량" type="text"/>
             <input v-model="item.unitPrice" class="w-20 rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20" placeholder="단가" type="text"/>
             <button
+                :aria-label="item.description ? `${item.description} 삭제` : `품목 ${i + 1} 삭제`"
                 :disabled="items.length <= 1"
                 class="flex size-7 shrink-0 items-center justify-center rounded text-muted-foreground/70 hover:bg-destructive/10 hover:text-destructive disabled:opacity-30"
                 type="button"

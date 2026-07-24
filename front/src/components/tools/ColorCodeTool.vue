@@ -43,7 +43,7 @@
         <span class="text-[11px] text-muted-foreground">{{ row.label }}</span>
         <div class="flex items-center gap-2">
           <span class="font-mono text-[13px] text-foreground">{{ row.value }}</span>
-          <button class="rounded p-0.5 text-muted-foreground/50 transition-colors hover:text-foreground"
+          <button :aria-label="`${row.label} 복사`" class="rounded p-0.5 text-muted-foreground/50 transition-colors hover:text-foreground"
                   @click="copyText(row.value)">
             <Copy class="size-3"/>
           </button>

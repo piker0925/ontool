@@ -8,6 +8,7 @@
       <form class="flex flex-col gap-3" @submit.prevent="login">
         <input
             v-model="username"
+            aria-label="사용자명"
             class="rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-ring"
             placeholder="사용자명"
             type="text"
@@ -15,6 +16,7 @@
         />
         <input
             v-model="password"
+            aria-label="비밀번호"
             class="rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-ring"
             placeholder="비밀번호"
             type="password"

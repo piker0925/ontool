@@ -46,7 +46,7 @@
         <div class="flex flex-col rounded-xl border border-border bg-card overflow-hidden">
           <div class="flex h-9 items-center justify-between border-b border-border px-3">
             <span class="text-[11px] font-medium text-muted-foreground">JSON 입력</span>
-            <button v-if="fmtInput" class="rounded p-0.5 text-muted-foreground/50 hover:text-foreground transition-colors"
+            <button v-if="fmtInput" aria-label="입력 지우기" class="rounded p-0.5 text-muted-foreground/50 hover:text-foreground transition-colors"
                     @click="fmtInput = ''; fmtCompute()">
               <X class="size-3.5"/>
             </button>
@@ -60,6 +60,7 @@
           <div class="flex h-9 items-center justify-between border-b border-border px-3">
             <span class="text-[11px] font-medium text-muted-foreground">결과</span>
             <button v-if="fmtOutput"
+                    :aria-label="fmtCopied ? '복사 완료' : '결과 복사'"
                     :class="fmtCopied ? 'text-emerald-500' : 'text-muted-foreground/50 hover:text-foreground'"
                     class="rounded p-0.5 transition-colors"
                     @click="copyText(fmtOutput)">

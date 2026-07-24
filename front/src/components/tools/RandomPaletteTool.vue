@@ -27,7 +27,7 @@
            class="flex items-center gap-3 rounded-xl border border-border bg-card px-3 py-2.5">
         <span :style="{ backgroundColor: hex }" class="size-9 shrink-0 rounded-lg border border-border/50"/>
         <span class="flex-1 font-mono text-[13px] text-foreground">{{ hex }}</span>
-        <button class="rounded p-1 transition-colors text-muted-foreground/50 hover:text-foreground"
+        <button :aria-label="`${hex} 복사`" class="rounded p-1 transition-colors text-muted-foreground/50 hover:text-foreground"
                 @click="copySwatch(hex, i)">
           <Copy class="size-3.5"/>
         </button>

@@ -29,7 +29,7 @@
             파일 선택
           </button>
           <input ref="fileInput" accept=".svg,image/svg+xml" class="hidden" type="file" @change="handleFileSelect"/>
-          <button v-if="input" class="rounded p-0.5 text-muted-foreground/50 hover:text-foreground transition-colors"
+          <button v-if="input" aria-label="입력 지우기" class="rounded p-0.5 text-muted-foreground/50 hover:text-foreground transition-colors"
                   @click="input = ''; compute()">
             <X class="size-3.5"/>
           </button>
@@ -57,7 +57,7 @@
         <div class="flex flex-col rounded-xl border border-border bg-card overflow-hidden">
           <div class="flex h-8 items-center justify-between px-3">
             <span class="text-[11px] font-medium text-muted-foreground">최적화 후</span>
-            <button :class="copied ? 'text-emerald-500' : 'text-muted-foreground/50 hover:text-foreground'"
+            <button :aria-label="copied ? '복사 완료' : '최적화 결과 복사'" :class="copied ? 'text-emerald-500' : 'text-muted-foreground/50 hover:text-foreground'"
                     class="rounded p-0.5 transition-colors"
                     @click="copyOutput">
               <Check v-if="copied" class="size-3.5"/>

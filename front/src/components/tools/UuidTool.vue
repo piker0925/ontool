@@ -32,7 +32,7 @@
         <span class="flex-1 font-mono text-[13px] text-foreground break-all">{{ uid }}</span>
         <span v-if="copiedIndex === i"
               class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">복사됨</span>
-        <button class="rounded p-1 transition-colors text-muted-foreground/50 hover:text-foreground"
+        <button :aria-label="`${uid} 복사`" class="rounded p-1 transition-colors text-muted-foreground/50 hover:text-foreground"
                 @click="copyRow(uid, i)">
           <Copy class="size-3.5"/>
         </button>

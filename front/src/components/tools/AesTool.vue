@@ -37,7 +37,7 @@
 
     <div v-if="result" class="flex items-start justify-between gap-2 rounded-xl border border-border bg-card p-4">
       <span class="font-mono text-[13px] text-foreground break-all whitespace-pre-wrap">{{ result }}</span>
-      <button class="rounded p-0.5 text-muted-foreground/50 transition-colors hover:text-foreground shrink-0"
+      <button aria-label="결과 복사" class="rounded p-0.5 text-muted-foreground/50 transition-colors hover:text-foreground shrink-0"
               @click="copyText(result)">
         <Copy class="size-3.5"/>
       </button>

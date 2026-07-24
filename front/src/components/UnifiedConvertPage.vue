@@ -80,6 +80,7 @@
         </span>
         <button
             v-if="output"
+            :aria-label="copied ? '복사 완료' : '결과 복사'"
             :class="copied ? 'text-emerald-500' : 'text-muted-foreground/60 hover:text-foreground'"
             class="rounded p-0.5 transition-colors"
             @click="copyOutput"

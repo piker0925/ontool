@@ -11,7 +11,7 @@
       <div class="flex flex-col rounded-xl border border-border bg-card overflow-hidden">
         <div class="flex h-9 items-center justify-between border-b border-border px-3">
           <span class="text-[11px] font-medium text-muted-foreground">JSON 입력</span>
-          <button v-if="input" class="rounded p-0.5 text-muted-foreground/50 hover:text-foreground transition-colors"
+          <button v-if="input" aria-label="입력 지우기" class="rounded p-0.5 text-muted-foreground/50 hover:text-foreground transition-colors"
                   @click="input = ''">
             <X class="size-3.5"/>
           </button>
@@ -24,6 +24,7 @@
         <div class="flex h-9 items-center justify-between border-b border-border px-3">
           <span class="text-[11px] font-medium text-muted-foreground">TypeScript interface</span>
           <button v-if="output"
+                  :aria-label="copied ? '복사 완료' : 'TypeScript interface 복사'"
                   :class="copied ? 'text-emerald-500' : 'text-muted-foreground/50 hover:text-foreground'"
                   class="rounded p-0.5 transition-colors"
                   @click="copyOutput">

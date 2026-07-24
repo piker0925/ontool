@@ -52,12 +52,14 @@
 
         <div v-if="pageCount > 1" class="flex items-center gap-3 text-[12px] text-muted-foreground">
           <button
+              aria-label="이전 페이지"
               class="flex size-6 items-center justify-center rounded hover:bg-accent disabled:opacity-30"
               :disabled="currentPage <= 1" type="button" @click="currentPage -= 1"
           ><ChevronLeft class="size-4"/>
           </button>
           <span data-testid="wm-page-indicator">{{ currentPage }} / {{ pageCount }} 페이지</span>
           <button
+              aria-label="다음 페이지"
               class="flex size-6 items-center justify-center rounded hover:bg-accent disabled:opacity-30"
               :disabled="currentPage >= pageCount" type="button" @click="currentPage += 1"
           ><ChevronRight class="size-4"/>
@@ -94,6 +96,7 @@
                 @input="patchSelected({fontSize: Number(($event.target as HTMLInputElement).value) || selectedElement!.fontSize})"
             />
             <button
+                aria-label="텍스트 요소 삭제"
                 class="flex size-8 shrink-0 items-center justify-center rounded text-muted-foreground/70 hover:bg-destructive/10 hover:text-destructive"
                 data-testid="wm-remove-element" type="button" @click="removeElement(selectedElement.id)"
             ><X class="size-4"/>

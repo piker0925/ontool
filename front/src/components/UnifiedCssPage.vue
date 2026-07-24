@@ -94,7 +94,8 @@
       <div class="rounded-xl border border-border bg-card overflow-hidden">
         <div class="flex h-9 items-center justify-between border-b border-border px-3">
           <span class="text-[11px] font-medium text-muted-foreground">CSS</span>
-          <button :class="cssCopied ? 'text-emerald-500' : 'text-muted-foreground/50 hover:text-foreground'"
+          <button :aria-label="cssCopied ? '복사 완료' : 'CSS 복사'"
+                  :class="cssCopied ? 'text-emerald-500' : 'text-muted-foreground/50 hover:text-foreground'"
                   class="rounded p-0.5 transition-colors" @click="copyCss">
             <Check v-if="cssCopied" class="size-3.5"/>
             <Copy v-else class="size-3.5"/>
@@ -145,7 +146,8 @@
       <div class="rounded-xl border border-border bg-card overflow-hidden">
         <div class="flex h-9 items-center justify-between border-b border-border px-3">
           <span class="text-[11px] font-medium text-muted-foreground">CSS 커스텀 프로퍼티</span>
-          <button :class="typeScaleCopied ? 'text-emerald-500' : 'text-muted-foreground/50 hover:text-foreground'"
+          <button :aria-label="typeScaleCopied ? '복사 완료' : 'CSS 커스텀 프로퍼티 복사'"
+                  :class="typeScaleCopied ? 'text-emerald-500' : 'text-muted-foreground/50 hover:text-foreground'"
                   class="rounded p-0.5 transition-colors" @click="copyTypeScaleCss">
             <Check v-if="typeScaleCopied" class="size-3.5"/>
             <Copy v-else class="size-3.5"/>

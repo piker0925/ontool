@@ -69,6 +69,16 @@ dependencies {
 	implementation("org.jsonschema2pojo:jsonschema2pojo-core:1.2.2")
 	implementation("org.openapitools:openapi-generator:7.5.0") {
 		exclude(group = "org.slf4j", module = "slf4j-simple")
+		// openapi-generator가 끌어오는 swagger-parser-v3 계열은 io.swagger.core.v3의
+		// 구(舊) javax 기반 아티팩트(swagger-core/-models/-annotations, non-jakarta)를 쓴다.
+		// springdoc-openapi 3.x(Spring Boot 4/Jakarta)는 같은 패키지(io.swagger.v3.core.*)의
+		// jakarta 아티팩트(swagger-core-jakarta 등)를 쓰는데, 두 아티팩트가 클래스패스에
+		// 동시에 올라가면 같은 FQCN이 중복 정의되어 클래스 로딩 순서에 따라 무작위로
+		// NoSuchFieldError/NoSuchMethodError가 난다(098 이슈에서 실제 발생 확인).
+		// 이 프로젝트는 전부 Jakarta 기반이라 구버전 javax 아티팩트가 필요 없으므로 제외한다.
+		exclude(group = "io.swagger.core.v3", module = "swagger-core")
+		exclude(group = "io.swagger.core.v3", module = "swagger-models")
+		exclude(group = "io.swagger.core.v3", module = "swagger-annotations")
 	}
 
 	// Formatter
@@ -87,7 +97,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 
 	// API Docs
-	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9")
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
 
 	// Test
 	testImplementation("org.springframework.boot:spring-boot-starter-test")

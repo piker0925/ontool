@@ -13,6 +13,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 [![Live Demo](https://img.shields.io/badge/🚀_LIVE_DEMO-VISIT-2ea44f?style=for-the-badge)](https://dev-toolbox-ivory.vercel.app)
+[![API 문서](https://img.shields.io/badge/API_문서-Swagger-85EA2D?logo=swagger&logoColor=black)](http://localhost:8080/swagger-ui.html)
 
 <img src="docs/preview.png" alt="OnTool 미리보기" width="840">
 

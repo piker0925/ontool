@@ -582,3 +582,22 @@ describe('ToolPage 배치 폴링 실패 (042)', () => {
         expect(wrapper.text()).not.toContain('재연결 중')
     })
 })
+
+// 113: pdf-merge·image-to-pdf·image-collage·gif-create·video-merge는 "여러 파일이 본질"인
+// 모듈이라 대상 파일 단일 제한 대상에서 제외됐다 — 대신 다중 업로드 가능 안내가 실제로 보이는지
+// 회귀 검증한다(설정에서 fileMultiple이 실수로 false가 되면 이 테스트가 잡아낸다).
+describe('ToolPage 다중 파일 모듈 안내 문구 (113)', () => {
+    it.each([
+        ['pdf-merge', 'PDF 병합'],
+        ['image-to-pdf', '이미지→PDF'],
+        ['image-collage', '이미지 콜라주'],
+        ['gif-create', 'GIF 생성'],
+        ['video-merge', '영상 병합'],
+    ])('%s 페이지는 "여러 파일 동시 업로드 가능" 안내를 보여준다', async (moduleId, name) => {
+        const wrapper = await mountAt(moduleId, [
+            {id: moduleId, name, category: 'PDF', isHeavy: true, zones: ['files']},
+        ])
+
+        expect(wrapper.text()).toContain('여러 파일 동시 업로드 가능')
+    })
+})

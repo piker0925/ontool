@@ -6,7 +6,6 @@ import com.back.tool.model.ToolModule;
 import com.back.tool.model.ToolParams;
 import com.back.tool.model.ToolProcessingException;
 import com.back.tool.model.ToolResult;
-import com.back.tool.pdf.WatermarkPosition;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -23,8 +22,9 @@ import java.util.List;
 
 /**
  * 이미지·텍스트 워터마크를 영상에 오버레이한다(037). {@code PdfWatermarkModule}과 같은 계약 —
- * files[0]=대상 영상, files[1]=워터마크 이미지(선택). 좌표 계산은 {@link WatermarkPosition}을
- * 그대로 재사용해 PDF/이미지 워터마크와 동일한 배치 로직을 쓴다.
+ * files[0]=대상 영상, files[1]=워터마크 이미지(선택). 이미지·텍스트 워터마크 모두 우하단 고정
+ * 위치에 배치한다(115) — 이전에는 {@code position} 파라미터(9방향)로 선택할 수 있었으나 실사용
+ * 가치가 낮다고 판단해 제거했다. 이 모듈은 전용 프론트 페이지가 없어 UI 영향은 없다.
  */
 @Component
 @RequiredArgsConstructor
@@ -68,7 +68,6 @@ public class VideoWatermarkModule implements ToolModule {
         if (text.isBlank() && watermarkImage == null) {
             throw new ToolProcessingException("텍스트 워터마크 또는 워터마크 이미지 중 하나는 필요합니다.");
         }
-        WatermarkPosition position = params.getEnum("position", WatermarkPosition.class, WatermarkPosition.CENTER);
         int opacityPercent = params.getInt("opacity", 30, 0, 100);
         double opacity = opacityPercent / 100.0;
 
@@ -99,7 +98,7 @@ public class VideoWatermarkModule implements ToolModule {
             if (watermarkImage != null) {
                 args.add("-i");
                 args.add(watermarkImage.toAbsolutePath().toString());
-                Point2D.Double offset = imageOffset(watermarkImage, position, videoWidth, videoHeight);
+                Point2D.Double offset = imageOffset(watermarkImage, videoWidth, videoHeight);
                 filter.append("[1:v]format=rgba,colorchannelmixer=aa=").append(opacity).append("[wm];")
                         .append("[").append(videoLabel).append("][wm]overlay=")
                         .append((int) offset.x).append(":").append((int) offset.y).append("[vwm];");
@@ -116,7 +115,7 @@ public class VideoWatermarkModule implements ToolModule {
                 } catch (IOException e) {
                     throw new ToolProcessingException("워터마크 텍스트 파일 생성에 실패했습니다: " + e.getMessage(), e);
                 }
-                String[] xy = textPositionExpr(position);
+                String[] xy = textPositionExpr();
                 filter.append("[").append(videoLabel).append("]drawtext=textfile='")
                         .append(escapePathForFilter(textFile.toAbsolutePath().toString()))
                         .append("':fontcolor=white@").append(opacity)
@@ -153,7 +152,7 @@ public class VideoWatermarkModule implements ToolModule {
         }
     }
 
-    private Point2D.Double imageOffset(Path watermarkImage, WatermarkPosition position, int videoWidth, int videoHeight) {
+    private Point2D.Double imageOffset(Path watermarkImage, int videoWidth, int videoHeight) {
         BufferedImage wm;
         try {
             wm = ImageIO.read(watermarkImage.toFile());
@@ -163,18 +162,14 @@ public class VideoWatermarkModule implements ToolModule {
         if (wm == null) {
             throw new ToolProcessingException("워터마크 이미지를 읽을 수 없습니다.");
         }
-        return position.offset(videoWidth, videoHeight, wm.getWidth(), wm.getHeight(), MARGIN);
+        // 우하단 고정(115) — 두 축 모두 "컨테이너 크기 - 콘텐츠 크기 - 여백"으로 계산한다.
+        return new Point2D.Double(videoWidth - wm.getWidth() - MARGIN, videoHeight - wm.getHeight() - MARGIN);
     }
 
-    private String[] textPositionExpr(WatermarkPosition position) {
+    /** ffmpeg drawtext의 x/y 표현식 — 우하단 고정(115). */
+    private String[] textPositionExpr() {
         String margin = String.valueOf((int) MARGIN);
-        return switch (position) {
-            case TOP_LEFT -> new String[]{margin, margin};
-            case TOP_RIGHT -> new String[]{"main_w-text_w-" + margin, margin};
-            case BOTTOM_LEFT -> new String[]{margin, "main_h-text_h-" + margin};
-            case BOTTOM_RIGHT -> new String[]{"main_w-text_w-" + margin, "main_h-text_h-" + margin};
-            case CENTER -> new String[]{"(main_w-text_w)/2", "(main_h-text_h)/2"};
-        };
+        return new String[]{"main_w-text_w-" + margin, "main_h-text_h-" + margin};
     }
 
     /**

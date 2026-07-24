@@ -25,7 +25,6 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -45,6 +44,10 @@ import java.util.Set;
  *
  * <p>워터마크 이미지는 두 번째 {@code files} 항목으로 선택적으로 전달된다 — 대상 파일과 워터마크 이미지가
  * 하나의 job으로 함께 도착해야 하므로 {@link #acceptsMultipleFiles()}를 true로 오버라이드한다.
+ *
+ * <p>이미지 워터마크의 위치는 우하단으로 고정한다(115) — 이전에는 {@code position} 파라미터(9방향
+ * {@code WatermarkPosition} enum)로 선택할 수 있었으나 실사용 가치가 낮다고 판단해 제거했다. 텍스트
+ * 워터마크는 이 변경과 무관하게 {@code xPercent}/{@code yPercent}로 계속 자유 배치된다.
  */
 @Component
 public class PdfWatermarkModule implements ToolModule {
@@ -83,16 +86,15 @@ public class PdfWatermarkModule implements ToolModule {
         if (elements.isEmpty() && watermarkImage == null) {
             throw new ToolProcessingException("텍스트 워터마크 또는 워터마크 이미지 중 하나는 필요합니다.");
         }
-        WatermarkPosition position = params.getEnum("position", WatermarkPosition.class, WatermarkPosition.CENTER);
         float opacity = params.getInt("opacity", 30, 0, 100) / 100f;
 
         Path target = input.files().get(0);
         String ext = extension(target);
         if (ext.equals("pdf")) {
-            return watermarkPdf(target, elements, watermarkImage, position, opacity);
+            return watermarkPdf(target, elements, watermarkImage, opacity);
         }
         if (IMAGE_EXTENSIONS.contains(ext)) {
-            return watermarkImage(target, elements, watermarkImage, position, opacity, ext);
+            return watermarkImage(target, elements, watermarkImage, opacity, ext);
         }
         throw new ToolProcessingException(
                 "워터마크는 PDF 또는 이미지(jpg, png) 파일만 지원합니다. (입력 파일: " + target.getFileName() + ")");
@@ -174,7 +176,7 @@ public class PdfWatermarkModule implements ToolModule {
     }
 
     private ToolResult watermarkPdf(Path target, List<TextElement> elements, Path watermarkImagePath,
-                                     WatermarkPosition position, float opacity) {
+                                     float opacity) {
         try (PDDocument doc = PDDocument.load(target.toFile())) {
             Map<KoreanFontSupport.FontWeight, PDFont> fontCache = new EnumMap<>(KoreanFontSupport.FontWeight.class);
             PDImageXObject wmImage = watermarkImagePath != null
@@ -212,10 +214,11 @@ public class PdfWatermarkModule implements ToolModule {
                         }
                     }
                     if (wmImage != null) {
-                        Point2D.Double offset = position.offset(
-                                box.getWidth(), box.getHeight(), wmImage.getWidth(), wmImage.getHeight(), MARGIN);
-                        float pdfY = (float) (box.getHeight() - offset.y - wmImage.getHeight());
-                        cs.drawImage(wmImage, (float) offset.x, pdfY, wmImage.getWidth(), wmImage.getHeight());
+                        // 우하단 고정(115) — PDF는 좌하단 원점·y축이 위로 증가하는 좌표계라, 하단
+                        // 여백은 그냥 MARGIN 그 자체가 된다(컨테이너 높이를 빼고 다시 더하는 상쇄가
+                        // 일어나므로, 우상/좌하 등 다른 모서리처럼 컨테이너 크기를 참조할 필요가 없다).
+                        float wmX = (float) (box.getWidth() - wmImage.getWidth() - MARGIN);
+                        cs.drawImage(wmImage, wmX, MARGIN, wmImage.getWidth(), wmImage.getHeight());
                     }
                 }
             }
@@ -228,7 +231,7 @@ public class PdfWatermarkModule implements ToolModule {
     }
 
     private ToolResult watermarkImage(Path target, List<TextElement> elements, Path watermarkImagePath,
-                                       WatermarkPosition position, float opacity, String ext) {
+                                       float opacity, String ext) {
         try {
             BufferedImage base = ImageIO.read(target.toFile());
             if (base == null) {
@@ -246,9 +249,11 @@ public class PdfWatermarkModule implements ToolModule {
                 if (wm == null) {
                     throw new ToolProcessingException("워터마크 이미지를 읽을 수 없습니다: " + watermarkImagePath.getFileName());
                 }
-                Point2D.Double offset = position.offset(
-                        base.getWidth(), base.getHeight(), wm.getWidth(), wm.getHeight(), MARGIN);
-                g.drawImage(wm, (int) Math.round(offset.x), (int) Math.round(offset.y), null);
+                // 우하단 고정(115) — 이미지 좌표계는 y가 아래로 증가하므로 두 축 모두 "컨테이너
+                // 크기 - 콘텐츠 크기 - 여백"으로 동일하게 계산한다(PDF 분기와 달리 뒤집을 필요 없음).
+                int wmX = (int) Math.round(base.getWidth() - wm.getWidth() - MARGIN);
+                int wmY = (int) Math.round(base.getHeight() - wm.getHeight() - MARGIN);
+                g.drawImage(wm, wmX, wmY, null);
             } else {
                 // 이미지 대상은 "페이지" 개념이 없으므로 page 필드는 무시하고 모든 요소를 그린다.
                 for (TextElement element : elements) {

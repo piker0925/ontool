@@ -136,14 +136,8 @@ export const VIDEO_HEAVY_CONFIGS: Record<string, ModuleConfig> = {
                 label: '텍스트 워터마크(선택 — 이미지 워터마크와 동시 사용 가능)',
                 type: 'text',
                 placeholder: '© 2026 내 채널',
-                help: '파일은 [대상 영상, 워터마크 이미지(선택)] 순서로 업로드하세요. 텍스트만 쓸 경우 영상 1개만 올리면 됩니다.',
-            },
-            {
-                key: 'position',
-                label: '위치',
-                type: 'select',
-                options: ['CENTER', 'TOP_LEFT', 'TOP_RIGHT', 'BOTTOM_LEFT', 'BOTTOM_RIGHT'],
-                default: 'CENTER',
+                help: '파일은 [대상 영상, 워터마크 이미지(선택)] 순서로 업로드하세요. 텍스트만 쓸 경우 영상 1개만 올리면 됩니다. ' +
+                    '위치는 우하단 고정입니다(115).',
             },
             {
                 key: 'opacity',

@@ -21,10 +21,12 @@ beforeEach(() => vi.clearAllMocks())
 
 // 파일 선택(input change) 구동 — 브라우저에서 파일을 드롭/선택한 것과 같다.
 // 034 이후 선택은 스테이징만 하고, 실행은 confirm-upload 버튼 클릭으로 일어난다.
+// data-testid로 정확히 "메인 슬롯" 입력을 지목한다 — secondSlotLabel이 있으면 input[type="file"]이
+// 2개가 되는데, DOM 순서가 소스 순서와 항상 일치한다고 보장할 수 없어(관찰됨) 순서 의존은 위험하다.
 async function selectFiles(wrapper: ReturnType<typeof mount>, files: File[]) {
-    const input = wrapper.find('input[type="file"]').element as HTMLInputElement
+    const input = wrapper.find('[data-testid="main-file-input"]').element as HTMLInputElement
     Object.defineProperty(input, 'files', {value: files, configurable: true})
-    await wrapper.find('input[type="file"]').trigger('change')
+    await wrapper.find('[data-testid="main-file-input"]').trigger('change')
     await flushPromises()
 }
 
@@ -195,6 +197,86 @@ describe('FileUploader', () => {
         expect(wrapper.emitted('uploaded')).toBeFalsy()
         expect(wrapper.emitted('error')).toBeTruthy()
         expect((wrapper.emitted('error')![0][0] as string)).toContain('크기')
+    })
+
+    it('maxFiles가 있으면 multiple=false여도 서로 다른 선택을 누적해 한도까지 담는다(대상+워터마크 이미지 조합)', async () => {
+        const wrapper = mount(FileUploader, {
+            props: {moduleId: 'pdf-watermark', multiple: false, maxFiles: 2, reorderable: true},
+        })
+
+        await selectFiles(wrapper, [new File(['a'], 'target.pdf')])
+        expect(wrapper.text()).toContain('target.pdf')
+
+        await selectFiles(wrapper, [new File(['b'], 'logo.png')])
+
+        expect(wrapper.text()).toContain('target.pdf')
+        expect(wrapper.text()).toContain('logo.png')
+        expect(wrapper.emitted('error')).toBeFalsy()
+    })
+
+    it('maxFiles 한도를 넘는 추가 선택은 담기지 않고 error를 emit한다(한도 내 파일은 그대로 유지)', async () => {
+        const wrapper = mount(FileUploader, {
+            props: {moduleId: 'pdf-watermark', multiple: false, maxFiles: 2, reorderable: true},
+        })
+
+        await selectFiles(wrapper, [new File(['a'], 'target.pdf')])
+        await selectFiles(wrapper, [new File(['b'], 'logo.png')])
+        await selectFiles(wrapper, [new File(['c'], 'extra.png')])
+
+        // 한도 초과분(extra.png)만 거부되고, 기존에 담긴 두 파일은 그대로 남아 있어야 한다
+        // (좁게 맞는 케이스: 한도 내 2개 유지 / 넓게 잘못된 케이스: 3개 다 담기거나 다 비워짐).
+        expect(wrapper.text()).toContain('target.pdf')
+        expect(wrapper.text()).toContain('logo.png')
+        expect(wrapper.text()).not.toContain('extra.png')
+        expect(wrapper.emitted('error')).toBeTruthy()
+    })
+
+    it('multiple=true와 maxFiles를 함께 쓰면 한 번의 선택에 담긴 파일 중 한도 내 개수만 자르고 나머지는 거른다', async () => {
+        const wrapper = mount(FileUploader, {
+            props: {moduleId: 'image-collage', multiple: true, maxFiles: 2, reorderable: true},
+        })
+
+        await selectFiles(wrapper, [
+            new File(['a'], 'a.png'),
+            new File(['b'], 'b.png'),
+            new File(['c'], 'c.png'),
+        ])
+
+        // 좁게 맞는 결과(한도 내 2개만 유지)와 넓게 잘못된 결과(3개 다 담김/다 비워짐)를 구분한다.
+        expect(wrapper.text()).toContain('a.png')
+        expect(wrapper.text()).toContain('b.png')
+        expect(wrapper.text()).not.toContain('c.png')
+        expect(wrapper.emitted('error')).toBeTruthy()
+        expect((wrapper.emitted('error')!.at(-1)![0] as string)).toContain('최대 2개')
+    })
+
+    it('multiple=false면 한 번에 여러 파일을 선택해도(다중 선택 시도) 첫 파일만 담긴다 — maxFiles와 무관하게 대상 파일은 항상 1개씩만', async () => {
+        const wrapper = mount(FileUploader, {
+            props: {moduleId: 'pdf-watermark', multiple: false, maxFiles: 2, reorderable: true},
+        })
+
+        await selectFiles(wrapper, [
+            new File(['a'], 'first.pdf'),
+            new File(['b'], 'second.pdf'),
+            new File(['c'], 'third.pdf'),
+        ])
+
+        expect(wrapper.text()).toContain('first.pdf')
+        expect(wrapper.text()).not.toContain('second.pdf')
+        expect(wrapper.text()).not.toContain('third.pdf')
+    })
+
+    it('maxFiles가 없으면(기본) 기존 모듈의 동작에 영향이 없다(회귀 없음)', async () => {
+        const wrapper = mount(FileUploader, {
+            props: {moduleId: 'pdf-merge', reorderable: true},
+        })
+
+        await selectFiles(wrapper, [new File(['a'], 'a.pdf'), new File(['b'], 'b.pdf'), new File(['c'], 'c.pdf')])
+
+        expect(wrapper.text()).toContain('a.pdf')
+        expect(wrapper.text()).toContain('b.pdf')
+        expect(wrapper.text()).toContain('c.pdf')
+        expect(wrapper.emitted('error')).toBeFalsy()
     })
 
     it('업로드가 실패하면 스테이징한 파일 목록을 유지해 재시도할 수 있다', async () => {
@@ -380,5 +462,136 @@ describe('FileUploader', () => {
         await selectFiles(wrapper, [new File(['a'], 'doc.pdf', {type: 'application/pdf'})])
 
         expect(wrapper.emitted('dimensions')?.at(-1)).toEqual([null])
+    })
+})
+
+// 113 확장: 대상 파일(1개) + 워터마크 이미지(선택)를 순서 기반 암묵 규칙 대신 명시적인 두 번째
+// 슬롯으로 노출한다. FileUploader의 소유권 구조(하나의 staged 배열·하나의 POST)는 그대로 두고
+// UI 어포던스만 늘리는 "veneer" — secondSlotLabel/secondSlotAccept prop으로 구현.
+describe('FileUploader 두 번째 업로드 슬롯 (113 확장 — 이미지 워터마크 전용 버튼)', () => {
+    function secondSlotInput(wrapper: ReturnType<typeof mount>) {
+        return wrapper.find('[data-testid="second-slot-file-input"]')
+    }
+
+    async function selectSecondSlotFile(wrapper: ReturnType<typeof mount>, file: File) {
+        const input = secondSlotInput(wrapper).element as HTMLInputElement
+        Object.defineProperty(input, 'files', {value: [file], configurable: true})
+        await secondSlotInput(wrapper).trigger('change')
+        await flushPromises()
+    }
+
+    function mountWithSecondSlot() {
+        return mount(FileUploader, {
+            props: {
+                moduleId: 'pdf-watermark',
+                accept: '.pdf,.jpg,.jpeg,.png',
+                multiple: false,
+                maxFiles: 2,
+                secondSlotLabel: '+ 이미지 워터마크 추가',
+                secondSlotAccept: '.jpg,.jpeg,.png',
+            },
+        })
+    }
+
+    it('대상 파일이 없으면 두 번째 슬롯 버튼은 보이지 않고 기본 드롭존만 보인다', () => {
+        const wrapper = mountWithSecondSlot()
+        expect(wrapper.text()).not.toContain('+ 이미지 워터마크 추가')
+        expect(wrapper.text()).toContain('파일을 드래그하거나 클릭하여 선택하세요')
+    })
+
+    it('대상 파일이 스테이징되면 기본 드롭존 대신 두 번째 슬롯 버튼이 나타난다', async () => {
+        const wrapper = mountWithSecondSlot()
+        await selectFiles(wrapper, [new File(['a'], 'target.pdf')])
+
+        expect(wrapper.text()).toContain('+ 이미지 워터마크 추가')
+        // 대상 파일이 스테이징된 뒤에는 일반 드롭존이 더 이상 클릭 가능한 형태로 남아있으면 안 된다
+        // — 그래야 두 번째 파일도 PDF를 올리는 예전의 애매한 경로(잔여 갭)가 완전히 막힌다.
+        expect(wrapper.text()).not.toContain('파일을 드래그하거나 클릭하여 선택하세요')
+    })
+
+    it('두 번째 슬롯에 이미지 파일을 올리면 정상적으로 두 번째 파일로 담긴다', async () => {
+        const wrapper = mountWithSecondSlot()
+        await selectFiles(wrapper, [new File(['a'], 'target.pdf')])
+
+        await selectSecondSlotFile(wrapper, new File(['b'], 'logo.png', {type: 'image/png'}))
+
+        expect(wrapper.text()).toContain('target.pdf')
+        expect(wrapper.text()).toContain('logo.png')
+        expect(wrapper.emitted('error')).toBeFalsy()
+    })
+
+    it('두 번째 슬롯 파일까지 담은 뒤 실행하면 target이 files[0], 워터마크 이미지가 files[1]로 전송된다', async () => {
+        mockPost.mockResolvedValueOnce({data: {jobId: 'job-wm'}})
+        const wrapper = mountWithSecondSlot()
+        await selectFiles(wrapper, [new File(['a'], 'target.pdf')])
+        await selectSecondSlotFile(wrapper, new File(['b'], 'logo.png', {type: 'image/png'}))
+
+        await clickRun(wrapper)
+
+        const form = mockPost.mock.calls[0][1] as FormData
+        const names = form.getAll('files').map(f => (f as File).name)
+        expect(names).toEqual(['target.pdf', 'logo.png'])
+        expect(wrapper.emitted('uploaded')![0]).toEqual([{jobId: 'job-wm'}])
+    })
+
+    it('두 번째 슬롯에 이미지가 아닌 파일(PDF)을 올리면 거부하고 에러를 emit한다(잔여 갭 차단)', async () => {
+        const wrapper = mountWithSecondSlot()
+        await selectFiles(wrapper, [new File(['a'], 'target.pdf')])
+
+        await selectSecondSlotFile(wrapper, new File(['b'], 'second-target.pdf'))
+
+        // 좁게 맞는 결과(PDF는 거부되어 target.pdf 1개만 남음)와 넓게 잘못된 결과(PDF가 그대로
+        // "워터마크 이미지"로 담김)를 구분한다 — 이게 이전 code-review가 지적한 잔여 갭이었다.
+        expect(wrapper.text()).toContain('target.pdf')
+        expect(wrapper.text()).not.toContain('second-target.pdf')
+        expect(wrapper.emitted('error')).toBeTruthy()
+        expect((wrapper.emitted('error')!.at(-1)![0] as string)).toContain('이미지')
+    })
+
+    it('두 번째 슬롯이 채워지면(한도 도달) 버튼이 사라진다', async () => {
+        const wrapper = mountWithSecondSlot()
+        await selectFiles(wrapper, [new File(['a'], 'target.pdf')])
+        await selectSecondSlotFile(wrapper, new File(['b'], 'logo.png', {type: 'image/png'}))
+
+        expect(wrapper.text()).not.toContain('+ 이미지 워터마크 추가')
+    })
+
+    it('두 번째 파일을 제거하면 두 번째 슬롯 버튼이 다시 나타난다', async () => {
+        const wrapper = mountWithSecondSlot()
+        await selectFiles(wrapper, [new File(['a'], 'target.pdf')])
+        await selectSecondSlotFile(wrapper, new File(['b'], 'logo.png', {type: 'image/png'}))
+        expect(wrapper.text()).not.toContain('+ 이미지 워터마크 추가')
+
+        await wrapper.find('[data-testid="remove-1"]').trigger('click')
+        await flushPromises()
+
+        expect(wrapper.text()).toContain('+ 이미지 워터마크 추가')
+        expect(wrapper.text()).toContain('target.pdf')
+    })
+
+    it('대상 파일(0번)을 제거하면 두 번째 슬롯에 담긴 이미지까지 함께 비워진다(인덱스 밀림 방지)', async () => {
+        const wrapper = mountWithSecondSlot()
+        await selectFiles(wrapper, [new File(['a'], 'target.pdf')])
+        await selectSecondSlotFile(wrapper, new File(['b'], 'logo.png', {type: 'image/png'}))
+
+        await wrapper.find('[data-testid="remove-0"]').trigger('click')
+        await flushPromises()
+
+        // 좁게 맞는 결과(전부 비워져 처음부터 다시 시작)와 넓게 잘못된 결과(logo.png가 밀려와
+        // 대상 파일 자리를 차지)를 구분한다.
+        expect(wrapper.text()).not.toContain('target.pdf')
+        expect(wrapper.text()).not.toContain('logo.png')
+        expect(wrapper.text()).toContain('파일을 드래그하거나 클릭하여 선택하세요')
+    })
+
+    it('secondSlotLabel이 없으면 기존 모듈의 동작에 영향이 없다(회귀 없음)', async () => {
+        const wrapper = mount(FileUploader, {
+            props: {moduleId: 'pdf-merge', reorderable: true},
+        })
+
+        await selectFiles(wrapper, [new File(['a'], 'a.pdf')])
+
+        expect(wrapper.text()).toContain('파일을 드래그하거나 클릭하여 선택하세요')
+        expect(wrapper.findAll('input[type="file"]')).toHaveLength(1)
     })
 })

@@ -1,7 +1,7 @@
 <template>
   <div v-if="loading" class="flex items-center gap-2 p-6 text-sm text-muted-foreground">
     <Loader2 class="size-4 animate-spin"/>
-    불러오는 중...
+    불러오는 중…
   </div>
 
   <div v-else-if="!mod" class="p-6 text-sm text-muted-foreground">모듈을 찾을 수 없습니다.</div>
@@ -310,7 +310,7 @@
               <template v-else-if="!batchComplete">
                 <Loader2 class="size-8 animate-spin text-primary/60"/>
                 <!-- 폴링 재시도 중 (042): 진행률이 멈춘 채 방치되지 않도록 명시적으로 알림 -->
-                <p v-if="batchReconnecting" class="text-[12px] text-amber-600">연결이 끊겼습니다 · 재연결 중...</p>
+                <p v-if="batchReconnecting" class="text-[12px] text-amber-600">연결이 끊겼습니다 · 재연결 중…</p>
                 <p class="text-[13px] text-muted-foreground">
                   일괄 처리 중… {{ batchProgress?.doneCount ?? 0 }} / {{ batchProgress?.totalCount ?? 0 }}
                   <span v-if="batchProgress?.failCount" class="text-destructive">(실패 {{
@@ -356,7 +356,7 @@
             <div v-else-if="!result" class="flex w-full max-w-sm flex-col items-center gap-4">
               <Loader2 class="size-8 animate-spin text-primary/60"/>
               <!-- 연결 끊김 상태 (042): 진행률이 멈춘 채 방치되지 않도록 명시적으로 알림 -->
-              <p v-if="sseReconnecting" class="text-[12px] text-amber-600">연결이 끊겼습니다 · 재연결 중...</p>
+              <p v-if="sseReconnecting" class="text-[12px] text-amber-600">연결이 끊겼습니다 · 재연결 중…</p>
               <!-- 대기 중: 큐 순번 안내 (ADR-0019 진행 가시화) -->
               <p v-if="jobProgress && jobProgress.queuePosition > 0" class="text-[13px] text-muted-foreground">
                 대기 중… 앞에 {{ jobProgress.queuePosition }}개
@@ -374,7 +374,7 @@
                   <span v-if="jobProgress.etaSeconds != null"> · 약 {{ formatEta(jobProgress.etaSeconds) }} 남음</span>
                 </p>
               </template>
-              <p v-else class="text-[13px] text-muted-foreground">처리 중입니다...</p>
+              <p v-else class="text-[13px] text-muted-foreground">처리 중입니다…</p>
             </div>
             <div v-else class="flex w-full flex-col gap-4">
               <ResultViewer :text="result.text"/>

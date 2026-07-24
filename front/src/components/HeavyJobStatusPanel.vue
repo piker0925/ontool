@@ -49,7 +49,7 @@
 
       <div v-else role="status" aria-live="polite" class="flex w-full max-w-sm flex-col items-center gap-4">
         <Loader2 class="size-8 animate-spin text-primary/60"/>
-        <p v-if="reconnecting" class="text-[12px] text-amber-600">연결이 끊겼습니다 · 재연결 중...</p>
+        <p v-if="reconnecting" class="text-[12px] text-amber-600">연결이 끊겼습니다 · 재연결 중…</p>
         <p v-if="progress && progress.queuePosition > 0" class="text-[13px] text-muted-foreground">
           대기 중… 앞에 {{ progress.queuePosition }}개
         </p>
@@ -65,7 +65,7 @@
             <span v-if="progress.etaSeconds != null"> · 약 {{ formatEta(progress.etaSeconds) }} 남음</span>
           </p>
         </template>
-        <p v-else class="text-[13px] text-muted-foreground">처리 중입니다...</p>
+        <p v-else class="text-[13px] text-muted-foreground">처리 중입니다…</p>
       </div>
     </div>
   </div>

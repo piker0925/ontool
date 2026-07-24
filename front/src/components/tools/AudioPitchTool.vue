@@ -17,7 +17,7 @@
         {{ largeShiftWarning }}
       </p>
       <Button :disabled="processing" class="w-fit" data-testid="apply-pitch" @click="applyPitch">
-        {{ processing ? '처리 중...' : '적용' }}
+        {{ processing ? '처리 중…' : '적용' }}
       </Button>
     </div>
   </AudioToolShell>

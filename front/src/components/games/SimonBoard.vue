@@ -24,7 +24,7 @@
         />
       </div>
 
-      <p v-if="phase === 'showing'" class="text-[12px] text-muted-foreground/70">순서를 잘 보세요...</p>
+      <p v-if="phase === 'showing'" class="text-[12px] text-muted-foreground/70">순서를 잘 보세요…</p>
       <p v-else-if="phase === 'over'" class="text-sm font-medium text-destructive" data-testid="game-over">게임 오버!</p>
       <p v-else class="text-[12px] text-muted-foreground/70">순서대로 따라 눌러보세요</p>
     </template>

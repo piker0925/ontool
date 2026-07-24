@@ -35,6 +35,17 @@ function itemNames(): string[] {
     return Array.from(document.body.querySelectorAll('[data-slot="command-item"]')).map(el => el.textContent?.trim() ?? '')
 }
 
+describe('CommandPalette — 검색 입력 속성', () => {
+    it('도구 검색 입력에 autocomplete="off"가 지정돼 있다 — 브라우저 자동완성 제안 방지', async () => {
+        const wrapper = activeWrapper = mount(CommandPalette, {props: {modules: MODULES}, global: {plugins: [router]}, attachTo: document.body})
+        wrapper.vm.open()
+        await wrapper.vm.$nextTick()
+
+        const input = document.body.querySelector('input') as HTMLInputElement
+        expect(input.getAttribute('autocomplete')).toBe('off')
+    })
+})
+
 describe('CommandPalette — 결과 그룹핑', () => {
     it('그룹 헤딩이 구역명(zones[0]) 단위다 — 카테고리까지 묶지 않아 스캐닝을 극대화한다 (ADR-0023)', async () => {
         const wrapper = activeWrapper = mount(CommandPalette, {props: {modules: MODULES}, global: {plugins: [router]}, attachTo: document.body})

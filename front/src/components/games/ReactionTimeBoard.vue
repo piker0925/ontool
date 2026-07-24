@@ -59,7 +59,7 @@ function onClick() {
 }
 
 const areaClass = computed(() => state.value.phase === 'ready' ? 'bg-zone-accent text-white' : 'bg-muted text-muted-foreground')
-const areaText = computed(() => state.value.phase === 'ready' ? '지금 클릭!' : '기다리세요...')
+const areaText = computed(() => state.value.phase === 'ready' ? '지금 클릭!' : '기다리세요…')
 
 onUnmounted(clearTimer)
 </script>

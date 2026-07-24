@@ -15,13 +15,14 @@
             <div class="text-sm font-medium text-muted-foreground">닉네임</div>
             
             <div v-if="isEditingNickname" class="flex items-center gap-2">
-              <Input 
-                v-model="editNickname" 
-                class="max-w-[200px]" 
+              <Input
+                v-model="editNickname"
+                class="max-w-[200px]"
                 @keyup.enter="saveNickname"
                 @keyup.escape="cancelEdit"
                 minlength="2"
                 maxlength="20"
+                autocomplete="nickname"
                 autofocus
               />
               <Button aria-label="저장" size="icon" variant="ghost" @click="saveNickname">
@@ -69,7 +70,7 @@
     <JobHistorySection v-if="user" />
 
     <div v-else-if="isLoading" class="py-12 text-center text-muted-foreground">
-      로딩 중...
+      로딩 중…
     </div>
 
     <!-- 회원 탈퇴 확인 모달 -->
@@ -86,7 +87,7 @@
         <DialogFooter class="mt-4 sm:justify-end gap-2 sm:gap-0">
           <Button variant="outline" @click="showWithdrawModal = false">취소</Button>
           <Button variant="destructive" @click="confirmWithdraw" :disabled="isWithdrawing">
-            {{ isWithdrawing ? '처리 중...' : '영구 탈퇴' }}
+            {{ isWithdrawing ? '처리 중…' : '영구 탈퇴' }}
           </Button>
         </DialogFooter>
       </DialogContent>

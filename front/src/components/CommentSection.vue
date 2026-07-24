@@ -18,7 +18,7 @@
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="mb-4 py-4 text-center text-sm text-muted-foreground">불러오는 중...</div>
+    <div v-if="loading" class="mb-4 py-4 text-center text-sm text-muted-foreground">불러오는 중…</div>
 
     <!-- Empty -->
     <div v-else-if="comments.length === 0" class="mb-4 py-6 text-center">
@@ -84,7 +84,7 @@
               v-model="reportDetail"
               aria-label="신고 상세 사유"
               class="mt-2 min-h-[56px] resize-none text-xs"
-              placeholder="구체적인 사유를 입력해 주세요 (필수)"
+              placeholder="구체적인 사유를 입력해 주세요… (필수 · 예: 광고성 댓글, 욕설 등)"
           />
           <div class="mt-2 flex items-center justify-end gap-2">
             <button class="text-xs text-muted-foreground hover:underline" @click="closeReport">취소</button>
@@ -94,7 +94,7 @@
                 size="sm"
                 variant="outline"
                 @click="submitReport(c.id)"
-            >{{ reportSubmitting ? '접수 중...' : '신고 접수' }}</Button>
+            >{{ reportSubmitting ? '접수 중…' : '신고 접수' }}</Button>
           </div>
         </div>
       </li>
@@ -106,7 +106,7 @@
           v-model="newContent"
           aria-label="댓글 내용"
           class="min-h-[72px] resize-none text-sm"
-          placeholder="댓글을 남겨주세요..."
+          placeholder="댓글을 남겨주세요… (다른 이용자를 존중해 주세요)"
           @keydown.ctrl.enter.prevent="handleShortcut"
           @keydown.meta.enter.prevent="handleShortcut"
       />
@@ -122,7 +122,7 @@
             size="sm"
             variant="outline"
             @click="submitComment"
-        >{{ submitting ? '등록 중...' : '댓글 등록' }}</Button>
+        >{{ submitting ? '등록 중…' : '댓글 등록' }}</Button>
       </div>
     </div>
   </div>

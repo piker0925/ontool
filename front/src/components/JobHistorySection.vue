@@ -5,7 +5,7 @@
     </CardHeader>
     <CardContent>
       <div v-if="loading" class="py-6 text-center text-sm text-muted-foreground">
-        불러오는 중...
+        불러오는 중…
       </div>
       <div v-else-if="jobs.length === 0" class="py-6 text-center text-sm text-muted-foreground">
         최근 작업 이력이 없습니다.

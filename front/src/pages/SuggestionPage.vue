@@ -12,7 +12,7 @@
       <Textarea
           v-model="content"
           class="min-h-[120px] resize-none text-sm"
-          placeholder="건의사항을 입력해주세요..."
+          placeholder="건의사항을 입력해주세요… (예: 이런 도구가 있었으면 좋겠어요)"
       />
       <div class="mt-3 flex items-center justify-between">
         <p class="text-xs text-muted-foreground">
@@ -20,7 +20,7 @@
           <span v-else>익명 · 로그인 없이 제출</span>
         </p>
         <Button :disabled="submitting || !content.trim()" class="text-xs" size="sm" @click="submit">
-          {{ submitting ? '제출 중...' : '제출' }}
+          {{ submitting ? '제출 중…' : '제출' }}
         </Button>
       </div>
     </div>

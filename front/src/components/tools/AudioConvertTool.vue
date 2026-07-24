@@ -9,7 +9,7 @@
         원본을 그대로 mp3/wav로 다시 인코딩합니다. 신호는 바뀌지 않고 포맷만 바뀝니다.
       </p>
       <Button :disabled="processing" class="w-fit" data-testid="apply-convert" @click="applyConvert">
-        {{ processing ? '처리 중...' : '적용' }}
+        {{ processing ? '처리 중…' : '적용' }}
       </Button>
     </div>
   </AudioToolShell>

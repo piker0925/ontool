@@ -565,7 +565,7 @@
       </div>
 
       <!-- Comments (접이식) -->
-      <div class="mt-8 border-t border-border pt-4">
+      <div :class="commentsSectionClass" class="mt-8 border-t border-border pt-4">
         <button
             class="flex items-center gap-2 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
             @click="showComments = !showComments"
@@ -833,6 +833,13 @@ const frontendToolComponent = computed(() =>
 const modComponent = computed(() => mod.value?.component ? defineAsyncComponent(mod.value.component) : null)
 const frontendToolLayoutClass = computed(() =>
     frontendToolEntry.value?.layout === 'narrow' ? 'px-6 py-8 max-w-5xl mx-auto' : '',
+)
+
+// Heavy 도구는 워크벤치(거의 풀 폭)가 좌측 정렬이라 댓글도 좌측 정렬 + 워크벤치 컬럼 폭(4xl)로 맞춘다.
+// 프론트 전용 도구는 도구 본문이 mx-auto로 가운데 정렬되므로(각 컴포넌트 내부 max-w-lg~5xl 다양),
+// 댓글이 좌측에 고정되면 가운데의 좁은 도구 본문과 정렬축이 어긋나 어색해진다 — 댓글도 가운데 정렬한다.
+const commentsSectionClass = computed(() =>
+    mod.value?.isFrontendOnly ? 'max-w-2xl mx-auto' : 'max-w-4xl',
 )
 const batchResultUrl = computed(() => batchId.value ? `${API_BASE}/api/v1/batches/${batchId.value}/result` : '')
 

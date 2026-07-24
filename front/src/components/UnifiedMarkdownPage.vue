@@ -34,6 +34,7 @@
         <div class="flex h-10 shrink-0 items-center justify-between border-b border-border px-4">
           <span class="font-mono text-[11px] font-medium uppercase tracking-wider text-muted-foreground">목차</span>
           <button v-if="tocOutput"
+                  :aria-label="tocCopied ? '복사 완료' : '목차 복사'"
                   :class="tocCopied ? 'text-emerald-500' : 'text-muted-foreground/60 hover:text-foreground'"
                   class="rounded p-0.5 transition-colors"
                   @click="copyToc">
@@ -62,7 +63,7 @@
       <div v-if="tableMode === 'csv'" class="rounded-xl border border-border bg-card overflow-hidden">
         <div class="flex h-9 items-center border-b border-border px-3">
           <span class="text-[11px] font-medium text-muted-foreground">CSV 입력 (첫 줄은 헤더)</span>
-          <button v-if="csvInput" class="rounded p-0.5 text-muted-foreground/50 hover:text-foreground transition-colors"
+          <button v-if="csvInput" aria-label="입력 지우기" class="rounded p-0.5 text-muted-foreground/50 hover:text-foreground transition-colors"
                   @click="csvInput = ''">
             <X class="size-3.5"/>
           </button>
@@ -114,6 +115,7 @@
         <div class="flex h-9 items-center justify-between border-b border-border px-3">
           <span class="text-[11px] font-medium text-muted-foreground">결과</span>
           <button v-if="tableOutput"
+                  :aria-label="tableCopied ? '복사 완료' : '결과 복사'"
                   :class="tableCopied ? 'text-emerald-500' : 'text-muted-foreground/50 hover:text-foreground'"
                   class="rounded p-0.5 transition-colors"
                   @click="copyTable">

@@ -9,7 +9,7 @@
       <AlertCircle v-if="feedback.type === 'error'" class="mt-0.5 size-3.5 shrink-0"/>
       <CheckCircle2 v-else class="mt-0.5 size-3.5 shrink-0"/>
       <p class="flex-1 font-medium">{{ feedback.message }}</p>
-      <button class="shrink-0 text-current/70 transition-colors hover:text-current" @click="feedback = null">
+      <button aria-label="알림 닫기" class="shrink-0 text-current/70 transition-colors hover:text-current" @click="feedback = null">
         <X class="size-3.5"/>
       </button>
     </div>
@@ -79,6 +79,7 @@
           <Textarea
               v-if="reportReason === 'OTHER'"
               v-model="reportDetail"
+              aria-label="신고 상세 사유"
               class="mt-2 min-h-[56px] resize-none text-xs"
               placeholder="구체적인 사유를 입력해 주세요 (필수)"
           />
@@ -100,6 +101,7 @@
     <div class="space-y-2">
       <Textarea
           v-model="newContent"
+          aria-label="댓글 내용"
           class="min-h-[72px] resize-none text-sm"
           placeholder="댓글을 남겨주세요..."
           @keydown.ctrl.enter.prevent="handleShortcut"

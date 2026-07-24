@@ -24,17 +24,17 @@
                 maxlength="20"
                 autofocus
               />
-              <Button size="icon" variant="ghost" @click="saveNickname">
+              <Button aria-label="저장" size="icon" variant="ghost" @click="saveNickname">
                 <Check class="h-4 w-4" />
               </Button>
-              <Button size="icon" variant="ghost" @click="cancelEdit">
+              <Button aria-label="취소" size="icon" variant="ghost" @click="cancelEdit">
                 <X class="h-4 w-4" />
               </Button>
             </div>
-            
+
             <div v-else class="flex items-center gap-2 text-lg font-semibold">
               {{ user.nickname }}
-              <Button size="icon" variant="ghost" class="h-6 w-6 text-muted-foreground hover:text-foreground" @click="startEdit">
+              <Button aria-label="닉네임 수정" size="icon" variant="ghost" class="h-6 w-6 text-muted-foreground hover:text-foreground" @click="startEdit">
                 <Edit2 class="h-3 w-3" />
               </Button>
               <Badge v-if="user.provider === 'GOOGLE'" variant="secondary" class="bg-blue-100 text-blue-800 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300">Google</Badge>

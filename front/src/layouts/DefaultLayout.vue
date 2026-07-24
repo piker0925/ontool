@@ -144,6 +144,7 @@
           <!-- 좌측: 모바일 메뉴 & 경로 (Breadcrumbs) -->
           <div class="flex min-w-0 flex-1 items-center gap-3 lg:w-1/3 lg:flex-none">
             <button
+                aria-label="메뉴 열기"
                 class="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground lg:hidden shrink-0"
                 @click="drawerOpen = true"
             >

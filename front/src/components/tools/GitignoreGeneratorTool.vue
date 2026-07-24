@@ -14,13 +14,14 @@
         <span class="text-[11px] font-medium text-muted-foreground">.gitignore</span>
         <div class="flex items-center gap-1">
           <button v-if="output"
+                  :aria-label="copied ? '복사 완료' : '결과 복사'"
                   :class="copied ? 'text-emerald-500' : 'text-muted-foreground/50 hover:text-foreground'"
                   class="rounded p-0.5 transition-colors"
                   @click="copyOutput">
             <Check v-if="copied" class="size-3.5"/>
             <Copy v-else class="size-3.5"/>
           </button>
-          <button v-if="output" class="rounded p-0.5 text-muted-foreground/50 hover:text-foreground transition-colors"
+          <button v-if="output" aria-label="다운로드" class="rounded p-0.5 text-muted-foreground/50 hover:text-foreground transition-colors"
                   @click="downloadOutput">
             <Download class="size-3.5"/>
           </button>

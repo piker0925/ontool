@@ -16,6 +16,7 @@
         <div class="flex h-9 items-center border-b border-border px-3">
           <span class="text-[11px] font-medium text-muted-foreground">JWT 토큰</span>
           <button v-if="jwtInput"
+                  aria-label="입력 지우기"
                   class="ml-auto rounded p-0.5 text-muted-foreground/50 transition-colors hover:text-foreground"
                   @click="jwtInput = ''; jwtResult = null; jwtError = ''">
             <X class="size-3.5"/>
@@ -184,7 +185,7 @@
         <div class="flex flex-col gap-2.5 rounded-xl border border-border bg-card p-3.5">
           <div class="flex items-center justify-between">
             <span class="text-[11px] font-medium text-muted-foreground">생성된 토큰</span>
-            <button class="rounded p-0.5 text-muted-foreground/50 transition-colors hover:text-foreground"
+            <button :aria-label="genCopied ? '복사 완료' : '생성된 토큰 복사'" class="rounded p-0.5 text-muted-foreground/50 transition-colors hover:text-foreground"
                     @click="copyGenToken">
               <Check v-if="genCopied" class="size-3 text-emerald-500"/>
               <Copy v-else class="size-3"/>

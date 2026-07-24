@@ -95,6 +95,18 @@ beforeEach(() => {
     sessionStorage.clear()
 })
 
+describe('AdminPage 로그인 폼 접근성', () => {
+    it('아이디/비밀번호 입력에 각각 aria-label이 있다', async () => {
+        mockAdminEndpoints()
+
+        const wrapper = await mountAdminPage()
+        const inputs = wrapper.findAll('input')
+
+        expect(inputs[0].attributes('aria-label')).toBe('사용자명')
+        expect(inputs[1].attributes('aria-label')).toBe('비밀번호')
+    })
+})
+
 describe('AdminPage 댓글 관리', () => {
     it('운영 탭으로 전환하면 전체 댓글 목록을 불러와 모듈 id와 함께 렌더링한다', async () => {
         mockAdminEndpoints()

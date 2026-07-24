@@ -30,7 +30,7 @@
 
 <script lang="ts" setup>
 import {nextTick, onMounted, onUnmounted, ref, watch} from 'vue'
-import {changeDirection, createSnakeGame, type Direction, tick} from '../../utils/snake'
+import {createSnakeGame, type Direction, queueDirection, tick} from '../../utils/snake'
 
 const GRID_SIZE = 15
 const CELL_SIZE = 20
@@ -41,6 +41,15 @@ const started = ref(false)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const containerRef = ref<HTMLDivElement | null>(null)
 let intervalId: ReturnType<typeof setInterval> | null = null
+
+// 한 틱(TICK_MS) 안에 방향키가 여러 번 눌려도 최대 1개만 다음 틱에 반영되도록 대기시키는 큐.
+// tick()은 이 큐에서 한 번에 하나씩만 꺼내 적용한다 — 그래야 짧은 시간 안의 연속 입력(예: 아래→왼쪽
+// 연타)이 전부 다음 틱 하나에 뭉개지지 않고 각 틱에 순서대로 반영된다.
+let pendingDirections: Direction[] = []
+
+function enqueueDirection(direction: Direction) {
+  pendingDirections = queueDirection(state.value, pendingDirections, direction)
+}
 
 // 시작 버튼(컨테이너 안쪽 자식)이 사라지면 포커스가 body로 밀려나 방향키 입력이 이 컨테이너의
 // keydown 리스너에 더 이상 닿지 않는다 — 시작 직후 컨테이너로 포커스를 되돌려준다.
@@ -66,7 +75,7 @@ function onKeydown(e: KeyboardEvent) {
     start()
     return
   }
-  state.value = changeDirection(state.value, direction)
+  enqueueDirection(direction)
 }
 
 let touchStart: { x: number; y: number } | null = null
@@ -90,7 +99,7 @@ function onTouchEnd(e: TouchEvent) {
     start()
     return
   }
-  state.value = changeDirection(state.value, direction)
+  enqueueDirection(direction)
 }
 
 function draw() {
@@ -117,7 +126,8 @@ function step() {
     }
     return
   }
-  state.value = tick(state.value, GRID_SIZE)
+  const nextDirection = pendingDirections.shift()
+  state.value = tick(state.value, GRID_SIZE, Math.random, nextDirection)
 }
 
 watch(state, draw, {deep: true})

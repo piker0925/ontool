@@ -1,5 +1,6 @@
 <template>
   <div
+      v-if="!secondSlotActive"
       :class="{ dragging }"
       class="file-uploader"
       @click="fileInput?.click()"
@@ -7,13 +8,32 @@
       @dragover.prevent="dragging = true"
       @drop.prevent="onDrop"
   >
-    <input ref="fileInput" :accept="accept" :multiple="multiple" hidden type="file" @change="onChange"/>
+    <input
+        ref="fileInput" :accept="accept" :multiple="multiple" data-testid="main-file-input" hidden type="file"
+        @change="onChange"
+    />
     <slot>
       <div style="font-size:2rem;margin-bottom:.5rem">📂</div>
       <p>파일을 드래그하거나 클릭하여 선택하세요</p>
       <p v-if="multiple" style="font-size:.75rem;margin-top:.25rem;opacity:.7">여러 파일 동시 업로드 가능</p>
     </slot>
   </div>
+
+  <!-- 113 확장: 순서 기반 암묵 규칙 대신, 대상 파일이 담긴 뒤에만 나타나는 명시적인 두 번째 슬롯.
+       FileUploader의 소유권 구조(하나의 staged 배열·하나의 POST)는 그대로 두는 veneer다. -->
+  <button
+      v-if="showSecondSlotButton"
+      class="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-border px-3 py-2 text-[12px] text-muted-foreground transition-colors hover:border-ring hover:text-foreground"
+      data-testid="add-second-slot"
+      type="button"
+      @click="secondSlotInput?.click()"
+  >{{ secondSlotLabel }}
+  </button>
+  <input
+      v-if="secondSlotLabel"
+      ref="secondSlotInput" :accept="secondSlotAccept" data-testid="second-slot-file-input" hidden type="file"
+      @change="onSecondSlotChange"
+  />
 
   <div v-if="staged.length" class="mt-3 flex flex-col gap-2" @click.stop>
     <ul class="flex flex-col gap-1">
@@ -45,7 +65,7 @@
             :data-testid="`remove-${i}`"
             class="ml-1 flex size-8 shrink-0 items-center justify-center rounded text-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
             title="제거"
-            type="button" @click="staged.splice(i, 1)"
+            type="button" @click="removeStaged(i)"
         ><X class="size-4"/>
         </button>
       </li>
@@ -82,6 +102,24 @@ const props = withDefaults(defineProps<{
   reorderable?: boolean
   /** 서버(/api/v1/modules)가 내려주는 이 모듈의 실제 업로드 한도(106). 0/미지정이면 사전검증을 건너뛴다. */
   maxFileSizeBytes?: number
+  /**
+   * 누적 스테이징 가능한 총 파일 개수 상한(113). `multiple`과 별개 축이다 — `multiple`은
+   * "한 번의 선택/드롭에서 몇 개까지 담을지"를, `maxFiles`는 "여러 번의 선택을 거쳐 최종적으로
+   * 몇 개까지 쌓일 수 있는지"를 제어한다. 예: 워터마크 도구는 대상 파일 1개를 여러 개 한 번에
+   * 고르지 못하게 `multiple=false`로 막으면서도, 대상 파일 → 워터마크 이미지 순으로 두 번 선택해
+   * 총 2개까지는 쌓이게 하려고 `maxFiles=2`를 함께 준다. 미지정이면 기존처럼 무제한 누적(교체는
+   * multiple=false일 때의 기존 동작 그대로).
+   */
+  maxFiles?: number
+  /**
+   * (113 확장) 지정하면 대상 파일이 1개 스테이징된 뒤 일반 드롭존 대신 이 라벨의 전용 버튼을
+   * 보여준다 — 클릭하면 `secondSlotAccept`로 범위를 좁힌 파일 선택기가 뜬다. 순서만으로 "이게
+   * 워터마크 이미지다"를 암묵적으로 가정하던 이전 UX를 명시적인 어포던스로 바꾼다. `maxFiles`와
+   * 함께 써야 의미가 있다(현재는 2 고정 시나리오만 지원).
+   */
+  secondSlotLabel?: string
+  /** 두 번째 슬롯 전용 accept — 확장자 화이트리스트로도 함께 쓰여, 맞지 않는 파일은 스테이징 자체를 막는다. */
+  secondSlotAccept?: string
 }>(), {
   multiple: true,
   reorderable: false,
@@ -96,6 +134,7 @@ const emit = defineEmits<{
 
 const dragging = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
+const secondSlotInput = ref<HTMLInputElement | null>(null)
 const staged = ref<File[]>([])
 const pageCounts = ref(new Map<File, number>())
 const imageDims = ref(new Map<File, PixelSize>())
@@ -106,6 +145,13 @@ const uploadProgress = ref(0)
 // 삼을지 애매해서 null로 둔다(소비 측에서 배치용 안내 문구로 대체).
 const singleFileDims = computed<PixelSize | null>(() =>
     staged.value.length === 1 ? imageDims.value.get(staged.value[0]) ?? null : null)
+
+// secondSlotLabel이 있고 대상 파일이 이미 스테이징됐으면, 일반 드롭존은 완전히 숨긴다 — 남겨두면
+// 두 번째 파일도 일반 accept(예: PDF 포함)로 올릴 수 있는 예전의 애매한 경로가 되살아난다.
+const secondSlotActive = computed(() => Boolean(props.secondSlotLabel) && staged.value.length >= 1)
+// 한도(maxFiles)에 아직 여유가 있을 때만 "추가" 버튼을 보여준다 — 다 찼으면 버튼도 사라진다.
+const showSecondSlotButton = computed(() =>
+    secondSlotActive.value && staged.value.length < (props.maxFiles ?? Infinity))
 
 watch(singleFileDims, dims => emit('dimensions', dims), {immediate: true})
 // 워터마크 편집기처럼 업로드 전 스테이징된 원본 파일이 필요한 소비자를 위한 훅 — deep이어야
@@ -172,6 +218,13 @@ async function upload(files: File[]) {
   }
 }
 
+// 스테이징된 파일의 페이지 수·픽셀 크기 등 부가 메타데이터를 비동기로 채운다 — 어느 경로로
+// 담겼든(누적/교체) 새로 추가되는 파일에는 항상 이 처리가 필요하다.
+function trackMetadata(files: File[]) {
+  files.forEach(loadPageCount)
+  files.forEach(loadImageDimensions)
+}
+
 function handleFiles(files: File[]) {
   if (!files.length) return
   // 파일 업로드하는 모든 모듈은 즉시 실행하지 않고 스테이징한다(034). 사용자가 파라미터를
@@ -186,10 +239,28 @@ function handleFiles(files: File[]) {
   const valid = selected.filter(f => !isOversizedFile(f, props.maxFileSizeBytes))
   if (!valid.length) return
 
+  if (props.maxFiles) {
+    // maxFiles가 있으면 multiple 값과 무관하게 항상 누적한다(대상 파일 + 워터마크 이미지처럼
+    // 서로 다른 선택을 순서대로 합치는 조합용) — 다만 총 개수가 한도를 넘으면 넘는 만큼만 잘라
+    // 담고 에러로 알린다. (multiple=true와 함께 쓰이면 한 번의 선택/드롭에 담긴 파일 중 일부만
+    // 한도 내로 잘릴 수도 있다 — 아래 room 계산이 그 경우도 함께 처리한다.)
+    const room = props.maxFiles - staged.value.length
+    if (room <= 0) {
+      emit('error', `이 도구는 파일을 최대 ${props.maxFiles}개까지만 담을 수 있습니다.`)
+      return
+    }
+    if (valid.length > room) {
+      emit('error', `이 도구는 파일을 최대 ${props.maxFiles}개까지만 담을 수 있습니다. 초과한 파일은 담기지 않았습니다.`)
+    }
+    const toAdd = valid.slice(0, room)
+    staged.value = [...staged.value, ...toAdd]
+    trackMetadata(toAdd)
+    return
+  }
+
   // multiple이면 여러 번 나눠 담을 수 있게 누적, 단일 모듈이면 새 선택으로 교체한다.
   staged.value = props.multiple ? [...staged.value, ...valid] : valid
-  valid.forEach(loadPageCount)
-  valid.forEach(loadImageDimensions)
+  trackMetadata(valid)
 }
 
 function onDrop(e: DragEvent) {
@@ -201,5 +272,44 @@ function onChange(e: Event) {
   const input = e.target as HTMLInputElement
   handleFiles(Array.from(input.files ?? []))
   input.value = ''
+}
+
+// secondSlotLabel 모드에서는 인덱스 0(대상 파일)이 항상 "대상"이라는 계약이 있다 — 그걸 그냥
+// splice하면 인덱스 1(워터마크 이미지)이 밀려와 대상 자리를 차지해버린다. 그러느니 통째로 비우고
+// 처음부터 다시 고르게 하는 편이 안전하다. secondSlotLabel이 없는 일반 모듈은 기존처럼 splice만.
+function removeStaged(i: number) {
+  if (props.secondSlotLabel && i === 0) {
+    staged.value = []
+    return
+  }
+  staged.value.splice(i, 1)
+}
+
+function secondSlotExtensions(): string[] {
+  return (props.secondSlotAccept ?? '')
+      .split(',')
+      .map(token => token.trim().replace(/^\./, '').toLowerCase())
+      .filter(Boolean)
+}
+
+function fileExtension(file: File): string {
+  const dot = file.name.lastIndexOf('.')
+  return dot >= 0 ? file.name.slice(dot + 1).toLowerCase() : ''
+}
+
+// 두 번째 슬롯은 "이미지여야 한다" 같은 도구별 제약이 있을 수 있으므로, accept 속성만으로는
+// 부족하다(드래그, accept 무시 등으로 우회 가능) — 확장자 화이트리스트로 한 번 더 막는다.
+function onSecondSlotChange(e: Event) {
+  const input = e.target as HTMLInputElement
+  const files = Array.from(input.files ?? [])
+  input.value = ''
+  if (!files.length) return
+  const file = files[0]
+  const allowed = secondSlotExtensions()
+  if (allowed.length && !allowed.includes(fileExtension(file))) {
+    emit('error', `이 파일은 ${allowed.join('/')} 형식의 이미지만 업로드할 수 있습니다. (${file.name})`)
+    return
+  }
+  handleFiles([file])
 }
 </script>

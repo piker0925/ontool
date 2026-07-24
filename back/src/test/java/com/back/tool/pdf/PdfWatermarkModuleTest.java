@@ -402,18 +402,18 @@ class PdfWatermarkModuleTest {
     }
 
     @Test
-    void 이미지에_이미지_워터마크를_삽입하면_지정한_위치의_픽셀만_달라지고_반대쪽_모서리는_그대로다() throws Exception {
-        // 패턴 B: position 파라미터가 실제로 반영되는지 — 반대쪽 모서리가 오염되지 않아야 한다.
+    void 이미지에_이미지_워터마크를_삽입하면_고정된_우하단_위치에만_픽셀이_달라지고_반대쪽_모서리는_그대로다() throws Exception {
+        // 115: 위치 선택 옵션 제거 — 이미지 워터마크는 항상 우하단 고정 위치에 삽입된다.
+        // 패턴 B: 실제로 우하단에만 반영되고, 반대쪽(좌상단)은 오염되지 않아야 한다.
         Path base = createSolidImage("base.png", 400, 400, Color.WHITE);
         Path stamp = createSolidImage("stamp.png", 40, 40, Color.BLACK);
 
-        ToolResult result = module.process(new ToolInput(List.of(base, stamp),
-                Map.of("position", "TOP_LEFT", "opacity", "100")));
+        ToolResult result = module.process(new ToolInput(List.of(base, stamp), Map.of("opacity", "100")));
 
         BufferedImage output = ImageIO.read(result.outputFile().toFile());
-        // 좌상단(여백 20 안쪽 좌표)은 검게 물들어야 하고, 우하단은 흰색 그대로여야 한다.
-        assertThat(output.getRGB(25, 25)).isEqualTo(Color.BLACK.getRGB());
-        assertThat(output.getRGB(390, 390)).isEqualTo(Color.WHITE.getRGB());
+        // 우하단(400-40-20=340 ~ 380 범위, 여백 20 안쪽)은 검게 물들어야 하고, 좌상단은 흰색 그대로여야 한다.
+        assertThat(output.getRGB(360, 360)).isEqualTo(Color.BLACK.getRGB());
+        assertThat(output.getRGB(25, 25)).isEqualTo(Color.WHITE.getRGB());
     }
 
     @Test

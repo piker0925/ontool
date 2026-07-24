@@ -20,16 +20,10 @@
               placeholder="30"
               type="text"
           />
-          <label class="mt-2 text-[11px] text-muted-foreground">워터마크 이미지 위치 (이미지 워터마크를 함께 쓸 때만 적용, 텍스트에는 영향 없음)</label>
-          <select
-              v-model="watermarkPosition"
-              class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
-          >
-            <option v-for="p in WATERMARK_POSITIONS" :key="p" :value="p">{{ p }}</option>
-          </select>
           <p class="mt-2 text-[11px] text-muted-foreground/70">
-            — 이미지 워터마크를 함께 쓰려면 파일을 <strong>대상 → 워터마크 이미지</strong> 순서로 업로드하세요
-            (위/아래 화살표로 순서 조정 가능).
+            — <strong>대상 파일은 1개만</strong> 업로드할 수 있습니다. 이미지 워터마크는 우하단 고정
+            위치에 삽입되며(115), 대상 파일을 올린 뒤 아래 "이미지 워터마크 추가" 버튼으로 별도로
+            더할 수 있습니다.
           </p>
         </div>
       </div>
@@ -38,9 +32,12 @@
         <FileUploader
             accept=".pdf,.jpg,.jpeg,.png"
             moduleId="pdf-watermark"
-            :multiple="true"
+            :max-files="2"
+            :multiple="false"
             :params="currentParams"
-            :reorderable="true"
+            :reorderable="false"
+            second-slot-accept=".jpg,.jpeg,.png"
+            second-slot-label="+ 이미지 워터마크 추가"
             @error="onUploadError"
             @staged="onStaged"
             @uploaded="onUploaded"
@@ -68,10 +65,7 @@ import WatermarkEditorCanvas, {type WatermarkTextElement} from './WatermarkEdito
 import {useHeavyJob} from '../composables/useHeavyJob'
 import {isBatchResult, type UploadResult} from '../types'
 
-const WATERMARK_POSITIONS = ['CENTER', 'TOP_LEFT', 'TOP_RIGHT', 'BOTTOM_LEFT', 'BOTTOM_RIGHT'] as const
-
 const watermarkElements = ref<WatermarkTextElement[]>([])
-const watermarkPosition = ref<typeof WATERMARK_POSITIONS[number]>('CENTER')
 const watermarkOpacity = ref('30')
 
 // 편집기가 미리보기를 그리려면 업로드 전 스테이징된 원본 파일이 필요하다 — FileUploader가
@@ -91,7 +85,7 @@ const currentParams = computed<Record<string, string>>(() => ({
     text: e.text, xPercent: e.xPercent, yPercent: e.yPercent, color: e.color, fontSize: e.fontSize, page: e.page,
     fontWeight: e.fontWeight, tiled: e.tiled,
   }))),
-  position: watermarkPosition.value, opacity: watermarkOpacity.value,
+  opacity: watermarkOpacity.value,
 }))
 
 const heavyJob = useHeavyJob()

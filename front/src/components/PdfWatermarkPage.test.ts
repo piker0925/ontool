@@ -43,11 +43,30 @@ afterEach(() => {
 })
 
 describe('PdfWatermarkPage', () => {
-    it('기본 params는 textElements 빈 배열·기본 위치/투명도로 채워진다', () => {
+    it('기본 params는 textElements 빈 배열·기본 투명도로 채워지고 position은 더 이상 보내지 않는다(115)', () => {
         const wrapper = mountPage()
         const params = uploaderProps(wrapper).params
-        expect(params).toEqual({textElements: '[]', position: 'CENTER', opacity: '30'})
+        expect(params).toEqual({textElements: '[]', opacity: '30'})
         expect(uploaderProps(wrapper).moduleId).toBe('pdf-watermark')
+    })
+
+    // 113: 대상 PDF를 여러 개 한 번에 선택할 수 없어야 한다(회귀 재현: 대상 3개 + 워터마크
+    // 이미지 1개 = 총 4개가 그대로 한 Job으로 넘어가 백엔드가 거부하던 버그).
+    it('FileUploader에 multiple=false·maxFiles=2·전용 두 번째 슬롯 설정이 전달된다', () => {
+        const wrapper = mountPage()
+        const props = uploaderProps(wrapper)
+        expect(props.multiple).toBe(false)
+        expect(props.maxFiles).toBe(2)
+        // 113 확장: 순서 기반 암묵 규칙을 명시적인 두 번째 슬롯 버튼으로 대체했으므로, 이제 순서는
+        // 구조적으로 고정된다(대상=0번, 이미지=1번) — 수동 순서 조정 UI는 더 이상 필요 없다.
+        expect(props.reorderable).toBe(false)
+        expect(props.secondSlotLabel).toContain('이미지 워터마크')
+        expect(props.secondSlotAccept).toBe('.jpg,.jpeg,.png')
+    })
+
+    it('대상 파일이 1개로 제한된다는 안내 문구가 노출된다', () => {
+        const wrapper = mountPage()
+        expect(wrapper.text()).toContain('대상 파일은 1개만')
     })
 
     it('워터마크 편집기가 요소를 갱신하면 FileUploader에 textElements JSON으로 전달된다', async () => {

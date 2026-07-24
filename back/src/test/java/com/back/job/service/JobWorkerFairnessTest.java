@@ -61,4 +61,29 @@ class JobWorkerFairnessTest {
 
         assertThat(chosen).containsExactlyInAnyOrder(a1, b1);
     }
+
+    /**
+     * 특성화(characterization) 테스트 — 127에서 고치기 전까지는 "현재 동작"을 문서화한다.
+     * 소유자가 permit 수(=limit)보다 많으면(A,B가 먼저 채우고 C가 뒤늦게 옴), C는 이번 픽에서 전혀
+     * 선택되지 못한다 — while 루프가 owner 순회 도중 chosen.size()>=limit이 되는 즉시 break하기 때문에
+     * 한 라운드에 각 owner당 최대 1건이라도, limit=owner 수 미만이면 뒤쪽 owner는 매 틱 굶는다(이슈 103
+     * 그릴링에서 JobWorker.selectFair 실제 코드로 발견한 경계, 이슈 127이 라운드로빈 공정성을 수정 대상).
+     * 2-owner 케이스(위 테스트)만으로는 이 경계를 발견하지 못한다 — "permit 수 ≥ owner 수"일 때만 우연히
+     * 통과하기 때문(패턴 B: 시나리오가 좁아 "좁게 맞는 것"과 "넓게 잘못된 것"을 구분 못함).
+     */
+    @Test
+    void selectFair_ownerCountExceedsPermits_laterOwnerStarvesInThisPick() {
+        Job a1 = ownedBy("A");
+        Job a2 = ownedBy("A");
+        Job b1 = ownedBy("B");
+        Job b2 = ownedBy("B");
+        Job c1 = ownedBy("C"); // 가장 늦게 도착(created_at 오름차순 리스트의 맨 뒤)
+        List<Job> candidates = List.of(a1, a2, b1, b2, c1);
+
+        List<Job> chosen = worker.selectFair(candidates, 2); // HEAVY 레인 permit=2
+
+        assertThat(chosen).hasSize(2);
+        assertThat(chosen).containsExactly(a1, b1); // A·B만 한 건씩, C는 이번 픽에서 완전히 배제
+        assertThat(chosen).doesNotContain(c1);       // 현재(127 이전) 동작: C는 A·B 백로그가 있는 한 계속 밀림
+    }
 }

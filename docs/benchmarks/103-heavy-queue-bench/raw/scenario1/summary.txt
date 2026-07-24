@@ -1,0 +1,4 @@
+N_A=40
+B started_at=2026-07-24 10:56:55.542954
+B rank by started_at (1-based, ties included)=4
+A jobs that started AFTER B (= A backlog still behind B)=37 / 40

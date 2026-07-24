@@ -1,0 +1,18 @@
+# 로컬 전용 벤치마크 프로파일 (이슈 103) — 큐 공정성·admission control 부하 실험을 위해
+# 앱 레벨 rate limiter(ADR-0021, 040)만 완화한다. 그 외 설정(datasource, storage, scheduling 등)은
+# local 프로파일 그대로 물려받는다 — 반드시 local과 함께 명시적으로 켠다:
+#   --spring.profiles.active=local,local-benchmark
+# 운영 프로파일(application-prod.yaml)은 이 파일을 전혀 참조하지 않고, 이 파일도 prod 값을 건드리지 않는다 —
+# on-profile 가드 덕분에 local-benchmark를 활성화하지 않으면(기본 상태) 이 설정은 완전히 무시된다.
+spring:
+  config:
+    activate:
+      on-profile: local-benchmark
+
+# IP당 요청 빈도 게이트(040) 완화. 벤치마크 스크립트는 짧은 시간 동안 같은 로컬 IP(127.0.0.1)에서
+# 소유자(X-Client-Id)별로 수십~수백 건을 쏘는데, rate limiter의 키는 IP이지 소유자가 아니므로
+# 기본값(60초당 200건)이면 큐 공정성 실험 자체가 429로 막혀 관찰이 불가능하다.
+ratelimit:
+  upload:
+    max-per-window: 100000
+    window-seconds: 60

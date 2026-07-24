@@ -1,11 +1,11 @@
 <template>
-  <div
+  <router-link
+      :to="`/tools/${mod.id}`"
       :title="mod.description ?? mod.name"
       :class="[
         'group relative flex cursor-pointer items-center rounded-xl border border-border bg-card transition-all duration-200 hover:border-primary/30 hover:bg-accent/50 hover:shadow-[0_4px_20px_rgb(0,0,0,0.03)] dark:hover:shadow-none',
         mode === 'list' ? 'gap-3 px-3 py-2.5' : 'gap-3.5 px-4 py-4'
       ]"
-      @click="router.push(`/tools/${mod.id}`)"
   >
     <!-- Category icon -->
     <div
@@ -56,25 +56,23 @@
 
     <!-- Arrow -->
     <ChevronRight class="size-4 shrink-0 text-muted-foreground/30 transition-colors group-hover:text-muted-foreground/70"/>
-  </div>
+  </router-link>
 </template>
 
 <script lang="ts" setup>
 import {computed} from 'vue'
-import {useRouter} from 'vue-router'
 import {ChevronRight, Star} from 'lucide-vue-next'
 import {getCategoryConfig} from '../utils/categoryConfig'
 import {useFavorites} from '../composables/useFavorites'
 import type {Module} from '../types'
 
-const props = withDefaults(defineProps<{ 
+const props = withDefaults(defineProps<{
   mod: Module;
   mode?: 'grid' | 'list'
 }>(), {
   mode: 'grid'
 })
 
-const router = useRouter()
 const config = computed(() => getCategoryConfig(props.mod.category))
 
 const {isFavorite, toggle} = useFavorites()

@@ -13,7 +13,7 @@
       </div>
 
       <button :disabled="generating" class="rounded-xl bg-primary px-4 py-2.5 text-[13px] font-medium text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-50"
-              @click="generateAndDownload">{{ generating ? '생성 중...' : 'favicon.ico + ZIP 다운로드' }}
+              @click="generateAndDownload">{{ generating ? '생성 중…' : 'favicon.ico + ZIP 다운로드' }}
       </button>
     </template>
 

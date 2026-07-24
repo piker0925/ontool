@@ -17,7 +17,7 @@
           />
         </label>
         <Button :disabled="processing" class="w-fit" data-testid="apply-normalize" @click="applyNormalize">
-          {{ processing ? '처리 중...' : '원클릭 정규화' }}
+          {{ processing ? '처리 중…' : '원클릭 정규화' }}
         </Button>
       </div>
 
@@ -33,7 +33,7 @@
           />
         </label>
         <Button :disabled="processing" class="w-fit" data-testid="apply-gain" @click="applyGain">
-          {{ processing ? '처리 중...' : '적용' }}
+          {{ processing ? '처리 중…' : '적용' }}
         </Button>
       </div>
     </div>

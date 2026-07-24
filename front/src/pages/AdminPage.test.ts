@@ -95,6 +95,26 @@ beforeEach(() => {
     sessionStorage.clear()
 })
 
+describe('AdminPage 유저 검색 입력', () => {
+    it('닉네임/제공자 검색 입력에 autocomplete="off"가 지정돼 있다 — 브라우저 자동완성 제안 방지', async () => {
+        mockGet.mockImplementation((url: string) => {
+            if (url === '/admin/stats') return Promise.resolve({data: []})
+            if (url.startsWith('/admin/users')) return Promise.resolve({data: {content: [], totalElements: 0, totalPages: 0, page: 0}})
+            return Promise.reject(new Error('unexpected GET ' + url))
+        })
+
+        const wrapper = await mountAdminPage()
+        await loginAsAdmin(wrapper)
+        const usersTab = wrapper.findAll('button').find(b => b.text().includes('유저 관리'))
+        await usersTab?.trigger('click')
+        await flushPromises()
+
+        const searchInput = wrapper.find('input[placeholder*="검색"]')
+        expect(searchInput.exists()).toBe(true)
+        expect(searchInput.attributes('autocomplete')).toBe('off')
+    })
+})
+
 describe('AdminPage 댓글 관리', () => {
     it('운영 탭으로 전환하면 전체 댓글 목록을 불러와 모듈 id와 함께 렌더링한다', async () => {
         mockAdminEndpoints()

@@ -18,7 +18,7 @@
         피치 유지 (끄면 배속에 비례해 피치도 함께 변함)
       </label>
       <Button :disabled="processing" class="w-fit" data-testid="apply-speed" @click="applySpeed">
-        {{ processing ? '처리 중...' : '적용' }}
+        {{ processing ? '처리 중…' : '적용' }}
       </Button>
     </div>
   </AudioToolShell>

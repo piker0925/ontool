@@ -35,7 +35,7 @@ const statusText = computed(() => {
   if (winner.value === HUMAN) return '승리했습니다!'
   if (winner.value === COMPUTER) return '패배했습니다'
   if (draw.value) return '무승부입니다'
-  return thinking.value ? '컴퓨터가 두는 중...' : '당신 차례입니다 (X)'
+  return thinking.value ? '컴퓨터가 두는 중…' : '당신 차례입니다 (X)'
 })
 
 const statusClass = computed(() => {

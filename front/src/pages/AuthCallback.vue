@@ -2,7 +2,7 @@
   <div class="flex min-h-screen items-center justify-center bg-background">
     <div class="flex flex-col items-center gap-4 text-center">
       <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-      <p class="text-sm text-muted-foreground">로그인 처리 중입니다...</p>
+      <p class="text-sm text-muted-foreground">로그인 처리 중입니다…</p>
     </div>
   </div>
 </template>

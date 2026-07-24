@@ -16,7 +16,7 @@
     </slot>
   </div>
 
-  <p v-if="loading" class="mt-2 text-[12px] text-muted-foreground">디코딩 중...</p>
+  <p v-if="loading" class="mt-2 text-[12px] text-muted-foreground">디코딩 중…</p>
   <p v-if="errorMessage" class="mt-2 text-[12px] text-destructive">{{ errorMessage }}</p>
 </template>
 

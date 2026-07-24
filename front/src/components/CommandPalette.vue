@@ -1,6 +1,6 @@
 <template>
   <CommandDialog v-model:open="isOpen">
-    <CommandInput placeholder="어떤 도구가 필요하신가요? (예: json)" @input="onSearchInput"/>
+    <CommandInput placeholder="어떤 도구가 필요하신가요? (예: json)" autocomplete="off" @input="onSearchInput"/>
     <CommandList class="max-h-[400px]">
       <CommandEmpty class="py-12 text-center text-sm text-muted-foreground">도구를 찾을 수 없습니다.</CommandEmpty>
       <CommandGroup

@@ -7,7 +7,7 @@
     <div class="flex flex-col gap-3">
       <AudioTrimWaveform :pcm="original!" @change="onTrimSelectionChange"/>
       <Button :disabled="processing" class="w-fit" data-testid="apply-trim" @click="applyTrim">
-        {{ processing ? '처리 중...' : '적용' }}
+        {{ processing ? '처리 중…' : '적용' }}
       </Button>
     </div>
   </AudioToolShell>

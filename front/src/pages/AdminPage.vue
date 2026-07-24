@@ -100,7 +100,8 @@
                 <input
                   v-model="searchInput"
                   type="text"
-                  placeholder="닉네임, 제공자 검색..."
+                  placeholder="닉네임, 제공자 검색… (예: kim, google)"
+                  autocomplete="off"
                   class="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm outline-none focus:border-primary"
                 />
                 <button type="submit" class="rounded-md bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground hover:bg-secondary/80">

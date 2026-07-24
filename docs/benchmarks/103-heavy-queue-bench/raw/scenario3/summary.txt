@@ -1,0 +1,5 @@
+N_A=8
+A pending backlog at moment B submitted=8
+B started_at=2026-07-24 10:59:33.208383
+B wall-clock wait (submit->terminal)=25.9s
+A jobs that started AFTER B (should be ~0 — B waits behind ALL of A's backlog with permit=1)=0

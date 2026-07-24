@@ -137,7 +137,21 @@ export const VIDEO_HEAVY_CONFIGS: Record<string, ModuleConfig> = {
                 type: 'text',
                 placeholder: '© 2026 내 채널',
                 help: '파일은 [대상 영상, 워터마크 이미지(선택)] 순서로 업로드하세요. 텍스트만 쓸 경우 영상 1개만 올리면 됩니다. ' +
-                    '위치는 우하단 고정입니다(115).',
+                    '텍스트 위치는 우하단 고정입니다(115) — 이 도구는 미리보기가 없어 이미지처럼 드래그로 잡을 수 없습니다.',
+            },
+            {
+                key: 'imageXPercent',
+                label: '이미지 워터마크 가로 위치(%, 0~100, 비우면 우하단)',
+                type: 'text',
+                placeholder: '80',
+                help: '영상 좌상단을 0, 우측 끝을 100으로 하는 퍼센트 좌표입니다(129). 비우면 기존처럼 우하단 고정.',
+            },
+            {
+                key: 'imageYPercent',
+                label: '이미지 워터마크 세로 위치(%, 0~100, 비우면 우하단)',
+                type: 'text',
+                placeholder: '80',
+                help: '영상 좌상단을 0, 하단 끝을 100으로 하는 퍼센트 좌표입니다(129). 비우면 기존처럼 우하단 고정.',
             },
             {
                 key: 'opacity',

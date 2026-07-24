@@ -96,4 +96,27 @@ class ToolParamsTest {
                 .hasMessageContaining("'mode'")
                 .hasMessageContaining("banana");
     }
+
+    @Test
+    void getOptionalDouble_missingOrBlank_returnsNull() {
+        ToolParams p = params(Map.of("blank", "  "));
+
+        assertThat(p.getOptionalDouble("missing", 0, 100)).isNull();
+        assertThat(p.getOptionalDouble("blank", 0, 100)).isNull();
+    }
+
+    @Test
+    void getOptionalDouble_present_parsesAndValidatesRange() {
+        ToolParams p = params(Map.of("x", "42.5"));
+
+        assertThat(p.getOptionalDouble("x", 0, 100)).isEqualTo(42.5);
+    }
+
+    @Test
+    void getOptionalDouble_outOfRange_throws() {
+        assertThatThrownBy(() -> params(Map.of("x", "150")).getOptionalDouble("x", 0, 100))
+                .isInstanceOf(ToolProcessingException.class)
+                .hasMessageContaining("'x'")
+                .hasMessageContaining("0.0~100.0");
+    }
 }

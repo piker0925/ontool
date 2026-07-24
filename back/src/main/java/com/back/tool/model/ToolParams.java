@@ -36,6 +36,16 @@ public record ToolParams(Map<String, String> raw) {
         return parsed;
     }
 
+    /**
+     * 값이 없으면(생략) {@code null}을 반환한다 — {@link #getDouble}과 달리 "파라미터를 아예
+     * 안 보냈을 때"와 "0을 명시적으로 보냈을 때"를 구분해야 하는 호출부(레거시 기본값으로 폴백해야
+     * 하는 워터마크 이미지 위치 등)를 위한 변형이다.
+     */
+    public Double getOptionalDouble(String key, double min, double max) {
+        if (!has(key)) return null;
+        return getDouble(key, 0, min, max);
+    }
+
     public String getString(String key, String defaultValue) {
         String v = raw.get(key);
         return (v == null || v.isBlank()) ? defaultValue : v;

@@ -5,6 +5,8 @@ import com.back.tool.model.ToolModule;
 import com.back.tool.model.ToolParams;
 import com.back.tool.model.ToolProcessingException;
 import com.back.tool.model.ToolResult;
+import com.back.tool.watermark.ImagePercentPosition;
+import com.back.tool.watermark.WatermarkPlacement;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,9 +47,11 @@ import java.util.Set;
  * <p>워터마크 이미지는 두 번째 {@code files} 항목으로 선택적으로 전달된다 — 대상 파일과 워터마크 이미지가
  * 하나의 job으로 함께 도착해야 하므로 {@link #acceptsMultipleFiles()}를 true로 오버라이드한다.
  *
- * <p>이미지 워터마크의 위치는 우하단으로 고정한다(115) — 이전에는 {@code position} 파라미터(9방향
- * {@code WatermarkPosition} enum)로 선택할 수 있었으나 실사용 가치가 낮다고 판단해 제거했다. 텍스트
- * 워터마크는 이 변경과 무관하게 {@code xPercent}/{@code yPercent}로 계속 자유 배치된다.
+ * <p>이미지 워터마크는 {@code imageXPercent}/{@code imageYPercent}로 텍스트와 같은 좌상단 앵커
+ * 퍼센트 좌표를 받아 자유 배치된다(129) — 115가 제거한 9방향 {@code WatermarkPosition} enum을
+ * 되살리지 않고, 텍스트 워터마크가 이미 쓰는 {@code xPercent}/{@code yPercent} 방식과 통일했다.
+ * 두 파라미터를 생략하면(구버전 호출 등) 115가 정한 우하단 고정 위치로 폴백한다. 좌표 계산은
+ * {@link WatermarkPlacement}에 모아 텍스트/이미지가 공유한다.
  */
 @Component
 public class PdfWatermarkModule implements ToolModule {
@@ -87,14 +91,15 @@ public class PdfWatermarkModule implements ToolModule {
             throw new ToolProcessingException("텍스트 워터마크 또는 워터마크 이미지 중 하나는 필요합니다.");
         }
         float opacity = params.getInt("opacity", 30, 0, 100) / 100f;
+        ImagePercentPosition imagePosition = ImagePercentPosition.of(params);
 
         Path target = input.files().get(0);
         String ext = extension(target);
         if (ext.equals("pdf")) {
-            return watermarkPdf(target, elements, watermarkImage, opacity);
+            return watermarkPdf(target, elements, watermarkImage, opacity, imagePosition);
         }
         if (IMAGE_EXTENSIONS.contains(ext)) {
-            return watermarkImage(target, elements, watermarkImage, opacity, ext);
+            return watermarkImage(target, elements, watermarkImage, opacity, ext, imagePosition);
         }
         throw new ToolProcessingException(
                 "워터마크는 PDF 또는 이미지(jpg, png) 파일만 지원합니다. (입력 파일: " + target.getFileName() + ")");
@@ -176,7 +181,7 @@ public class PdfWatermarkModule implements ToolModule {
     }
 
     private ToolResult watermarkPdf(Path target, List<TextElement> elements, Path watermarkImagePath,
-                                     float opacity) {
+                                     float opacity, ImagePercentPosition imagePosition) {
         try (PDDocument doc = PDDocument.load(target.toFile())) {
             Map<KoreanFontSupport.FontWeight, PDFont> fontCache = new EnumMap<>(KoreanFontSupport.FontWeight.class);
             PDImageXObject wmImage = watermarkImagePath != null
@@ -203,9 +208,8 @@ public class PdfWatermarkModule implements ToolModule {
                         if (isTiled(element)) {
                             drawTiledText(cs, font, element.text(), fontSize, box);
                         } else {
-                            float x = (float) (element.xPercent() / 100.0 * box.getWidth());
-                            float topY = (float) (element.yPercent() / 100.0 * box.getHeight());
-                            float pdfY = box.getHeight() - topY - fontSize;
+                            float x = (float) WatermarkPlacement.topDownX(element.xPercent(), box.getWidth());
+                            float pdfY = (float) WatermarkPlacement.pdfY(element.yPercent(), box.getHeight(), fontSize);
                             cs.beginText();
                             cs.setFont(font, fontSize);
                             cs.newLineAtOffset(x, pdfY);
@@ -214,11 +218,15 @@ public class PdfWatermarkModule implements ToolModule {
                         }
                     }
                     if (wmImage != null) {
-                        // 우하단 고정(115) — PDF는 좌하단 원점·y축이 위로 증가하는 좌표계라, 하단
-                        // 여백은 그냥 MARGIN 그 자체가 된다(컨테이너 높이를 빼고 다시 더하는 상쇄가
-                        // 일어나므로, 우상/좌하 등 다른 모서리처럼 컨테이너 크기를 참조할 필요가 없다).
-                        float wmX = (float) (box.getWidth() - wmImage.getWidth() - MARGIN);
-                        cs.drawImage(wmImage, wmX, MARGIN, wmImage.getWidth(), wmImage.getHeight());
+                        float wmWidth = wmImage.getWidth();
+                        float wmHeight = wmImage.getHeight();
+                        // xPercent/yPercent가 있으면 텍스트와 같은 좌상단 앵커 퍼센트 좌표로 배치하고,
+                        // 없으면(구버전 호출 등) 115가 정한 우하단 고정으로 폴백한다.
+                        float wmX = (float) WatermarkPlacement.resolveX(
+                                imagePosition.xPercent(), box.getWidth(), wmWidth, MARGIN);
+                        float wmY = (float) WatermarkPlacement.resolvePdfY(
+                                imagePosition.yPercent(), box.getHeight(), wmHeight, MARGIN);
+                        cs.drawImage(wmImage, wmX, wmY, wmWidth, wmHeight);
                     }
                 }
             }
@@ -231,7 +239,7 @@ public class PdfWatermarkModule implements ToolModule {
     }
 
     private ToolResult watermarkImage(Path target, List<TextElement> elements, Path watermarkImagePath,
-                                       float opacity, String ext) {
+                                       float opacity, String ext, ImagePercentPosition imagePosition) {
         try {
             BufferedImage base = ImageIO.read(target.toFile());
             if (base == null) {
@@ -249,10 +257,12 @@ public class PdfWatermarkModule implements ToolModule {
                 if (wm == null) {
                     throw new ToolProcessingException("워터마크 이미지를 읽을 수 없습니다: " + watermarkImagePath.getFileName());
                 }
-                // 우하단 고정(115) — 이미지 좌표계는 y가 아래로 증가하므로 두 축 모두 "컨테이너
-                // 크기 - 콘텐츠 크기 - 여백"으로 동일하게 계산한다(PDF 분기와 달리 뒤집을 필요 없음).
-                int wmX = (int) Math.round(base.getWidth() - wm.getWidth() - MARGIN);
-                int wmY = (int) Math.round(base.getHeight() - wm.getHeight() - MARGIN);
+                // xPercent/yPercent가 있으면 텍스트와 같은 좌상단 앵커 퍼센트 좌표(top-down, 뒤집을
+                // 필요 없음)로 배치하고, 없으면(구버전 호출 등) 115가 정한 우하단 고정으로 폴백한다.
+                int wmX = (int) Math.round(
+                        WatermarkPlacement.resolveX(imagePosition.xPercent(), base.getWidth(), wm.getWidth(), MARGIN));
+                int wmY = (int) Math.round(WatermarkPlacement.resolveTopDownY(
+                        imagePosition.yPercent(), base.getHeight(), wm.getHeight(), MARGIN));
                 g.drawImage(wm, wmX, wmY, null);
             } else {
                 // 이미지 대상은 "페이지" 개념이 없으므로 page 필드는 무시하고 모든 요소를 그린다.
@@ -264,8 +274,8 @@ public class PdfWatermarkModule implements ToolModule {
                         drawTiledText(g, font, element.text(), base.getWidth(), base.getHeight());
                     } else {
                         FontMetrics fm = g.getFontMetrics();
-                        float x = (float) (element.xPercent() / 100.0 * base.getWidth());
-                        float topY = (float) (element.yPercent() / 100.0 * base.getHeight());
+                        float x = (float) WatermarkPlacement.topDownX(element.xPercent(), base.getWidth());
+                        float topY = (float) WatermarkPlacement.topDownY(element.yPercent(), base.getHeight());
                         g.drawString(element.text(), x, topY + fm.getAscent());
                     }
                 }

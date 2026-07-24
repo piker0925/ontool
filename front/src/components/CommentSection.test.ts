@@ -9,6 +9,25 @@ vi.mock('@/api/client', () => ({
 }))
 
 const mockGet = apiClient.get as ReturnType<typeof vi.fn>
+const mockPost = apiClient.post as ReturnType<typeof vi.fn>
+
+const ONE_COMMENT = [
+    {id: 1, content: '좋은 도구네요', createdAt: '2026-07-20T10:00:00', nickname: 'writer'},
+]
+
+async function mountAndOpenReport() {
+    accessToken.value = 'token'
+    user.value = {id: 1, provider: 'GOOGLE', nickname: 'tester', email: null, createdAt: '2026-07-01T00:00:00'}
+    mockGet.mockResolvedValueOnce({data: ONE_COMMENT})
+    const wrapper = mount(CommentSection, {props: {moduleId: 'sha256'}})
+    await flushPromises()
+
+    const reportBtn = wrapper.findAll('button').find(b => b.text().includes('신고'))
+    await reportBtn?.trigger('click')
+
+    const submitBtn = wrapper.findAll('button').find(b => b.text() === '신고 접수')
+    return {wrapper, submitBtn}
+}
 
 beforeEach(() => {
     vi.clearAllMocks()
@@ -45,5 +64,33 @@ describe('CommentSection 폼 접근성', () => {
 
         const detailTextarea = wrapper.find('textarea[aria-label="신고 상세 사유"]')
         expect(detailTextarea.exists()).toBe(true)
+    })
+})
+
+describe('CommentSection 인라인 알림 배너 — aria-live', () => {
+    it('신고 접수 성공 시 배너가 role=status, aria-live=polite로 렌더된다', async () => {
+        mockPost.mockResolvedValueOnce({})
+        const {wrapper, submitBtn} = await mountAndOpenReport()
+
+        await submitBtn?.trigger('click')
+        await flushPromises()
+
+        expect(wrapper.text()).toContain('신고가 접수되었습니다.')
+        const banner = wrapper.find('[role="status"]')
+        expect(banner.exists()).toBe(true)
+        expect(banner.attributes('aria-live')).toBe('polite')
+    })
+
+    it('신고 접수 실패(중복 409) 시 배너가 role=alert, aria-live=assertive로 렌더된다', async () => {
+        mockPost.mockRejectedValueOnce({response: {status: 409}})
+        const {wrapper, submitBtn} = await mountAndOpenReport()
+
+        await submitBtn?.trigger('click')
+        await flushPromises()
+
+        expect(wrapper.text()).toContain('이미 신고한 댓글입니다.')
+        const banner = wrapper.find('[role="alert"]')
+        expect(banner.exists()).toBe(true)
+        expect(banner.attributes('aria-live')).toBe('assertive')
     })
 })

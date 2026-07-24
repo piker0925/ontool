@@ -64,7 +64,7 @@
       </div>
 
       <!-- Nav -->
-      <nav class="flex-1 overflow-y-auto px-2 pt-4 pb-3">
+      <nav class="flex-1 overflow-y-auto overscroll-contain px-2 pt-4 pb-3">
 
         <!-- Favorites Section -->
         <div class="mb-6 flex flex-col gap-0.5">

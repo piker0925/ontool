@@ -184,3 +184,14 @@ describe('DefaultLayout — 브레드크럼', () => {
         expect(url.searchParams.get('category')).toBe('포맷터')
     })
 })
+
+describe('DefaultLayout — 모바일 드로어 터치 인터랙션', () => {
+    it('내비게이션 스크롤 영역에 overscroll-contain이 적용되어 배경 페이지로 스크롤이 전파되지 않는다', async () => {
+        await router.push('/dev')
+        const wrapper = mount(DefaultLayout, {global: {plugins: [router]}})
+        await flushPromises()
+
+        const nav = wrapper.find('nav')
+        expect(nav.classes()).toContain('overscroll-contain')
+    })
+})

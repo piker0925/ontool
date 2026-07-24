@@ -210,3 +210,95 @@ describe('AdminPage 댓글 신고 목록 — 댓글 삭제 버튼', () => {
         expect(mockPatch).not.toHaveBeenCalled()
     })
 })
+
+describe('AdminPage 댓글 신고 목록 — 댓글 삭제 버튼 비활성화', () => {
+    function mockAdminEndpointsWithReport(status: string) {
+        mockGet.mockImplementation((url: string) => {
+            if (url === '/admin/stats') return Promise.resolve({data: []})
+            if (url === '/admin/suggestions') return Promise.resolve({data: []})
+            if (url === '/admin/comments') return Promise.resolve({data: []})
+            if (url === '/admin/action-logs') {
+                return Promise.resolve({data: {content: [], totalElements: 0, totalPages: 0, page: 0}})
+            }
+            if (url.startsWith('/admin/comment-reports/users')) return Promise.resolve({data: []})
+            if (url.startsWith('/admin/comment-reports')) {
+                return Promise.resolve({
+                    data: {
+                        content: [{
+                            id: 10, commentId: 5, commentContent: '신고당한 댓글', reason: 'SPAM', detail: null,
+                            status, reporterId: 2, reporterNickname: '신고자', createdAt: '2026-07-24T09:00:00',
+                        }],
+                        totalElements: 1, totalPages: 1, page: 0,
+                    },
+                })
+            }
+            return Promise.reject(new Error('unexpected GET ' + url))
+        })
+    }
+
+    async function openReportList() {
+        const wrapper = await mountAdminPage()
+        await loginAsAdmin(wrapper)
+        const opsTab = wrapper.findAll('button').find(b => b.text().includes('운영'))
+        await opsTab?.trigger('click')
+        await flushPromises()
+        return wrapper
+    }
+
+    it('신고가 RESOLVED 상태면 댓글 삭제 버튼이 비활성화된다 — 이미 삭제된 댓글을 다시 삭제 시도하지 못하게 함', async () => {
+        mockAdminEndpointsWithReport('RESOLVED')
+        const wrapper = await openReportList()
+
+        const deleteBtn = wrapper.findAll('button').find(b => b.text() === '댓글 삭제')
+        expect(deleteBtn?.attributes('disabled')).toBeDefined()
+    })
+
+    it('신고가 DISMISSED 상태면 댓글 삭제 버튼은 여전히 활성화된다 — RESOLVED일 때만 비활성화되는 것이지 처리 완료 전반이 아니다', async () => {
+        mockAdminEndpointsWithReport('DISMISSED')
+        const wrapper = await openReportList()
+
+        const deleteBtn = wrapper.findAll('button').find(b => b.text() === '댓글 삭제')
+        expect(deleteBtn?.attributes('disabled')).toBeUndefined()
+    })
+
+    it('댓글 삭제 성공 후(자동 RESOLVED 전환 + 목록 재조회) 같은 신고의 댓글 삭제 버튼이 비활성화된다', async () => {
+        let reportGetCount = 0
+        mockGet.mockImplementation((url: string) => {
+            if (url === '/admin/stats') return Promise.resolve({data: []})
+            if (url === '/admin/suggestions') return Promise.resolve({data: []})
+            if (url === '/admin/comments') return Promise.resolve({data: []})
+            if (url === '/admin/action-logs') {
+                return Promise.resolve({data: {content: [], totalElements: 0, totalPages: 0, page: 0}})
+            }
+            if (url.startsWith('/admin/comment-reports/users')) return Promise.resolve({data: []})
+            if (url.startsWith('/admin/comment-reports')) {
+                reportGetCount++
+                return Promise.resolve({
+                    data: {
+                        content: [{
+                            id: 10, commentId: 5, commentContent: '신고당한 댓글', reason: 'SPAM', detail: null,
+                            status: reportGetCount === 1 ? 'PENDING' : 'RESOLVED',
+                            reporterId: 2, reporterNickname: '신고자', createdAt: '2026-07-24T09:00:00',
+                        }],
+                        totalElements: 1, totalPages: 1, page: 0,
+                    },
+                })
+            }
+            return Promise.reject(new Error('unexpected GET ' + url))
+        })
+        vi.spyOn(window, 'confirm').mockReturnValue(true)
+        mockDelete.mockResolvedValueOnce({})
+        mockPatch.mockResolvedValueOnce({})
+
+        const wrapper = await openReportList()
+
+        const deleteBtnBefore = wrapper.findAll('button').find(b => b.text() === '댓글 삭제')
+        expect(deleteBtnBefore?.attributes('disabled')).toBeUndefined()
+
+        await deleteBtnBefore?.trigger('click')
+        await flushPromises()
+
+        const deleteBtnAfter = wrapper.findAll('button').find(b => b.text() === '댓글 삭제')
+        expect(deleteBtnAfter?.attributes('disabled')).toBeDefined()
+    })
+})

@@ -339,7 +339,8 @@
                         @click="updateReportStatus(r.id, 'DISMISSED')"
                     >기각</button>
                     <button
-                        class="rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-xs text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                        :disabled="r.status === 'RESOLVED'"
+                        class="rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-xs text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors disabled:opacity-40"
                         title="이 댓글을 삭제하고 신고를 확인완료 처리합니다"
                         @click="deleteComment(r.commentId, r.id)"
                     >댓글 삭제</button>

@@ -402,8 +402,10 @@ class PdfWatermarkModuleTest {
     }
 
     @Test
-    void 이미지에_이미지_워터마크를_삽입하면_고정된_우하단_위치에만_픽셀이_달라지고_반대쪽_모서리는_그대로다() throws Exception {
-        // 115: 위치 선택 옵션 제거 — 이미지 워터마크는 항상 우하단 고정 위치에 삽입된다.
+    void 이미지_워터마크에_퍼센트_좌표를_주지_않으면_레거시대로_우하단_고정_위치에만_픽셀이_달라지고_반대쪽_모서리는_그대로다() throws Exception {
+        // 115: 위치 선택 옵션(enum) 제거 — 129: 그 대신 퍼센트 좌표로 자유 배치할 수 있게 됐지만,
+        // 퍼센트 파라미터를 아예 안 보내면(구버전 호출·프론트가 값을 못 채운 예외 상황) 여전히
+        // 우하단 고정이어야 한다 — 이 폴백이 "129 이전 동작과의 하위 호환"이다.
         // 패턴 B: 실제로 우하단에만 반영되고, 반대쪽(좌상단)은 오염되지 않아야 한다.
         Path base = createSolidImage("base.png", 400, 400, Color.WHITE);
         Path stamp = createSolidImage("stamp.png", 40, 40, Color.BLACK);
@@ -414,6 +416,60 @@ class PdfWatermarkModuleTest {
         // 우하단(400-40-20=340 ~ 380 범위, 여백 20 안쪽)은 검게 물들어야 하고, 좌상단은 흰색 그대로여야 한다.
         assertThat(output.getRGB(360, 360)).isEqualTo(Color.BLACK.getRGB());
         assertThat(output.getRGB(25, 25)).isEqualTo(Color.WHITE.getRGB());
+    }
+
+    @Test
+    void 이미지_대상에_이미지_워터마크_퍼센트_좌표를_주면_그_위치에_찍히고_레거시_우하단_자리는_오염되지_않는다() throws Exception {
+        // 129: xPercent=0/yPercent=0(좌상단 앵커) — 레거시 우하단 고정 폴백과 명백히 다른 위치를
+        // 지정해, "좁게 맞는 것"과 "넓게 잘못된 것"을 구분한다.
+        Path base = createSolidImage("base.png", 400, 400, Color.WHITE);
+        Path stamp = createSolidImage("stamp.png", 40, 40, Color.BLACK);
+
+        ToolResult result = module.process(new ToolInput(List.of(base, stamp),
+                Map.of("opacity", "100", "imageXPercent", "0", "imageYPercent", "0")));
+
+        BufferedImage output = ImageIO.read(result.outputFile().toFile());
+        assertThat(output.getRGB(20, 20)).as("좌상단 퍼센트로 지정했으니 좌상단에 찍혀야 한다")
+                .isEqualTo(Color.BLACK.getRGB());
+        assertThat(output.getRGB(360, 360)).as("레거시 우하단 자리는 오염되지 않아야 한다")
+                .isEqualTo(Color.WHITE.getRGB());
+    }
+
+    @Test
+    void PDF_대상에_이미지_워터마크_퍼센트_좌표를_주면_그_위치에_삽입되고_레거시_우하단_자리는_비어있다() throws Exception {
+        // createPdf()가 페이지에 "P1" 라벨을 좌상단 부근(50,700)에 검정으로 이미 그려두므로, 좌상단은
+        // 검증 기준으로 쓸 수 없다 — 라벨과도 레거시 우하단과도 겹치지 않는 우상단(90%,5%)을 목표로 삼는다.
+        Path pdf = createPdf("doc.pdf", "P1");
+        Path stamp = createSolidImage("stamp.png", 40, 40, Color.BLACK);
+
+        ToolResult result = module.process(new ToolInput(List.of(pdf, stamp),
+                Map.of("opacity", "100", "imageXPercent", "90", "imageYPercent", "5")));
+
+        try (PDDocument doc = PDDocument.load(result.outputFile().toFile())) {
+            BufferedImage rendered = new PDFRenderer(doc).renderImage(0);
+            assertThat(containsColorInRegion(rendered, Color.BLACK, 10, 0.85, 1.0, 0.0, 0.2))
+                    .as("우상단 퍼센트로 지정했으니 우상단 영역에 찍혀야 한다").isTrue();
+            assertThat(containsColorInRegion(rendered, Color.BLACK, 10, 0.8, 1.0, 0.8, 1.0))
+                    .as("레거시 우하단 자리는 비어 있어야 한다").isFalse();
+        }
+    }
+
+    @Test
+    void PDF_대상에_이미지_워터마크를_퍼센트_없이_주면_레거시대로_우하단_고정_위치에_삽입된다() throws Exception {
+        Path pdf = createPdf("doc.pdf", "P1");
+        Path stamp = createSolidImage("stamp.png", 40, 40, Color.BLACK);
+
+        ToolResult result = module.process(new ToolInput(List.of(pdf, stamp), Map.of("opacity", "100")));
+
+        try (PDDocument doc = PDDocument.load(result.outputFile().toFile())) {
+            BufferedImage rendered = new PDFRenderer(doc).renderImage(0);
+            assertThat(containsColorInRegion(rendered, Color.BLACK, 10, 0.8, 1.0, 0.8, 1.0))
+                    .as("퍼센트 파라미터가 없으면 기존처럼 우하단에 찍혀야 한다").isTrue();
+            // 좌상단은 "P1" 라벨 자체가 이미 검정이라 검증 기준으로 못 쓴다 — 라벨과도 우하단과도
+            // 겹치지 않는 좌하단으로 "다른 위치는 오염되지 않는다"를 확인한다.
+            assertThat(containsColorInRegion(rendered, Color.BLACK, 10, 0.0, 0.15, 0.85, 1.0))
+                    .as("좌하단은 오염되지 않아야 한다").isFalse();
+        }
     }
 
     @Test

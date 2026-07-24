@@ -72,8 +72,9 @@ class VideoWatermarkModuleTest {
     }
 
     @Test
-    void 이미지_워터마크가_실제로_합성된다() throws Exception {
-        // 115: 위치 선택 옵션 제거 — 이미지 워터마크는 항상 우하단 고정 위치에 합성된다.
+    void 이미지_워터마크_퍼센트_좌표를_주지_않으면_레거시대로_우하단_고정_위치에_합성된다() throws Exception {
+        // 115: 위치 선택 옵션(enum) 제거 — 129: 그 대신 퍼센트 좌표로 자유 배치할 수 있게 됐지만,
+        // 퍼센트 파라미터를 아예 안 보내면 여전히 우하단 고정이어야 한다(하위 호환 폴백).
         Path video = generateTestVideo("black.mp4", 2.0, 320, 240);
         Path watermark = generateWatermarkImage("wm.png", 100, 100, Color.RED);
 
@@ -89,6 +90,25 @@ class VideoWatermarkModuleTest {
         // 퍼지는 회귀였다면 이 점도 빨갛게 물들었을 것이다.
         int[] topLeft = pixelAt(result.outputFile(), 1.0, 40, 40);
         assertThat(topLeft[0]).isLessThan(50);
+    }
+
+    @Test
+    void 이미지_워터마크에_퍼센트_좌표를_주면_그_위치에_합성되고_레거시_우하단_자리는_오염되지_않는다() throws Exception {
+        // 129: xPercent=0/yPercent=0(좌상단 앵커) — 레거시 우하단 고정 폴백과 명백히 다른 위치를
+        // 지정해, "좁게 맞는 것"과 "넓게 잘못된 것"을 구분한다.
+        Path video = generateTestVideo("black.mp4", 2.0, 320, 240);
+        Path watermark = generateWatermarkImage("wm.png", 100, 100, Color.RED);
+
+        ToolResult result = module.process(new ToolInput(
+                List.of(video, watermark),
+                Map.of("opacity", "100", "imageXPercent", "0", "imageYPercent", "0")));
+
+        int[] topLeft = pixelAt(result.outputFile(), 1.0, 40, 40);
+        assertThat(topLeft[0]).as("좌상단 퍼센트로 지정했으니 좌상단에 빨강이 보여야 한다").isGreaterThan(150);
+        assertThat(topLeft[1]).isLessThan(100);
+
+        int[] bottomRight = pixelAt(result.outputFile(), 1.0, 250, 170);
+        assertThat(bottomRight[0]).as("레거시 우하단 자리는 오염되지 않아야 한다").isLessThan(50);
     }
 
     @Test

@@ -33,6 +33,21 @@
               @pointerdown="startDrag(el, $event)"
           >{{ el.text || '(빈 텍스트)' }}
           </div>
+
+          <img
+              v-if="wmImageUrl && imagePosition && wmDisplaySize"
+              :src="wmImageUrl"
+              alt="워터마크 이미지 미리보기"
+              class="absolute cursor-move touch-none select-none rounded-sm outline outline-1 outline-dashed outline-transparent hover:outline-primary/40"
+              :style="{
+                left: imagePosition.xPercent + '%',
+                top: imagePosition.yPercent + '%',
+                width: wmDisplaySize.width + 'px',
+                height: wmDisplaySize.height + 'px',
+              }"
+              data-testid="wm-image-element"
+              @pointerdown="startImageDrag($event)"
+          />
         </div>
 
         <div v-if="pageCount > 1" class="flex items-center gap-3 text-[12px] text-muted-foreground">
@@ -135,20 +150,41 @@ export interface WatermarkTextElement {
   fontWeight: FontWeight
   tiled: boolean
 }
+
+/**
+ * 워터마크 이미지의 위치(129) — 텍스트 요소와 같은 좌상단 앵커 퍼센트 좌표계를 쓴다. 워터마크
+ * 이미지는 파일 슬롯 제약(113)상 항상 1개뿐이라 배열이 아닌 단일 값으로 관리한다.
+ */
+export interface WatermarkImagePosition {
+  xPercent: number
+  yPercent: number
+}
 </script>
 
 <script lang="ts" setup>
 import {computed, ref, watch} from 'vue'
 import {ChevronLeft, ChevronRight, X} from 'lucide-vue-next'
+import {readImageDimensions} from '../utils/imageDimensions'
 
 const CSS_WEIGHT: Record<FontWeight, number> = {REGULAR: 400, MEDIUM: 500, BOLD: 700, BLACK: 900}
 const WEIGHT_LABEL: Record<FontWeight, string> = {REGULAR: '보통', MEDIUM: '중간', BOLD: '굵게', BLACK: '아주 굵게'}
+// 백엔드 PdfWatermarkModule/VideoWatermarkModule의 MARGIN과 동일한 값 — 위치 파라미터를 아예 안 보낼 때
+// 백엔드가 폴백하는 "레거시 우하단"과 시각적으로 같은 지점을 기본값으로 보여주기 위해 맞춰둔다.
+const LEGACY_MARGIN = 20
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   file: File | null
   elements: WatermarkTextElement[]
+  watermarkImageFile?: File | null
+  imagePosition?: WatermarkImagePosition | null
+}>(), {
+  watermarkImageFile: null,
+  imagePosition: null,
+})
+const emit = defineEmits<{
+  'update:elements': [elements: WatermarkTextElement[]]
+  'update:imagePosition': [position: WatermarkImagePosition]
 }>()
-const emit = defineEmits<{ 'update:elements': [elements: WatermarkTextElement[]] }>()
 
 const RENDER_MAX_WIDTH = 480
 type Status = 'idle' | 'loading' | 'done' | 'error'
@@ -161,6 +197,14 @@ const renderScale = ref(1) // fontSize(pt 또는 이미지 픽셀)를 미리보�
 const pageCount = ref(1)
 const currentPage = ref(1)
 const selectedId = ref<string | null>(null)
+
+// 워터마크 이미지 자체의 미리보기 렌더링 상태 — 텍스트 요소와 달리 파일 하나뿐이라 배열이 아니다.
+const wmImageUrl = ref<string | null>(null)
+const wmNaturalSize = ref<{width: number, height: number} | null>(null)
+const wmDisplaySize = computed(() => wmNaturalSize.value ? {
+  width: wmNaturalSize.value.width * renderScale.value,
+  height: wmNaturalSize.value.height * renderScale.value,
+} : null)
 
 let nextId = 0
 
@@ -243,10 +287,45 @@ async function render() {
   } catch {
     status.value = 'error'
   }
+  maybeEmitDefaultImagePosition()
 }
 
 watch(() => props.file, render, {immediate: true})
 watch(currentPage, () => { if (isPdf.value) render() })
+
+/**
+ * 워터마크 이미지가 새로 올라오면 실제 픽셀 크기를 읽어와 미리보기 박스 크기 계산에 쓰고, 오브젝트
+ * URL을 만들어 <img> 미리보기에 물린다. 대상 파일 미리보기(renderImage)와 달리 캔버스에 픽셀을
+ * 합성하지 않는다 — 워터마크는 단순 <img> 오버레이로 충분하고, 드래그 판정도 그 쪽이 더 쉽다.
+ */
+watch(() => props.watermarkImageFile, async (file, prevFile) => {
+  if (wmImageUrl.value) URL.revokeObjectURL(wmImageUrl.value)
+  wmImageUrl.value = null
+  wmNaturalSize.value = null
+  if (!file) return
+  if (file !== prevFile) wmImageUrl.value = URL.createObjectURL(file)
+  const size = await readImageDimensions(file)
+  // await 도중 파일이 또 바뀌었으면(빠른 교체) 이 결과는 이제 최신이 아니므로 버린다.
+  if (props.watermarkImageFile !== file) return
+  wmNaturalSize.value = size
+  maybeEmitDefaultImagePosition()
+}, {immediate: true})
+
+/**
+ * 워터마크 이미지 위치가 아직 없을 때(사용자가 드래그로 정한 적 없음) 우하단 근처 기본값을 계산해
+ * emit한다 — 115가 정했던 "고정 우하단"을 초기값으로만 재현하고, 이후엔 자유롭게 드래그로 바뀐다.
+ * 백엔드가 퍼센트 파라미터 없이 호출될 때 쓰는 폴백(WatermarkPlacement.bottomRightX/Y)과 같은
+ * 비율식이므로, 프론트가 계산 없이 보내는 값이 백엔드의 레거시 폴백과 시각적으로 일치한다.
+ */
+function maybeEmitDefaultImagePosition() {
+  if (props.imagePosition || !wmDisplaySize.value || !canvasWidth.value || !canvasHeight.value) return
+  const marginPx = LEGACY_MARGIN * renderScale.value
+  const xPercent = clamp(
+      ((canvasWidth.value - wmDisplaySize.value.width - marginPx) / canvasWidth.value) * 100, 0, 100)
+  const yPercent = clamp(
+      ((canvasHeight.value - wmDisplaySize.value.height - marginPx) / canvasHeight.value) * 100, 0, 100)
+  emit('update:imagePosition', {xPercent, yPercent})
+}
 
 function addElement() {
   const el: WatermarkTextElement = {
@@ -279,8 +358,12 @@ function clamp(v: number, min: number, max: number) {
   return Math.min(max, Math.max(min, v))
 }
 
-function startDrag(el: WatermarkTextElement, e: PointerEvent) {
-  selectedId.value = el.id
+/**
+ * 드래그 공통 로직 — stage 기준 포인터 좌표를 0~100% 로 변환해 onPercentChange로 흘려보낸다.
+ * 텍스트 요소 드래그(startDrag)와 워터마크 이미지 드래그(startImageDrag)가 이 하나를 공유한다
+ * (129 — 이미지 워터마크도 텍스트와 같은 좌표 규약·같은 드래그 UX를 쓰도록 통일).
+ */
+function startDragCore(e: PointerEvent, onPercentChange: (xPercent: number, yPercent: number) => void) {
   const target = e.currentTarget as HTMLElement
   const stage = stageEl.value
   if (!stage) return
@@ -299,7 +382,7 @@ function startDrag(el: WatermarkTextElement, e: PointerEvent) {
     const y = ev.clientY - stageRect.top
     const xPercent = clamp((x / stageRect.width) * 100, 0, 100)
     const yPercent = clamp((y / stageRect.height) * 100, 0, 100)
-    emit('update:elements', props.elements.map(e => e.id === el.id ? {...e, xPercent, yPercent} : e))
+    onPercentChange(xPercent, yPercent)
   }
   function onUp(ev: PointerEvent) {
     try {
@@ -312,5 +395,18 @@ function startDrag(el: WatermarkTextElement, e: PointerEvent) {
   }
   target.addEventListener('pointermove', onMove)
   target.addEventListener('pointerup', onUp)
+}
+
+function startDrag(el: WatermarkTextElement, e: PointerEvent) {
+  selectedId.value = el.id
+  startDragCore(e, (xPercent, yPercent) => {
+    emit('update:elements', props.elements.map(item => item.id === el.id ? {...item, xPercent, yPercent} : item))
+  })
+}
+
+function startImageDrag(e: PointerEvent) {
+  startDragCore(e, (xPercent, yPercent) => {
+    emit('update:imagePosition', {xPercent, yPercent})
+  })
 }
 </script>

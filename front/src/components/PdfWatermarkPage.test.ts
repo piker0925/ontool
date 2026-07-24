@@ -43,11 +43,43 @@ afterEach(() => {
 })
 
 describe('PdfWatermarkPage', () => {
-    it('기본 params는 textElements 빈 배열·기본 투명도로 채워지고 position은 더 이상 보내지 않는다(115)', () => {
+    it('워터마크 이미지를 올리기 전 기본 params는 textElements 빈 배열·기본 투명도만 채워지고 이미지 위치 파라미터는 아직 없다(129)', () => {
         const wrapper = mountPage()
         const params = uploaderProps(wrapper).params
         expect(params).toEqual({textElements: '[]', opacity: '30'})
         expect(uploaderProps(wrapper).moduleId).toBe('pdf-watermark')
+    })
+
+    it('워터마크 이미지 편집기가 위치를 갱신하면 FileUploader에 imageXPercent/imageYPercent로 전달된다(129)', async () => {
+        const wrapper = mountPage()
+        await wrapper.findComponent(WatermarkEditorCanvas).vm.$emit('update:imagePosition', {xPercent: 77, yPercent: 88})
+
+        const params = uploaderProps(wrapper).params
+        expect(params!.imageXPercent).toBe('77')
+        expect(params!.imageYPercent).toBe('88')
+    })
+
+    it('두 번째 슬롯에 스테이징된 워터마크 이미지 파일이 편집기의 watermarkImageFile prop으로 전달된다(129)', async () => {
+        const wrapper = mountPage()
+        const target = new File(['x'], 'target.pdf', {type: 'application/pdf'})
+        const wmImage = new File(['x'], 'wm.png', {type: 'image/png'})
+        await wrapper.findComponent(FileUploader).vm.$emit('staged', [target, wmImage])
+
+        expect(wrapper.findComponent(WatermarkEditorCanvas).props('watermarkImageFile')).toBe(wmImage)
+    })
+
+    it('워터마크 이미지 파일이 바뀌면(교체) 이전에 잡아둔 이미지 위치가 초기화된다(129)', async () => {
+        const wrapper = mountPage()
+        const target = new File(['x'], 'target.pdf', {type: 'application/pdf'})
+        const wmImage1 = new File(['x'], 'wm1.png', {type: 'image/png'})
+        await wrapper.findComponent(FileUploader).vm.$emit('staged', [target, wmImage1])
+        await wrapper.findComponent(WatermarkEditorCanvas).vm.$emit('update:imagePosition', {xPercent: 10, yPercent: 10})
+        expect(uploaderProps(wrapper).params!.imageXPercent).toBe('10')
+
+        const wmImage2 = new File(['x'], 'wm2.png', {type: 'image/png'})
+        await wrapper.findComponent(FileUploader).vm.$emit('staged', [target, wmImage2])
+
+        expect(uploaderProps(wrapper).params!.imageXPercent).toBeUndefined()
     })
 
     // 113: 대상 PDF를 여러 개 한 번에 선택할 수 없어야 한다(회귀 재현: 대상 3개 + 워터마크

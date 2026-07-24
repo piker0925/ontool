@@ -53,15 +53,23 @@ export function createSnakeGame(gridSize: number, random: () => number = Math.ra
     }
 }
 
-export function changeDirection(state: SnakeState, direction: Direction): SnakeState {
-    if (state.snake.length > 1 && OPPOSITE[direction] === state.direction) return state
-    return {...state, direction}
+// 한 틱 안에 방향키가 여러 번 눌려도 최대 1개만 다음 틱에 반영되도록 대기열에 쌓는다.
+// 반대 방향 검사 기준은 "현재 이동 방향"이 아니라 "큐에 마지막으로 쌓인 방향"이어야 한다 —
+// 그래야 아직 tick()에 반영되지 않은 이전 입력을 고려해 역주행을 막을 수 있다.
+export const MAX_QUEUED_DIRECTIONS = 2
+
+export function queueDirection(state: SnakeState, queue: Direction[], direction: Direction): Direction[] {
+    const reference = queue.length > 0 ? queue[queue.length - 1] : state.direction
+    if (state.snake.length > 1 && OPPOSITE[direction] === reference) return queue
+    if (queue.length >= MAX_QUEUED_DIRECTIONS) return queue
+    return [...queue, direction]
 }
 
-export function tick(state: SnakeState, gridSize: number, random: () => number = Math.random): SnakeState {
+export function tick(state: SnakeState, gridSize: number, random: () => number = Math.random, queuedDirection?: Direction): SnakeState {
     if (state.status !== 'playing') return state
 
-    const delta = DELTA[state.direction]
+    const direction = queuedDirection ?? state.direction
+    const delta = DELTA[direction]
     const head = state.snake[0]
     const newHead: Point = {x: head.x + delta.x, y: head.y + delta.y}
 
@@ -78,7 +86,7 @@ export function tick(state: SnakeState, gridSize: number, random: () => number =
 
     return {
         snake: newSnake,
-        direction: state.direction,
+        direction,
         food: eating ? (placeFood(newSnake, gridSize, random) ?? state.food) : state.food,
         status: 'playing',
         score: eating ? state.score + 1 : state.score,

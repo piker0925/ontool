@@ -171,10 +171,19 @@ class JobWorkerTest extends AbstractMySQLIntegrationTest {
         // 200ms(테스트 설정)마다 uploadDir 아래 "비워진 디렉토리"를 청소하는데, ffmpeg 프로세스 기동에
         // 걸리는 수십 ms 동안 방금 만든 빈 디렉토리가 그 청소 대상이 되어 파일을 쓰기 직전에 부모
         // 디렉토리가 사라지는 레이스가 실제로 관찰됐다(uploadDir 밖은 스케줄러가 건드리지 않는다).
+        //
+        // 131 진단: 이전의 640x480/30s 소스는 실제 재인코딩(-c:v libx264 -c:a aac, 프리셋 기본값)이
+        // 0.5초 안팎으로 끝나버려 ffmpeg가 "-progress" 라인을 단 한 번(그것도 종료 직전, 99%대)만
+        // 찍는 경우가 흔했다 — 그러면 DB에 남는 진행률은 초기값 0(Job 기본값)과 최종 100뿐이라
+        // seenProgress가 항상 {0, 100}이 되어 "중간값을 거친다"는 이 테스트의 전제 자체가 실제 인코딩
+        // 속도와 경쟁하는 레이스였다(스로틀 간격과는 무관 — 첫 tick은 스로틀을 무조건 통과한다).
+        // 해상도·길이를 올려 재인코딩이 최소 수 초 이상 걸리게 만들면 ffmpeg가 tick을 여러 번(실측 5회,
+        // 0.5초 간격) 남기고, 그중 첫 tick부터 이미 0%보다 큰 값이라 폴링(50ms) 주기로도 안정적으로
+        // 관측된다 — CPU가 낮은/부하 환경 모두에서 재현 확인.
         java.nio.file.Path inputDir = java.nio.file.Files.createTempDirectory("video-e2e-");
         java.nio.file.Path source = inputDir.resolve("source.mp4");
         Process gen = new ProcessBuilder(
-                "ffmpeg", "-y", "-f", "lavfi", "-i", "testsrc=duration=30:size=640x480:rate=30",
+                "ffmpeg", "-y", "-f", "lavfi", "-i", "testsrc=duration=60:size=1280x720:rate=30",
                 "-c:v", "libx264", "-g", "30", "-pix_fmt", "yuv420p", source.toAbsolutePath().toString())
                 .redirectErrorStream(true).start();
         String genOutput = new String(gen.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);

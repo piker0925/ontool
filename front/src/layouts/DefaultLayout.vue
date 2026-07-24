@@ -175,7 +175,7 @@
           <!-- 중앙: 글로벌 검색 바 (데스크톱 전용) -->
           <div class="hidden lg:flex w-1/3 justify-center">
             <button
-                class="flex w-full max-w-[320px] items-center gap-2.5 rounded-lg border border-border/50 bg-background/50 px-3 py-1.5 text-left transition-all hover:bg-accent hover:border-border shadow-sm group"
+                class="flex w-full max-w-[320px] items-center gap-2.5 rounded-lg border border-border/50 bg-background/50 px-3 py-1.5 text-left transition-[background-color,border-color] hover:bg-accent hover:border-border shadow-sm group"
                 @click="paletteRef?.open()"
             >
               <Search class="size-[14px] shrink-0 text-muted-foreground group-hover:text-foreground transition-colors"/>

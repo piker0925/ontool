@@ -8,9 +8,9 @@
           class="flex shrink-0 items-center justify-center rounded-lg transition-colors overflow-hidden"
       >
         <div class="relative flex items-center justify-center size-[15px]">
-          <Sun :class="preference === 'light' ? 'scale-100 rotate-0' : 'scale-0 -rotate-90'" class="absolute transition-all duration-300 size-[15px]"/>
-          <Moon :class="preference === 'dark' ? 'scale-100 rotate-0' : 'scale-0 rotate-90'" class="absolute transition-all duration-300 size-[15px]"/>
-          <MonitorSmartphone :class="preference === 'system' ? 'scale-100 rotate-0' : 'scale-0 rotate-90'" class="absolute transition-all duration-300 size-[15px]"/>
+          <Sun :class="preference === 'light' ? 'scale-100 rotate-0' : 'scale-0 -rotate-90'" class="absolute transition-transform duration-300 size-[15px]"/>
+          <Moon :class="preference === 'dark' ? 'scale-100 rotate-0' : 'scale-0 rotate-90'" class="absolute transition-transform duration-300 size-[15px]"/>
+          <MonitorSmartphone :class="preference === 'system' ? 'scale-100 rotate-0' : 'scale-0 rotate-90'" class="absolute transition-transform duration-300 size-[15px]"/>
         </div>
       </button>
     </DropdownMenuTrigger>

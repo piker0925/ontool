@@ -15,14 +15,14 @@
     <div class="grid grid-cols-2 gap-1 rounded-xl border border-border bg-card p-1">
       <button
           :class="mode === 'team' ? 'bg-violet-500 text-white shadow-sm' : 'text-muted-foreground hover:bg-accent hover:text-foreground'"
-          class="flex items-center justify-center gap-1.5 rounded-lg py-2 text-[13px] font-medium transition-all"
+          class="flex items-center justify-center gap-1.5 rounded-lg py-2 text-[13px] font-medium transition-[background-color,color,box-shadow]"
           @click="mode = 'team'">
         <Users class="size-3.5"/>
         팀 나누기
       </button>
       <button
           :class="mode === 'ladder' ? 'bg-violet-500 text-white shadow-sm' : 'text-muted-foreground hover:bg-accent hover:text-foreground'"
-          class="flex items-center justify-center gap-1.5 rounded-lg py-2 text-[13px] font-medium transition-all"
+          class="flex items-center justify-center gap-1.5 rounded-lg py-2 text-[13px] font-medium transition-[background-color,color,box-shadow]"
           @click="mode = 'ladder'">
         <Rows3 class="size-3.5"/>
         사다리타기
@@ -93,7 +93,7 @@
 
       <button
           :disabled="participants.length === 0 || teamCount < 1"
-          class="flex items-center justify-center gap-1.5 rounded-xl bg-violet-500 py-2.5 text-[14px] font-semibold text-white transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-40"
+          class="flex items-center justify-center gap-1.5 rounded-xl bg-violet-500 py-2.5 text-[14px] font-semibold text-white transition-[opacity,scale] hover:opacity-90 active:scale-[0.99] disabled:opacity-40"
           @click="doSplit">
         <Shuffle class="size-4"/>
         팀 나누기
@@ -130,7 +130,7 @@
         <div class="flex items-center gap-1 rounded-lg bg-muted p-1">
           <button v-for="m in (['ox', 'custom'] as const)" :key="m"
                   :class="outcomeMode === m ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
-                  class="flex-1 rounded-md py-1.5 text-[12px] font-medium transition-all"
+                  class="flex-1 rounded-md py-1.5 text-[12px] font-medium transition-[background-color,color,box-shadow]"
                   @click="outcomeMode = m">{{ m === 'ox' ? 'O/X 당첨' : '직접 입력' }}
           </button>
         </div>
@@ -161,7 +161,7 @@
       <div class="flex gap-2">
         <button
             :disabled="participants.length < 2"
-            class="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-violet-500 py-2.5 text-[14px] font-semibold text-white transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-40"
+            class="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-violet-500 py-2.5 text-[14px] font-semibold text-white transition-[opacity,scale] hover:opacity-90 active:scale-[0.99] disabled:opacity-40"
             @click="doLadder">
           <Rows3 class="size-4"/>
           사다리 타기
@@ -188,7 +188,7 @@
             <button v-for="(name, i) in participants" :key="i"
                     :style="{ width: `${colGap}px` }"
                     :class="selectedStart === i ? 'bg-violet-500 text-white shadow-sm' : 'bg-accent text-foreground/80 hover:opacity-80'"
-                    class="shrink-0 truncate rounded-full px-1 py-1 text-[11px] font-medium transition-all hover:-translate-y-0.5"
+                    class="shrink-0 truncate rounded-full px-1 py-1 text-[11px] font-medium transition-[background-color,color,box-shadow,opacity,translate] hover:-translate-y-0.5"
                     @click="selectPath(i)">
               {{ name }}
             </button>
@@ -411,7 +411,7 @@ const highlightPoints = computed(() => {
 }
 
 .pop-in-enter-active {
-  transition: all 0.25s ease;
+  transition: opacity 0.25s ease, transform 0.25s ease;
 }
 
 .pop-in-enter-from {

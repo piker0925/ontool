@@ -18,7 +18,7 @@
             :class="[highlightIndex === i ? color.active : color.base, phase !== 'input' ? 'opacity-70' : '']"
             :data-testid="`simon-color-${i}`"
             :disabled="phase !== 'input'"
-            class="size-20 rounded-lg transition-all"
+            class="size-20 rounded-lg transition-[background-color,opacity]"
             type="button"
             @click="onColorClick(i)"
         />

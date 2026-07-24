@@ -18,7 +18,7 @@
       <!-- View Toggle (Segmented Control) -->
       <div class="flex items-center rounded-lg border border-border/60 bg-card p-0.5 shadow-sm">
         <button
-            class="flex items-center justify-center rounded-md px-2.5 py-1.5 transition-all"
+            class="flex items-center justify-center rounded-md px-2.5 py-1.5 transition-[background-color,color,box-shadow]"
             :class="viewMode === 'grid' ? 'bg-accent text-foreground shadow-sm ring-1 ring-border/50' : 'text-muted-foreground hover:text-foreground'"
             @click="viewMode = 'grid'"
             title="바둑판 보기"
@@ -26,7 +26,7 @@
           <LayoutGrid class="size-3.5" />
         </button>
         <button
-            class="flex items-center justify-center rounded-md px-2.5 py-1.5 transition-all"
+            class="flex items-center justify-center rounded-md px-2.5 py-1.5 transition-[background-color,color,box-shadow]"
             :class="viewMode === 'list' ? 'bg-accent text-foreground shadow-sm ring-1 ring-border/50' : 'text-muted-foreground hover:text-foreground'"
             @click="viewMode = 'list'"
             title="리스트 보기"

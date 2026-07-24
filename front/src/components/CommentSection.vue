@@ -1,7 +1,10 @@
 <template>
   <div class="pt-4">
-    <!-- 인라인 알림 배너 (신고/삭제 결과 등) -->
+    <!-- 인라인 알림 배너 (신고/삭제 결과 등) — 스크린리더 사용자도 조용히 갱신되는 결과를 알 수 있도록
+         에러는 role=alert + aria-live=assertive(즉시 알림), 성공은 role=status + aria-live=polite로 알린다. -->
     <div v-if="feedback"
+         :role="feedback.type === 'error' ? 'alert' : 'status'"
+         :aria-live="feedback.type === 'error' ? 'assertive' : 'polite'"
          :class="feedback.type === 'error'
            ? 'border-destructive/30 bg-destructive/10 text-destructive'
            : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'"

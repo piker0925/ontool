@@ -20,7 +20,7 @@
             type="password"
             autocomplete="current-password"
         />
-        <p v-if="loginError" class="text-xs text-destructive">{{ loginError }}</p>
+        <p v-if="loginError" role="alert" aria-live="assertive" class="text-xs text-destructive">{{ loginError }}</p>
         <button
             type="submit"
             class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"

@@ -95,6 +95,24 @@ beforeEach(() => {
     sessionStorage.clear()
 })
 
+describe('AdminPage 로그인 실패 배너 — aria-live', () => {
+    it('로그인 실패 시 에러 배너가 role=alert, aria-live=assertive로 렌더된다', async () => {
+        mockGet.mockRejectedValueOnce(new Error('unauthorized'))
+
+        const wrapper = await mountAdminPage()
+        const inputs = wrapper.findAll('input')
+        await inputs[0].setValue('admin')
+        await inputs[1].setValue('wrong-password')
+        await wrapper.find('form').trigger('submit')
+        await flushPromises()
+
+        expect(wrapper.text()).toContain('인증 실패')
+        const banner = wrapper.find('[role="alert"]')
+        expect(banner.exists()).toBe(true)
+        expect(banner.attributes('aria-live')).toBe('assertive')
+    })
+})
+
 describe('AdminPage 댓글 관리', () => {
     it('운영 탭으로 전환하면 전체 댓글 목록을 불러와 모듈 id와 함께 렌더링한다', async () => {
         mockAdminEndpoints()

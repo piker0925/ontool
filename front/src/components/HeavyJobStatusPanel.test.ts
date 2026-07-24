@@ -87,3 +87,51 @@ describe('HeavyJobStatusPanel', () => {
         expect(wrapper.findComponent({name: 'FileResultPanel'}).exists()).toBe(true)
     })
 })
+
+describe('HeavyJobStatusPanel 상태 텍스트 — aria-live', () => {
+    it('처리 중(진행률) 상태는 상태 영역에 aria-live=polite가 있다', () => {
+        const wrapper = mountPanel({
+            jobId: 'job-1',
+            progress: {queuePosition: 0, progress: 42, etaSeconds: 130},
+        })
+        expect(wrapper.find('[aria-live="polite"]').exists()).toBe(true)
+    })
+
+    it('uploadError는 role=alert, aria-live=assertive로 즉시 알림 처리된다', () => {
+        const wrapper = mountPanel({jobId: 'job-1', uploadError: '파일이 너무 큽니다'})
+        const alertEl = wrapper.find('[role="alert"]')
+        expect(alertEl.exists()).toBe(true)
+        expect(alertEl.attributes('aria-live')).toBe('assertive')
+        expect(alertEl.text()).toContain('파일이 너무 큽니다')
+    })
+
+    it('result.url 없이 처리 실패했을 때도 role=alert, aria-live=assertive로 알린다', () => {
+        const wrapper = mountPanel({
+            jobId: 'job-1',
+            result: {url: null, text: '처리에 실패했습니다.'},
+        })
+        const alertEl = wrapper.find('[role="alert"]')
+        expect(alertEl.exists()).toBe(true)
+        expect(alertEl.attributes('aria-live')).toBe('assertive')
+        expect(alertEl.text()).toContain('처리에 실패했습니다.')
+    })
+
+    it('sseFailed도 role=alert, aria-live=assertive로 알린다', () => {
+        const wrapper = mountPanel({jobId: 'job-1', sseFailed: true})
+        const alertEl = wrapper.find('[role="alert"]')
+        expect(alertEl.exists()).toBe(true)
+        expect(alertEl.attributes('aria-live')).toBe('assertive')
+        expect(alertEl.text()).toContain('새로고침')
+    })
+
+    it('result.url이 있으면(완료) FileResultPanel과 별개로 완료를 알리는 aria-live=polite 상태 텍스트가 있다', () => {
+        const wrapper = mountPanel({
+            jobId: 'job-1',
+            result: {url: '/api/v1/files/job-1/result.pdf', text: null},
+        })
+        const statusEl = wrapper.find('[role="status"]')
+        expect(statusEl.exists()).toBe(true)
+        expect(statusEl.attributes('aria-live')).toBe('polite')
+        expect(statusEl.text()).toContain('완료')
+    })
+})

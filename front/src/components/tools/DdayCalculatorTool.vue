@@ -9,8 +9,11 @@
       <input v-model="targetDate" type="date" class="rounded-md border border-input bg-background px-3 py-2"/>
     </label>
     <div class="rounded-lg border border-zone-accent-life/20 bg-zone-accent-life/10 px-4 py-4 text-center">
-      <div class="mt-1 font-mono text-2xl font-semibold text-zone-accent-life">{{ label }}</div>
-      <div class="mt-1 text-[11px] text-muted-foreground">총 {{ Math.abs(diff) }}일 차이</div>
+      <template v-if="targetDate">
+        <div class="mt-1 font-mono text-2xl font-semibold text-zone-accent-life">{{ label }}</div>
+        <div class="mt-1 text-[11px] text-muted-foreground">총 {{ Math.abs(diff) }}일 차이</div>
+      </template>
+      <div v-else class="text-[13px] text-muted-foreground">목표일을 입력하면 D-Day를 계산합니다</div>
     </div>
     <p class="text-[11px] text-muted-foreground">참고용 계산입니다 · 실제와 다를 수 있습니다</p>
   </div>
@@ -22,8 +25,8 @@ import {daysBetween, formatDday} from '../../utils/dateCalc'
 import {todayDateString} from '../../utils/todayDateString'
 
 const baseDate = ref(todayDateString())
-const targetDate = ref(todayDateString())
+const targetDate = ref('')
 
-const diff = computed(() => daysBetween(baseDate.value, targetDate.value))
+const diff = computed(() => targetDate.value ? daysBetween(baseDate.value, targetDate.value) : 0)
 const label = computed(() => formatDday(diff.value))
 </script>

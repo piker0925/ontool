@@ -127,7 +127,7 @@
             />
             배경 전체 채우기 (대각선으로 반복 인쇄, 위치 드래그 대신 자동 배치)
           </label>
-          <p v-if="selectedElement.tiled" class="text-[11px] text-muted-foreground/70">
+          <p v-if="selectedElement.tiled" class="text-[11px] text-muted-foreground">
             — 미리보기에는 반복 패턴이 표시되지 않습니다. 실제 결과는 생성 후 확인하세요.
           </p>
         </div>

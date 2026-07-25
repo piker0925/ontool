@@ -212,7 +212,7 @@
                   :style="{ width: `${colGap}px` }"
                   :class="selectedEnd === i
                       ? 'bg-violet-500/15 text-violet-600 font-bold'
-                      : (outcomeMode === 'ox' ? (label === 'O' ? 'text-emerald-500 font-semibold' : 'text-muted-foreground/60') : 'text-muted-foreground')"
+                      : (outcomeMode === 'ox' ? (label === 'O' ? 'text-emerald-500 font-semibold' : 'text-muted-foreground') : 'text-muted-foreground')"
                   class="shrink-0 truncate rounded-full px-1 py-1 text-center text-[12px] transition-colors">
               {{ label }}
             </span>

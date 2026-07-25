@@ -85,7 +85,7 @@
               <div v-for="(ln, i) in fmtDisplayLines" :key="i"
                    class="group flex items-start px-2 hover:bg-muted/50">
                 <span
-                    class="w-9 shrink-0 select-none pr-2.5 text-right font-mono text-[11px] leading-[1.4rem] text-muted-foreground/40">{{
+                    class="w-9 shrink-0 select-none pr-2.5 text-right font-mono text-[11px] leading-[1.4rem] text-muted-foreground">{{
                     i + 1
                   }}</span>
                 <span class="min-w-0 flex-1 whitespace-pre-wrap break-all font-mono text-[13px] leading-[1.4rem]">
@@ -103,7 +103,7 @@
 
             <div v-else class="flex h-full flex-col items-center justify-center gap-2 text-center">
               <ArrowRight class="size-4 text-muted-foreground/40"/>
-              <p class="text-[11px] text-muted-foreground/50">입력하면 바로 변환됩니다</p>
+              <p class="text-[11px] text-muted-foreground">입력하면 바로 변환됩니다</p>
             </div>
           </div>
         </div>
@@ -154,7 +154,7 @@
       <div class="rounded-xl border border-border bg-card overflow-hidden">
         <div class="flex h-9 items-center justify-between border-b border-border px-3">
           <span class="text-[11px] font-medium text-muted-foreground">비교 결과</span>
-          <span v-if="!diffError && diffEntries.length" class="text-[11px] text-muted-foreground/70">{{ diffEntries.length }}건</span>
+          <span v-if="!diffError && diffEntries.length" class="text-[11px] text-muted-foreground">{{ diffEntries.length }}건</span>
         </div>
 
         <div v-if="diffError" class="flex flex-col items-center justify-center gap-2 px-4 py-10 text-center">
@@ -164,7 +164,7 @@
 
         <div v-else-if="!diffLeft || !diffRight" class="flex flex-col items-center justify-center gap-2 px-4 py-10 text-center">
           <ArrowRight class="size-4 text-muted-foreground/40"/>
-          <p class="text-[11px] text-muted-foreground/50">양쪽에 JSON을 입력하면 구조적으로 비교합니다</p>
+          <p class="text-[11px] text-muted-foreground">양쪽에 JSON을 입력하면 구조적으로 비교합니다</p>
         </div>
 
         <div v-else-if="diffEntries.length === 0" class="flex flex-col items-center justify-center gap-2 px-4 py-10 text-center">
@@ -217,7 +217,7 @@
       <div class="rounded-xl border border-border bg-card overflow-hidden">
         <div class="flex h-9 items-center justify-between border-b border-border px-3">
           <span class="text-[11px] font-medium text-muted-foreground">매칭 결과</span>
-          <span v-if="!jpError && jpMatches.length" class="text-[11px] text-muted-foreground/70">{{ jpMatches.length }}건</span>
+          <span v-if="!jpError && jpMatches.length" class="text-[11px] text-muted-foreground">{{ jpMatches.length }}건</span>
         </div>
 
         <div v-if="jpError" class="flex flex-col items-center justify-center gap-2 px-4 py-10 text-center">
@@ -227,7 +227,7 @@
 
         <div v-else-if="!jpInput || !jpExpr" class="flex flex-col items-center justify-center gap-2 px-4 py-10 text-center">
           <ArrowRight class="size-4 text-muted-foreground/40"/>
-          <p class="text-[11px] text-muted-foreground/50">JSON과 JSONPath 표현식을 입력하면 매칭 결과가 나타납니다</p>
+          <p class="text-[11px] text-muted-foreground">JSON과 JSONPath 표현식을 입력하면 매칭 결과가 나타납니다</p>
         </div>
 
         <div v-else-if="jpMatches.length === 0" class="flex flex-col items-center justify-center gap-2 px-4 py-10 text-center">

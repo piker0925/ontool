@@ -1,12 +1,12 @@
 <template>
   <div class="border-t border-white/60 dark:border-white/10 px-2 pb-2 pt-3" data-testid="active-jobs-panel">
     <div class="flex items-center justify-between px-2 pb-1.5">
-      <span class="text-[10px] font-bold tracking-wider text-muted-foreground/60">내 작업</span>
-      <span v-if="jobs.length > 0" class="font-mono text-[10px] text-muted-foreground/60">{{ jobs.length }}</span>
+      <span class="text-[10px] font-bold tracking-wider text-muted-foreground">내 작업</span>
+      <span v-if="jobs.length > 0" class="font-mono text-[10px] text-muted-foreground">{{ jobs.length }}</span>
     </div>
 
     <div v-if="jobs.length === 0" class="mx-2 rounded-md border border-dashed border-sidebar-border bg-sidebar-accent/30 px-3 py-2.5">
-      <p class="text-[11px] leading-tight text-muted-foreground/60">진행 중인 백그라운드 작업이 없습니다.</p>
+      <p class="text-[11px] leading-tight text-muted-foreground">진행 중인 백그라운드 작업이 없습니다.</p>
     </div>
 
     <ul v-else class="flex max-h-48 flex-col gap-0.5 overflow-y-auto">
@@ -19,7 +19,7 @@
         <component :is="statusIcon(job.status)" :class="statusIconClass(job.status)" class="size-3.5 shrink-0"/>
         <div class="min-w-0 flex-1">
           <p class="truncate text-[12px] font-medium text-sidebar-foreground">{{ job.moduleName }}</p>
-          <p class="truncate text-[10px] text-muted-foreground/70">{{ statusLabel(job) }}</p>
+          <p class="truncate text-[10px] text-muted-foreground">{{ statusLabel(job) }}</p>
         </div>
         <button
             v-if="job.status === 'DONE' || job.status === 'FAILED'"

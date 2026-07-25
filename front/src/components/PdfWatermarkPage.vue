@@ -25,7 +25,7 @@
               placeholder="30"
               type="text"
           />
-          <p class="mt-2 text-[11px] text-muted-foreground/70">
+          <p class="mt-2 text-[11px] text-muted-foreground">
             — <strong>대상 파일은 1개만</strong> 업로드할 수 있습니다. 대상 파일을 올린 뒤 아래
             "이미지 워터마크 추가" 버튼으로 워터마크 이미지를 더할 수 있고, 미리보기 위에서 텍스트와
             똑같이 드래그해 위치를 잡을 수 있습니다(기본 위치는 우하단).

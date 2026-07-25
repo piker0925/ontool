@@ -9,8 +9,8 @@
       <div class="mt-1 font-mono text-2xl font-semibold text-zone-accent-life">{{ dueDate }}</div>
       <div class="mt-1 text-[11px] text-muted-foreground">현재 임신 {{ gestationalAge.weeks }}주 {{ gestationalAge.days }}일</div>
     </div>
-    <p class="text-[11px] text-muted-foreground/70">네겔레 법칙(최종 월경일 + 280일) 기준 추정치입니다</p>
-    <p class="text-[11px] text-muted-foreground/70">의료적 판단은 전문의와 상담하세요</p>
+    <p class="text-[11px] text-muted-foreground">네겔레 법칙(최종 월경일 + 280일) 기준 추정치입니다</p>
+    <p class="text-[11px] text-muted-foreground">의료적 판단은 전문의와 상담하세요</p>
   </div>
 </template>
 

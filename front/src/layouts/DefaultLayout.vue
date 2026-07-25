@@ -35,7 +35,7 @@
                   <component :is="ZONE_ICONS[currentZoneId || 'dev']" class="size-4" />
                 </div>
                 <div class="flex flex-col truncate">
-                  <span class="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/60 leading-none mb-0.5">Workspace</span>
+                  <span class="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground leading-none mb-0.5">Workspace</span>
                   <span class="truncate text-[13px] font-bold text-foreground leading-none">{{ currentZoneName }}</span>
                 </div>
               </div>
@@ -68,7 +68,7 @@
 
         <!-- Favorites Section -->
         <div class="mb-6 flex flex-col gap-0.5">
-          <div class="px-2 pb-1.5 text-[10px] font-bold text-muted-foreground/60 tracking-wider">Favorites</div>
+          <div class="px-2 pb-1.5 text-[10px] font-bold text-muted-foreground tracking-wider">Favorites</div>
           <template v-if="favoriteModules.length > 0">
             <router-link
                 v-for="mod in favoriteModules"
@@ -81,7 +81,7 @@
             </router-link>
           </template>
           <div v-else class="mx-2 mt-1 rounded-md border border-dashed border-sidebar-border bg-sidebar-accent/30 px-3 py-2.5">
-            <p class="text-[11px] leading-tight text-muted-foreground/60">
+            <p class="text-[11px] leading-tight text-muted-foreground">
               도구 상단의 <Star class="inline size-[11px] mx-0.5 text-amber-400" /> 아이콘을 눌러 자주 쓰는 도구를 고정하세요.
             </p>
           </div>
@@ -89,7 +89,7 @@
 
         <!-- Explore Section (특정 구역에 속한 페이지에서만 노출 — 구역이 없으면 카테고리 스코프 자체가 무의미함) -->
         <div v-if="currentZoneId" class="flex flex-col gap-0.5">
-          <div class="px-2 pb-1.5 text-[10px] font-bold text-muted-foreground/60 tracking-wider">Explore</div>
+          <div class="px-2 pb-1.5 text-[10px] font-bold text-muted-foreground tracking-wider">Explore</div>
 
           <!-- 전체 (현재 구역 스코프) -->
           <router-link

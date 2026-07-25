@@ -27,8 +27,8 @@
         <span class="font-mono text-foreground">{{ row.value.toLocaleString() }}원</span>
       </div>
     </div>
-    <p class="text-[11px] text-muted-foreground/70">국세청 근로소득 간이세액표(2026.03.01 시행분, 소득세법 시행령 별표2) 기준</p>
-    <p class="text-[11px] text-muted-foreground/70">참고용 계산이며 법적 효력이 없습니다 · 2026년 기준</p>
+    <p class="text-[11px] text-muted-foreground">국세청 근로소득 간이세액표(2026.03.01 시행분, 소득세법 시행령 별표2) 기준</p>
+    <p class="text-[11px] text-muted-foreground">참고용 계산이며 법적 효력이 없습니다 · 2026년 기준</p>
   </div>
 </template>
 

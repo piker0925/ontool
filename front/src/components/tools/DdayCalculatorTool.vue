@@ -12,7 +12,7 @@
       <div class="mt-1 font-mono text-2xl font-semibold text-zone-accent-life">{{ label }}</div>
       <div class="mt-1 text-[11px] text-muted-foreground">총 {{ Math.abs(diff) }}일 차이</div>
     </div>
-    <p class="text-[11px] text-muted-foreground/70">참고용 계산입니다 · 실제와 다를 수 있습니다</p>
+    <p class="text-[11px] text-muted-foreground">참고용 계산입니다 · 실제와 다를 수 있습니다</p>
   </div>
 </template>
 

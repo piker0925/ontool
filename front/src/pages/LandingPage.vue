@@ -94,8 +94,8 @@
     <!-- 푸터 -->
     <footer class="absolute bottom-4 left-0 right-0 z-10 px-4 sm:px-8">
       <div class="mx-auto max-w-7xl flex flex-row items-center justify-between">
-        <p class="font-mono text-[11px] text-muted-foreground/60">&copy; 2026 OnTool. <a href="https://opensource.org/licenses/MIT" target="_blank" class="hover:underline hover:text-foreground transition-colors">MIT License</a></p>
-        <div class="flex gap-4 text-[11px] font-medium text-muted-foreground/80">
+        <p class="font-mono text-[11px] text-muted-foreground">&copy; 2026 OnTool. <a href="https://opensource.org/licenses/MIT" target="_blank" class="hover:underline hover:text-foreground transition-colors">MIT License</a></p>
+        <div class="flex gap-4 text-[11px] font-medium text-muted-foreground">
           <router-link to="/suggestions" class="hover:text-foreground transition-colors">건의하기</router-link>
           <router-link to="/privacy" class="hover:text-foreground transition-colors">개인정보처리방침</router-link>
         </div>

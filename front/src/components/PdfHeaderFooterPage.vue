@@ -30,7 +30,7 @@
             placeholder="예: {page} / {total}"
             type="text"
         />
-        <p class="mt-2 text-[11px] text-muted-foreground/70">— 헤더·푸터·페이지 번호 중 최소 하나는 입력해야 합니다.</p>
+        <p class="mt-2 text-[11px] text-muted-foreground">— 헤더·푸터·페이지 번호 중 최소 하나는 입력해야 합니다.</p>
       </div>
 
       <div class="flex flex-1 flex-col overflow-auto p-6">

@@ -16,7 +16,7 @@
       월 소정근로시간
       <input v-model.number="monthlyHours" type="number" inputmode="numeric" min="1" class="rounded-md border border-input bg-background px-3 py-2"/>
     </label>
-    <p class="text-[11px] text-muted-foreground/70">기본값 209시간은 주 40시간 근무제의 법정 통상임금 산정 기준시간(유급주휴 포함)입니다 — 평균이 아니라 표준값이며, 계약 근로시간이 다르면 바꿔주세요.</p>
+    <p class="text-[11px] text-muted-foreground">기본값 209시간은 주 40시간 근무제의 법정 통상임금 산정 기준시간(유급주휴 포함)입니다 — 평균이 아니라 표준값이며, 계약 근로시간이 다르면 바꿔주세요.</p>
     <div v-if="belowMinimumWage" class="text-[13px] text-destructive">2026년 최저임금({{ MINIMUM_WAGE_2026_HOURLY.toLocaleString() }}원) 미만입니다.</div>
     <div class="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
       <div
@@ -32,7 +32,7 @@
         <span class="text-[11px] text-muted-foreground">{{ s.label }}</span>
       </div>
     </div>
-    <p class="text-[11px] text-muted-foreground/70">참고용 계산이며 법적 효력이 없습니다 · 2026년 기준</p>
+    <p class="text-[11px] text-muted-foreground">참고용 계산이며 법적 효력이 없습니다 · 2026년 기준</p>
   </div>
 </template>
 

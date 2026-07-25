@@ -40,7 +40,7 @@
               type="text"
           />
           <p v-if="contentError" class="text-[11px] text-destructive">{{ contentError }}</p>
-          <p v-else class="text-[11px] text-muted-foreground/70">{{ format.guide }}</p>
+          <p v-else class="text-[11px] text-muted-foreground">{{ format.guide }}</p>
         </div>
 
         <!-- QR 전용 옵션 -->
@@ -77,7 +77,7 @@
             >
               <option v-for="l in EC_LEVELS" :key="l.id" :value="l.id">{{ l.label }}</option>
             </select>
-            <p class="text-[11px] text-muted-foreground/70">{{ ecLevel.help }}</p>
+            <p class="text-[11px] text-muted-foreground">{{ ecLevel.help }}</p>
           </div>
         </template>
 
@@ -159,7 +159,7 @@
       </div>
 
       <div class="flex h-9 shrink-0 items-center border-t border-border px-4">
-        <p class="text-[11px] text-muted-foreground/70">입력하면 자동으로 생성됩니다</p>
+        <p class="text-[11px] text-muted-foreground">입력하면 자동으로 생성됩니다</p>
       </div>
     </div>
 

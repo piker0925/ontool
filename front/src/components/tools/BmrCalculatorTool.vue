@@ -39,9 +39,9 @@
         <div class="mt-1 font-mono text-xl font-semibold text-zone-accent-life">{{ Math.round(tdee).toLocaleString() }}kcal</div>
       </div>
     </div>
-    <p class="text-[11px] text-muted-foreground/70">Mifflin-St Jeor 공식 기준 추정치입니다</p>
-    <p class="text-[11px] text-muted-foreground/70">참고용 계산입니다 · 실제와 다를 수 있습니다</p>
-    <p class="text-[11px] text-muted-foreground/70">의료적 판단은 전문의와 상담하세요</p>
+    <p class="text-[11px] text-muted-foreground">Mifflin-St Jeor 공식 기준 추정치입니다</p>
+    <p class="text-[11px] text-muted-foreground">참고용 계산입니다 · 실제와 다를 수 있습니다</p>
+    <p class="text-[11px] text-muted-foreground">의료적 판단은 전문의와 상담하세요</p>
   </div>
 </template>
 

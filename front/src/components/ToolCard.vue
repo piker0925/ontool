@@ -29,14 +29,14 @@
               class="shrink-0 rounded-full border border-border bg-secondary px-1.5 py-0.5 font-mono text-[9px] font-medium text-muted-foreground"
           >게임</span>
         </div>
-        <p v-if="mod.description && mode !== 'list'" class="truncate mt-0.5 text-[12px] text-muted-foreground/80">
+        <p v-if="mod.description && mode !== 'list'" class="truncate mt-0.5 text-[12px] text-muted-foreground">
           {{ mod.description }}
         </p>
       </div>
       
       <!-- List mode exclusive metadata -->
       <div v-if="mode === 'list'" class="hidden sm:flex items-center gap-2 min-w-0 flex-1">
-        <span v-if="mod.description" class="truncate text-[12px] text-muted-foreground/60 flex-1 max-w-[60%]">
+        <span v-if="mod.description" class="truncate text-[12px] text-muted-foreground flex-1 max-w-[60%]">
           <span class="mr-2 text-border">|</span>{{ mod.description }}
         </span>
       </div>

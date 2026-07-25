@@ -18,7 +18,7 @@
       <div class="mt-1 font-mono text-2xl font-semibold text-zone-accent-life">{{ humanAge.toFixed(1) }}세</div>
     </div>
 
-    <p class="text-[11px] text-muted-foreground/70">품종·크기를 반영하지 않는 일반적인 간이 환산식입니다(1세=15세, 2세=24세, 이후 매년 강아지 +5세·고양이 +4세) — 실제 노화 속도는 품종에 따라 다를 수 있습니다.</p>
+    <p class="text-[11px] text-muted-foreground">품종·크기를 반영하지 않는 일반적인 간이 환산식입니다(1세=15세, 2세=24세, 이후 매년 강아지 +5세·고양이 +4세) — 실제 노화 속도는 품종에 따라 다를 수 있습니다.</p>
   </div>
 </template>
 

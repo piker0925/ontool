@@ -31,7 +31,7 @@
         <pre v-if="output" class="p-3 font-mono text-[13px] text-foreground whitespace-pre-wrap break-all">{{ output }}</pre>
         <div v-else class="flex h-full flex-col items-center justify-center gap-2 text-center">
           <ArrowRight class="size-4 text-muted-foreground/40"/>
-          <p class="text-[11px] text-muted-foreground/50">템플릿을 선택하면 .gitignore가 생성됩니다</p>
+          <p class="text-[11px] text-muted-foreground">템플릿을 선택하면 .gitignore가 생성됩니다</p>
         </div>
       </div>
     </div>

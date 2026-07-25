@@ -137,7 +137,7 @@
         <div class="flex flex-col divide-y divide-border">
           <div v-for="s in typeScaleSteps" :key="s.step" class="flex items-center gap-3 px-3 py-2">
             <span class="w-24 shrink-0 font-mono text-[11px] text-muted-foreground">--font-size-{{ s.step }}</span>
-            <span class="w-16 shrink-0 font-mono text-[11px] text-muted-foreground/70">{{ s.sizePx }}px</span>
+            <span class="w-16 shrink-0 font-mono text-[11px] text-muted-foreground">{{ s.sizePx }}px</span>
             <span class="truncate text-foreground" :style="{fontSize: `${s.sizePx}px`}">가나다 Aa</span>
           </div>
         </div>

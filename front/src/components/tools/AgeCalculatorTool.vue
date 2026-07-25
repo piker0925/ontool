@@ -12,7 +12,7 @@
       <div class="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">만 나이</div>
       <div class="mt-1 font-mono text-2xl font-semibold text-zone-accent-life">{{ internationalAge }}세</div>
     </div>
-    <p class="text-[11px] text-muted-foreground/70">참고용 계산입니다 · 실제와 다를 수 있습니다</p>
+    <p class="text-[11px] text-muted-foreground">참고용 계산입니다 · 실제와 다를 수 있습니다</p>
   </div>
 </template>
 

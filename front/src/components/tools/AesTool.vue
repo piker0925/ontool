@@ -33,7 +33,7 @@
              class="w-40 rounded-xl border border-border bg-card px-3 py-2.5 font-mono text-[12px] text-foreground outline-none focus:border-ring"
              placeholder="IV(hex, 선택)" spellcheck="false" type="text"/>
     </div>
-    <p class="text-[10px] text-muted-foreground/70">IV를 비우면 암호화 시 임의 생성해 결과 앞에 붙이고, 복호화 시 앞에서 분리합니다.</p>
+    <p class="text-[10px] text-muted-foreground">IV를 비우면 암호화 시 임의 생성해 결과 앞에 붙이고, 복호화 시 앞에서 분리합니다.</p>
 
     <div v-if="result" class="flex items-start justify-between gap-2 rounded-xl border border-border bg-card p-4">
       <span class="font-mono text-[13px] text-foreground break-all whitespace-pre-wrap">{{ result }}</span>

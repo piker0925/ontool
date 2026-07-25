@@ -33,8 +33,8 @@
         <span class="font-mono text-foreground">{{ depositResult.maturityAmount.toLocaleString() }}원</span>
       </div>
     </div>
-    <p class="text-[11px] text-muted-foreground/70">단리·세전 기준 참고용 계산입니다. 실제 상품은 복리·우대금리·이자소득세(15.4%) 적용 여부에 따라 다를 수 있습니다.</p>
-    <p class="text-[11px] text-muted-foreground/70">참고용 계산이며 법적 효력이 없습니다 · 2026년 기준</p>
+    <p class="text-[11px] text-muted-foreground">단리·세전 기준 참고용 계산입니다. 실제 상품은 복리·우대금리·이자소득세(15.4%) 적용 여부에 따라 다를 수 있습니다.</p>
+    <p class="text-[11px] text-muted-foreground">참고용 계산이며 법적 효력이 없습니다 · 2026년 기준</p>
   </div>
 </template>
 

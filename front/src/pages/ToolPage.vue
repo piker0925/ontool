@@ -195,7 +195,7 @@
 
             <div v-for="p in visibleHeavyParams" :key="p.key" class="flex flex-col gap-1">
               <label v-if="p.type !== 'checkbox'" :for="heavyParamId(p.key)" class="text-[11px] text-muted-foreground">{{ p.label }}</label>
-              <span v-if="p.type !== 'checkbox' && p.help" class="-mt-1 text-[11px] font-normal text-muted-foreground/60">— {{ p.help }}</span>
+              <span v-if="p.type !== 'checkbox' && p.help" class="-mt-1 text-[11px] font-normal text-muted-foreground">— {{ p.help }}</span>
               <input
                   v-if="p.type === 'text'"
                   :id="heavyParamId(p.key)"
@@ -222,7 +222,7 @@
                     @change="heavyFormValues[p.key] = ($event.target as HTMLInputElement).checked ? 'true' : 'false'"
                 />
                 {{ p.label }}
-                <span v-if="p.help" class="text-[11px] text-muted-foreground/60">— {{ p.help }}</span>
+                <span v-if="p.help" class="text-[11px] text-muted-foreground">— {{ p.help }}</span>
               </label>
               <select
                   v-else-if="p.type === 'select'"
@@ -249,7 +249,7 @@
                   heavyConfig.textInput.label
                 }}</span>
             </div>
-            <p v-if="heavyConfig.textInput.help" class="px-4 pt-2 text-[11px] text-muted-foreground/60">
+            <p v-if="heavyConfig.textInput.help" class="px-4 pt-2 text-[11px] text-muted-foreground">
               — {{ heavyConfig.textInput.help }}
             </p>
             <textarea
@@ -422,7 +422,7 @@
           <div v-if="moduleConfig" class="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
             <div v-for="p in moduleConfig.params" :key="p.key" class="flex flex-col gap-1.5">
               <label v-if="p.type !== 'checkbox'" class="text-[11px] font-medium text-muted-foreground">{{ p.label }}</label>
-              <span v-if="p.type !== 'checkbox' && p.help" class="-mt-1 text-[11px] font-normal text-muted-foreground/60">— {{ p.help }}</span>
+              <span v-if="p.type !== 'checkbox' && p.help" class="-mt-1 text-[11px] font-normal text-muted-foreground">— {{ p.help }}</span>
               <textarea
                   v-if="p.type === 'textarea'"
                   v-model="formValues[p.key]"
@@ -457,7 +457,7 @@
                     @change="formValues[p.key] = ($event.target as HTMLInputElement).checked ? 'true' : 'false'"
                 />
                 {{ p.label }}
-                <span v-if="p.help" class="text-[11px] text-muted-foreground/60">— {{ p.help }}</span>
+                <span v-if="p.help" class="text-[11px] text-muted-foreground">— {{ p.help }}</span>
               </label>
               <select
                   v-else-if="p.type === 'select'"
@@ -485,11 +485,11 @@
           />
 
           <div class="flex h-11 shrink-0 items-center gap-3 border-t border-border px-4">
-            <p class="flex-1 text-[11px] text-muted-foreground/70">
+            <p class="flex-1 text-[11px] text-muted-foreground">
               <template v-if="autoRunEnabled">입력하면 자동으로 실행됩니다</template>
               <template v-else>입력 후 실행 버튼을 누르세요</template>
             </p>
-            <span class="font-mono text-[10px] text-muted-foreground/60">⌘↵</span>
+            <span class="font-mono text-[10px] text-muted-foreground">⌘↵</span>
             <Button :disabled="running" class="h-8 px-4 text-[13px]" size="sm" @click="() => runLight()">
               <Loader2 v-if="running" class="size-3.5 animate-spin"/>
               <span>{{ running ? '실행 중' : '실행' }}</span>

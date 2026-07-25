@@ -55,8 +55,8 @@
         </tbody>
       </table>
     </div>
-    <p class="text-[11px] text-muted-foreground/70">원리금균등은 매회 상환액이 동일, 원금균등은 원금이 동일하고 이자가 점차 줄어듭니다. 중도상환수수료·우대금리는 반영하지 않은 단순 모델입니다.</p>
-    <p class="text-[11px] text-muted-foreground/70">참고용 계산이며 법적 효력이 없습니다 · 2026년 기준</p>
+    <p class="text-[11px] text-muted-foreground">원리금균등은 매회 상환액이 동일, 원금균등은 원금이 동일하고 이자가 점차 줄어듭니다. 중도상환수수료·우대금리는 반영하지 않은 단순 모델입니다.</p>
+    <p class="text-[11px] text-muted-foreground">참고용 계산이며 법적 효력이 없습니다 · 2026년 기준</p>
   </div>
 </template>
 

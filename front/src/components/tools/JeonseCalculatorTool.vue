@@ -48,8 +48,8 @@
         <template v-else>{{ jeonseResultWon.toLocaleString() }}원</template>
       </div>
     </div>
-    <p class="text-[11px] text-muted-foreground/70">법정 전환율 상한은 한국은행 기준금리 + 2.0%p입니다(주택임대차보호법 시행령 §9, 산정률은 한국부동산원·LH 임대차분쟁조정위원회 공식 계산기 기준). 기준금리는 계속 바뀌는 값이라 최신 값을 직접 확인해 입력하세요.</p>
-    <p class="text-[11px] text-muted-foreground/70">참고용 계산이며 법적 효력이 없습니다 · 2026년 기준</p>
+    <p class="text-[11px] text-muted-foreground">법정 전환율 상한은 한국은행 기준금리 + 2.0%p입니다(주택임대차보호법 시행령 §9, 산정률은 한국부동산원·LH 임대차분쟁조정위원회 공식 계산기 기준). 기준금리는 계속 바뀌는 값이라 최신 값을 직접 확인해 입력하세요.</p>
+    <p class="text-[11px] text-muted-foreground">참고용 계산이며 법적 효력이 없습니다 · 2026년 기준</p>
   </div>
 </template>
 

@@ -5,7 +5,7 @@
       <span class="rounded-full border border-border bg-muted px-2.5 py-0.5 font-mono text-[10px] font-semibold text-muted-foreground">
         JavaScript RegExp 엔진
       </span>
-      <span class="text-[10px] text-muted-foreground/60">브라우저에서 즉시 실행 — 서버 전송 없음</span>
+      <span class="text-[10px] text-muted-foreground">브라우저에서 즉시 실행 — 서버 전송 없음</span>
       <div class="ml-auto flex flex-wrap gap-1">
         <button
             v-for="p in REGEX_PRESETS"
@@ -23,7 +23,7 @@
     <div class="flex flex-col gap-2">
       <div :class="error ? 'border-destructive/60' : 'border-border focus-within:border-ring'"
            class="flex items-center gap-0 rounded-xl border bg-card px-3 font-mono text-[13px]">
-        <span class="select-none text-muted-foreground/50">/</span>
+        <span class="select-none text-muted-foreground">/</span>
         <input
             v-model="pattern"
             class="min-w-0 flex-1 bg-transparent px-1.5 py-2 text-foreground outline-none placeholder:text-muted-foreground/40"
@@ -31,7 +31,7 @@
             spellcheck="false"
             type="text"
         />
-        <span class="select-none text-muted-foreground/50">/</span>
+        <span class="select-none text-muted-foreground">/</span>
         <span class="select-none pl-0.5 text-primary">{{ flags }}</span>
       </div>
 
@@ -94,7 +94,7 @@
     <div v-if="text && pattern && !error" class="rounded-xl border border-border bg-card">
       <div class="flex h-9 items-center gap-2 border-b border-border px-4">
         <span class="font-mono text-[11px] font-medium uppercase tracking-wider text-muted-foreground">하이라이트</span>
-        <span class="text-[11px] text-muted-foreground/60">
+        <span class="text-[11px] text-muted-foreground">
           {{ matchOutcome.matches.length }}개 매치<template v-if="matchOutcome.truncated"> (최대 {{ MAX_MATCHES }}개까지만 표시)</template>
         </span>
       </div>
@@ -114,7 +114,7 @@
     <div v-if="mode === 'replace' && text && pattern && !error" class="rounded-xl border border-border bg-card">
       <div class="flex h-9 items-center gap-2 border-b border-border px-4">
         <span class="font-mono text-[11px] font-medium uppercase tracking-wider text-muted-foreground">치환 결과</span>
-        <span class="text-[11px] text-muted-foreground/60">{{ replaceOutcome.count }}개 치환됨</span>
+        <span class="text-[11px] text-muted-foreground">{{ replaceOutcome.count }}개 치환됨</span>
         <button
             class="ml-auto rounded p-0.5 text-muted-foreground/50 transition-colors hover:text-foreground"
             title="치환 결과 복사"
@@ -145,7 +145,7 @@
       <div v-else class="overflow-x-auto">
         <table class="w-full text-left font-mono text-[12px]">
           <thead>
-          <tr class="border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground/60">
+          <tr class="border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
             <th class="px-4 py-2 font-medium">#</th>
             <th class="px-2 py-2 font-medium">매치</th>
             <th class="px-2 py-2 font-medium">위치</th>
@@ -166,12 +166,12 @@
             </td>
             <td class="whitespace-nowrap px-2 py-2 text-muted-foreground">{{ m.start }}–{{ m.end }}</td>
             <td class="px-2 py-2">
-              <span v-if="m.groups.length === 0" class="text-muted-foreground/40">—</span>
+              <span v-if="m.groups.length === 0" class="text-muted-foreground">—</span>
               <div v-else class="flex flex-col gap-0.5">
                 <span v-for="g in m.groups" :key="g.num" class="break-all">
                   <span class="text-primary">{{ g.name ?? `$${g.num}` }}</span><span class="text-muted-foreground">:</span>
                   <span v-if="g.text !== null" class="text-foreground"> {{ g.text }}</span>
-                  <span v-else class="text-muted-foreground/40"> (미참여)</span>
+                  <span v-else class="text-muted-foreground"> (미참여)</span>
                 </span>
               </div>
             </td>

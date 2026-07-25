@@ -6,11 +6,11 @@
       <div>
         <h1 class="text-2xl font-bold tracking-tight text-foreground">
           {{ activeCategory ?? zone.name }}
-          <span class="ml-1.5 align-middle font-mono text-sm font-medium text-muted-foreground/60">{{
+          <span class="ml-1.5 align-middle font-mono text-sm font-medium text-muted-foreground">{{
               filteredModules.length
             }}</span>
         </h1>
-        <p class="mt-2 text-sm text-muted-foreground/80">
+        <p class="mt-2 text-sm text-muted-foreground">
           {{ activeCategory ? `${activeCategory} 카테고리의 도구입니다.` : zone.description }}
         </p>
       </div>

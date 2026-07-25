@@ -86,7 +86,7 @@
 
     <Button :disabled="uploading" class="h-7 gap-1.5 text-[12px]" data-testid="confirm-upload" @click="upload(staged)">
       <Loader2 v-if="uploading" class="size-3 animate-spin"/>
-      {{ uploading ? `업로드 중… ${uploadProgress}%` : (staged.length >= 2 ? `${staged.length}개 파일 실행` : '실행') }}
+      {{ runLabel }}
     </Button>
   </div>
 </template>
@@ -157,6 +157,9 @@ const pageCounts = ref(new Map<File, number>())
 const imageDims = ref(new Map<File, PixelSize>())
 const uploading = ref(false)
 const uploadProgress = ref(0)
+// 114: 현재 staged 세트로 이미 한 번 실행에 성공했는지 — 재실행 버튼 문구("다시 실행")를
+// 결정하는 데만 쓰인다. staged가 실제로 바뀌면(새 파일 추가·제거) 다시 false로 돌아간다.
+const alreadyRan = ref(false)
 
 // 파일이 정확히 1장일 때만 "이 파일의 실제 크기"가 의미 있다 — 여러 장이면 어느 걸 기준으로
 // 삼을지 애매해서 null로 둔다(소비 측에서 배치용 안내 문구로 대체).
@@ -170,10 +173,24 @@ const secondSlotActive = computed(() => Boolean(props.secondSlotLabel) && staged
 const showSecondSlotButton = computed(() =>
     secondSlotActive.value && staged.value.length < (props.maxFiles ?? Infinity))
 
+// 114: 결과를 확인한 뒤 파라미터만 바꿔 재실행하고 싶을 때, 결과 화면에 별도 컨트롤을 두는 대신
+// (FileResultPanel 참고 — 초기화/재실행 컨트롤은 항상 이 왼쪽 패널에 둔다는 기존 관례) 이 버튼
+// 문구 자체로 "지금 누르면 같은 파일이 다시 전송된다"는 걸 알려준다.
+const runLabel = computed(() => {
+  if (uploading.value) return `업로드 중… ${uploadProgress.value}%`
+  const verb = alreadyRan.value ? '다시 실행' : '실행'
+  return staged.value.length >= 2 ? `${staged.value.length}개 파일 ${verb}` : verb
+})
+
 watch(singleFileDims, dims => emit('dimensions', dims), {immediate: true})
 // 워터마크 편집기처럼 업로드 전 스테이징된 원본 파일이 필요한 소비자를 위한 훅 — deep이어야
-// splice/moveItem 같은 제자리 변경도 감지한다.
-watch(staged, files => emit('staged', [...files]), {immediate: true, deep: true})
+// splice/moveItem 같은 제자리 변경도 감지한다. 114: staged가 실제로 바뀌는 모든 경로(추가·제거·
+// 순서 변경·clear())가 이 한 지점을 지나므로, "다시 실행" 문구 취소도 여기서 함께 처리한다 —
+// upload() 성공 시에는 staged를 건드리지 않으므로 이 watch가 alreadyRan을 되돌리지 않는다.
+watch(staged, files => {
+  emit('staged', [...files])
+  alreadyRan.value = false
+}, {immediate: true, deep: true})
 
 async function loadImageDimensions(file: File) {
   const dims = await readImageDimensions(file)
@@ -225,7 +242,11 @@ async function upload(files: File[]) {
         if (e.total) uploadProgress.value = Math.round((e.loaded / e.total) * 100)
       },
     })
-    staged.value = []
+    // 114: 결과 확인 후 파라미터만 바꿔 재실행할 수 있도록, 성공해도 staged를 비우지 않는다 —
+    // 같은 File 객체로 재업로드 없이 다시 POST할 수 있게 유지한다. 새 파일을 고르거나(드롭존·두
+    // 번째 슬롯) 개별 제거(제거 버튼)해야만 비워진다. 새로고침·탭 종료로 이 메모리 참조가
+    // 사라지는 건 알려진 제약(114 이슈) — 그 경우엔 기존처럼 재업로드해야 한다.
+    alreadyRan.value = true
     emit('uploaded', data)
   } catch (e) {
     // 실패 시 staged를 비우지 않아 사용자가 그대로 재시도할 수 있게 둔다.
@@ -301,6 +322,17 @@ function removeStaged(i: number) {
   }
   staged.value.splice(i, 1)
 }
+
+// 114: FileUploader가 staged의 유일한 소유자이므로, 부모(예: ToolPage의 좌측 업로드 패널
+// 헤더 "초기화" ✕ 버튼 — resetAll)가 결과와 함께 스테이징된 파일까지 완전히 비우고 싶을 때는
+// 이 메서드로만 가능하다. 개별 파일만 지우고 싶으면 기존 "제거" 버튼(removeStaged)을 쓴다.
+function clear() {
+  staged.value = []
+  pageCounts.value = new Map()
+  imageDims.value = new Map()
+}
+
+defineExpose({clear})
 
 function secondSlotExtensions(): string[] {
   return (props.secondSlotAccept ?? '')

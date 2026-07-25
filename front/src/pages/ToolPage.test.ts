@@ -154,6 +154,48 @@ describe('ToolPage 업로드 실패 표시 (032)', () => {
     })
 })
 
+// 114: 결과를 본 뒤 파라미터만 바꿔 재실행할 수 있도록 FileUploader가 업로드 성공 후에도 스테이징을
+// 유지한다 — 여기서는 ToolPage 통합 레벨에서 그 유지가 실제로 보이는지, 그리고 "초기화" ✕ 버튼이
+// (더 이상 자동으로 비워지지 않는) 스테이징까지 함께 정리해주는지를 검증한다.
+describe('ToolPage 재업로드 없는 재실행 (114)', () => {
+    async function selectAndRun(wrapper: ReturnType<typeof mount>, name: string) {
+        const file = new File(['x'], name, {type: 'image/jpeg'})
+        const inputEl = wrapper.find('input[type="file"]').element as HTMLInputElement
+        Object.defineProperty(inputEl, 'files', {value: [file], configurable: true})
+        await wrapper.find('input[type="file"]').trigger('change')
+        await flushPromises()
+        await wrapper.find('[data-testid="confirm-upload"]').trigger('click')
+        await flushPromises()
+    }
+
+    it('업로드 성공 후에도 파일이 스테이징 목록에 남아 재실행 가능한 상태를 유지한다', async () => {
+        const wrapper = await mountAt('img-heavy', [
+            {id: 'img-heavy', name: '이미지 도구', category: 'PDF', isHeavy: true, zones: ['files']},
+        ])
+        mockPost.mockResolvedValueOnce({data: {jobId: 'job-1'}})
+
+        await selectAndRun(wrapper, 'photo.jpg')
+
+        expect(wrapper.text()).toContain('photo.jpg')
+        expect(wrapper.find('[data-testid="confirm-upload"]').exists()).toBe(true)
+    })
+
+    it('초기화(✕) 버튼을 누르면 결과뿐 아니라 스테이징된 파일도 함께 비워진다', async () => {
+        const wrapper = await mountAt('img-heavy', [
+            {id: 'img-heavy', name: '이미지 도구', category: 'PDF', isHeavy: true, zones: ['files']},
+        ])
+        mockPost.mockResolvedValueOnce({data: {jobId: 'job-1'}})
+        await selectAndRun(wrapper, 'photo.jpg')
+        expect(wrapper.text()).toContain('photo.jpg')
+
+        await wrapper.find('[aria-label="초기화"]').trigger('click')
+        await flushPromises()
+
+        expect(wrapper.text()).not.toContain('photo.jpg')
+        expect(wrapper.text()).toContain('파일을 드래그하거나 클릭하여 선택하세요')
+    })
+})
+
 describe('ToolPage 전역 Job 추적 (043)', () => {
     it('Heavy 모듈 업로드가 성공하면 전역 store에 Job을 등록한다', async () => {
         const wrapper = await mountAt('img-heavy', [

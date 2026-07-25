@@ -267,6 +267,7 @@
 
           <div class="flex flex-1 flex-col overflow-auto p-6">
             <FileUploader
+                ref="fileUploaderRef"
                 :accept="heavyConfig?.fileAccept"
                 :maxFileSizeBytes="mod.maxFileSizeBytes ?? 0"
                 :moduleId="mod.id"
@@ -644,6 +645,10 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
 const route = useRoute()
 const mod = ref<Module | null>(null)
 const loading = ref(true)
+// 114: "초기화" ✕ 버튼(resetAll)이 결과뿐 아니라 FileUploader가 들고 있는 스테이징 파일까지
+// 함께 비우려면 FileUploader의 노출된 clear()를 호출해야 한다 — staged는 FileUploader가
+// 유일하게 소유한 상태라 부모가 직접 조작할 수 없다.
+const fileUploaderRef = ref<InstanceType<typeof FileUploader> | null>(null)
 const jobId = ref<string | null>(null)
 // 단건 작업 진행 가시화 (ADR-0019): 큐 순번·진행률·ETA를 SSE로 받아 표시
 const jobProgress = ref<{ queuePosition: number; progress: number; etaSeconds: number | null } | null>(null)
@@ -1284,6 +1289,7 @@ function resetAll() {
   runError.value = ''
   copied.value = false
   heavyTextContent.value = ''
+  fileUploaderRef.value?.clear() // 114: 결과와 함께 스테이징된 파일도 완전히 비운다.
   initForm()
 }
 

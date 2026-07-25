@@ -1,13 +1,8 @@
 <template>
   <div class="flex flex-col gap-3 max-w-lg mx-auto w-full">
-    <input ref="fileInput" accept="image/*" class="hidden" type="file" @change="onFileChange"/>
+    <UploadDropzone ref="dropzoneRef" :active="!imageEl" accept="image/*" label="이미지를 선택하세요" @select="onFilesSelected"/>
 
-    <button v-if="!imageEl"
-            class="flex h-40 items-center justify-center rounded-xl border border-dashed border-border bg-card text-[13px] text-muted-foreground transition-colors hover:border-zone-accent-files/50 hover:text-zone-accent-files"
-            @click="fileInput?.click()">이미지를 선택하세요
-    </button>
-
-    <template v-else>
+    <template v-if="imageEl">
       <div class="flex items-center gap-3">
         <label class="text-[11px] font-medium text-muted-foreground shrink-0">가로 해상도</label>
         <input v-model.number="columns" class="flex-1" max="200" min="20" step="10" type="range"/>
@@ -29,7 +24,7 @@
                 @click="copyAscii">텍스트 복사
         </button>
         <button class="rounded-xl border border-border bg-card px-4 py-2.5 text-[13px] text-foreground transition-colors hover:border-zone-accent-files/50"
-                @click="fileInput?.click()">다른 이미지
+                @click="dropzoneRef?.open()">다른 이미지
         </button>
       </div>
     </template>
@@ -42,8 +37,10 @@
 import {ref, watch} from 'vue'
 import {ASCII_CHARSET_PRESETS, type AsciiCharsetPreset, imageToAscii} from '../../utils/imageToAscii'
 import {useImageFileInput} from '../../composables/useImageFileInput'
+import UploadDropzone from '../UploadDropzone.vue'
 
-const {fileInput, imageEl, error, onFileChange} = useImageFileInput()
+const {imageEl, error, onFilesSelected} = useImageFileInput()
+const dropzoneRef = ref<InstanceType<typeof UploadDropzone> | null>(null)
 const columns = ref(80)
 const selectedCharset = ref<AsciiCharsetPreset>(ASCII_CHARSET_PRESETS[0])
 const ascii = ref('')

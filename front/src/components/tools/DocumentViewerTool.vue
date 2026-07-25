@@ -1,17 +1,13 @@
 <template>
   <div class="flex flex-col gap-3 max-w-3xl mx-auto w-full">
-    <input ref="fileInput" accept=".docx,.xlsx" class="hidden" type="file" @change="onFileChange"/>
-
-    <button v-if="!docType"
-            class="flex h-40 items-center justify-center rounded-xl border border-dashed border-border bg-card text-[13px] text-muted-foreground transition-colors hover:border-zone-accent-files/50 hover:text-zone-accent-files"
-            @click="fileInput?.click()">DOCX 또는 XLSX 파일을 선택하세요
-    </button>
+    <UploadDropzone ref="dropzoneRef" :active="!docType" :icon="FileText" accept=".docx,.xlsx"
+                    label="DOCX 또는 XLSX 파일을 선택하세요" @select="onFilesSelected"/>
 
     <div v-show="!!docType" class="flex flex-col gap-3">
       <div class="flex items-center justify-between">
         <span class="truncate text-[12px] text-muted-foreground">{{ fileName }}</span>
         <button class="shrink-0 rounded-lg border border-border bg-card px-3 py-1.5 text-[12px] text-foreground transition-colors hover:border-zone-accent-files/50"
-                @click="fileInput?.click()">다른 파일
+                @click="dropzoneRef?.open()">다른 파일
         </button>
       </div>
 
@@ -49,10 +45,12 @@
 <script lang="ts" setup>
 import {computed, ref} from 'vue'
 import {renderAsync} from 'docx-preview'
+import {FileText} from 'lucide-vue-next'
 import {detectDocumentType, type DocumentType} from '../../utils/documentViewer'
 import {parseWorkbook} from '../../utils/xlsxViewer'
+import UploadDropzone from '../UploadDropzone.vue'
 
-const fileInput = ref<HTMLInputElement | null>(null)
+const dropzoneRef = ref<InstanceType<typeof UploadDropzone> | null>(null)
 const docxContainer = ref<HTMLDivElement | null>(null)
 const docType = ref<DocumentType | null>(null)
 const fileName = ref('')
@@ -63,8 +61,8 @@ const sheets = ref<Record<string, unknown[][]>>({})
 const activeSheet = ref('')
 const activeSheetRows = computed(() => sheets.value[activeSheet.value] ?? [])
 
-async function onFileChange(e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0]
+async function onFilesSelected(files: File[]) {
+  const file = files[0]
   if (!file) return
 
   error.value = ''

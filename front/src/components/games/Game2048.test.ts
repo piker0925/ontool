@@ -130,3 +130,48 @@ describe('Game2048 — 스와이프 테스트 전제 검증', () => {
         expect(b[1][3]).toBe(4)
     })
 })
+
+describe('Game2048 — 병합·생성 애니메이션', () => {
+    function mockRandomQueue(values: number[]) {
+        const queue = [...values]
+        return vi.spyOn(Math, 'random').mockImplementation(() => queue.length ? queue.shift()! : 0.5)
+    }
+
+    afterEach(() => {
+        vi.restoreAllMocks()
+    })
+
+    it('같은 값 두 타일이 합쳐지면 결과 칸에 병합 애니메이션 클래스가 붙는다', async () => {
+        // (0,0)=2, (0,1)=2 로 배치 — index=0(=(0,0)), 이어서 남은 칸 중 첫 번째(=(0,1))
+        const random = mockRandomQueue([0, 0.1, 0, 0.1])
+        const wrapper = mount(Game2048)
+        await nextTick()
+
+        const board = wrapper.find('[data-testid="board"]')
+        // 왼쪽 스와이프: (0,0)=2, (0,1)=2 → 병합되어 (0,0)=4
+        await board.trigger('touchstart', {touches: [{clientX: 200, clientY: 200}]})
+        await board.trigger('touchend', {changedTouches: [{clientX: 100, clientY: 200}]})
+
+        const cells = wrapper.findAll('[data-testid="board"] > *')
+        expect(cells[0].text()).toBe('4')
+        expect(cells[0].classes()).toContain('tile-pop-merge')
+        // 병합되지 않은 칸(빈 칸)에는 병합 클래스가 붙지 않는다 — 전체가 아니라 실제 병합 칸만 표시되는지 확인
+        expect(cells[3].classes()).not.toContain('tile-pop-merge')
+
+        random.mockRestore()
+    })
+
+    it('이동 후 새로 생긴 랜덤 타일에는 생성 애니메이션 클래스가 붙는다', async () => {
+        mockRandomQueue([0.26, 0.5, 0.4, 0.95, 0.9, 0.1])
+        const wrapper = mount(Game2048)
+        await nextTick()
+
+        const board = wrapper.find('[data-testid="board"]')
+        await board.trigger('touchstart', {touches: [{clientX: 200, clientY: 200}]})
+        await board.trigger('touchend', {changedTouches: [{clientX: 100, clientY: 200}]})
+
+        const cells = wrapper.findAll('[data-testid="board"] > *')
+        const newTileCells = cells.filter(c => c.classes().includes('tile-pop-in'))
+        expect(newTileCells.length).toBe(1) // 이동마다 랜덤 타일은 정확히 하나만 새로 생긴다
+    })
+})

@@ -11,31 +11,36 @@
     <div
         v-else-if="state.phase === 'waiting' || state.phase === 'ready'"
         :class="areaClass"
-        class="flex h-56 w-full max-w-md cursor-pointer select-none items-center justify-center rounded-xl text-lg font-semibold transition-colors"
+        class="reaction-area flex h-56 w-full max-w-md cursor-pointer select-none items-center justify-center rounded-xl text-lg font-semibold transition-[background-color,color,transform]"
         data-testid="reaction-area"
         @click="onClick"
     >
       {{ areaText }}
     </div>
 
-    <div v-else class="flex flex-col items-center gap-3">
-      <p v-if="state.phase === 'result'" class="font-mono text-3xl text-foreground" data-testid="reaction-result">
-        {{ Math.round(state.elapsedMs ?? 0) }}ms
-      </p>
-      <p v-else class="text-sm font-medium text-destructive" data-testid="reaction-false-start">
-        너무 빨랐습니다! 신호가 뜬 후 클릭하세요.
-      </p>
-      <button class="text-sm text-primary underline" @click="start">다시 도전</button>
-    </div>
+    <Transition v-else name="result-pop">
+      <div class="flex flex-col items-center gap-3">
+        <p v-if="state.phase === 'result'" class="font-mono text-3xl text-foreground" data-testid="reaction-result">
+          {{ Math.round(state.elapsedMs ?? 0) }}ms
+        </p>
+        <p v-else class="text-sm font-medium text-destructive" data-testid="reaction-false-start">
+          너무 빨랐습니다! 신호가 뜬 후 클릭하세요.
+        </p>
+        <button class="text-sm text-primary underline" @click="start">다시 도전</button>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script lang="ts" setup>
-import {computed, onUnmounted, ref} from 'vue'
+import {computed, onUnmounted, ref, watch} from 'vue'
 import {handleReactionClick, type ReactionState} from '../../utils/reactionTime'
+import {useGameSound} from '../../composables/useGameSound'
 
 const state = ref<ReactionState>({phase: 'idle', signalAt: null, elapsedMs: null})
 let timer: ReturnType<typeof setTimeout> | null = null
+
+const {playClick, playSuccess, playFail} = useGameSound()
 
 function clearTimer() {
   if (timer) {
@@ -58,8 +63,39 @@ function onClick() {
   if (state.value.phase === 'result' || state.value.phase === 'false-start') clearTimer()
 }
 
-const areaClass = computed(() => state.value.phase === 'ready' ? 'bg-zone-accent text-white' : 'bg-muted text-muted-foreground')
+const areaClass = computed(() => state.value.phase === 'ready' ? 'bg-zone-accent text-white scale-[1.02]' : 'bg-muted text-muted-foreground')
 const areaText = computed(() => state.value.phase === 'ready' ? '지금 클릭!' : '기다리세요…')
+
+watch(() => state.value.phase, phase => {
+  if (phase === 'ready') playClick()
+  else if (phase === 'result') playSuccess()
+  else if (phase === 'false-start') playFail()
+})
 
 onUnmounted(clearTimer)
 </script>
+
+<style scoped>
+.result-pop-enter-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.result-pop-enter-from {
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reaction-area {
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .result-pop-enter-active {
+    transition: opacity 0.2s ease;
+  }
+
+  .result-pop-enter-from {
+    transform: none;
+  }
+}
+</style>

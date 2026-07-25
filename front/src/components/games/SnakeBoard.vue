@@ -1,10 +1,11 @@
 <template>
   <div ref="containerRef" class="flex flex-col items-center gap-4 py-6" tabindex="0" @keydown="onKeydown">
-    <p class="font-mono text-sm text-muted-foreground">점수 <span class="text-foreground" data-testid="score">{{ state.score }}</span></p>
+    <GameStat label="점수" testid="score" :value="state.score"/>
 
     <div class="relative">
       <canvas
           ref="canvasRef"
+          :class="{'snake-flash': flashFood}"
           :height="GRID_SIZE * CELL_SIZE"
           :width="GRID_SIZE * CELL_SIZE"
           class="rounded-xl border border-border bg-muted/40"
@@ -21,16 +22,28 @@
         >시작
         </button>
       </div>
+
+      <GameResultOverlay :show="state.status === 'over'" testid="game-over" title="게임 오버!" tone="lose"/>
     </div>
 
-    <p v-if="state.status === 'over'" class="text-sm font-medium text-destructive" data-testid="game-over">게임 오버!</p>
-    <p v-else class="text-[11px] text-muted-foreground">방향키 또는 스와이프로 이동하세요</p>
+    <p v-if="state.status !== 'over'" class="text-[11px] text-muted-foreground">방향키 또는 스와이프로 이동하세요</p>
   </div>
 </template>
 
 <script lang="ts" setup>
 import {nextTick, onMounted, onUnmounted, ref, watch} from 'vue'
 import {createSnakeGame, type Direction, queueDirection, tick} from '../../utils/snake'
+import {useGameSound} from '../../composables/useGameSound'
+import GameResultOverlay from '../GameResultOverlay.vue'
+import GameStat from '../GameStat.vue'
+
+const {playSuccess, playFail} = useGameSound()
+
+// 먹이를 먹어 점수가 오른 틱에 캔버스 테두리를 잠깐 밝혀 손맛을 준다.
+// draw()의 fillRect 호출 자체는 건드리지 않아 SnakeGame.test.ts의 캔버스 캡처 기반
+// 헤드 위치 검증(draw 호출 스텁)에 영향을 주지 않는다.
+const flashFood = ref(false)
+let flashTimer: ReturnType<typeof setTimeout> | null = null
 
 const GRID_SIZE = 15
 const CELL_SIZE = 20
@@ -132,6 +145,20 @@ function step() {
 
 watch(state, draw, {deep: true})
 
+watch(() => state.value.score, (next, prev) => {
+  if (next <= prev) return
+  playSuccess()
+  flashFood.value = true
+  if (flashTimer) clearTimeout(flashTimer)
+  flashTimer = setTimeout(() => {
+    flashFood.value = false
+  }, 200)
+})
+
+watch(() => state.value.status, status => {
+  if (status === 'over') playFail()
+})
+
 onMounted(() => {
   draw()
   containerRef.value?.focus()
@@ -139,5 +166,19 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (intervalId) clearInterval(intervalId)
+  if (flashTimer) clearTimeout(flashTimer)
 })
 </script>
+
+<style scoped>
+.snake-flash {
+  transition: box-shadow 0.2s ease;
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--zone-accent) 60%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .snake-flash {
+    transition: none;
+  }
+}
+</style>

@@ -18,7 +18,7 @@
         >{{ value || '' }}</button>
       </div>
 
-      <GameResultOverlay :show="solved" testid="game-clear" title="완성했습니다!" tone="win">
+      <GameResultOverlay :restart="props.restart" :show="solved" testid="game-clear" title="완성했습니다!" tone="win">
         <span data-testid="clear-moves">{{ moveCount }}번 만에 완성</span>
       </GameResultOverlay>
     </div>
@@ -36,7 +36,7 @@ import GameStat from '../GameStat.vue'
 
 const SIZE = 4
 
-const props = defineProps<{ submitScore?: (score: number) => void }>()
+const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void }>()
 
 const board = ref(shuffle(SIZE))
 const moveCount = ref(0)

@@ -31,7 +31,7 @@
         </template>
       </div>
 
-      <GameResultOverlay :show="state.status !== 'playing'" :title="statusText" :tone="resultTone" testid="game-result-overlay">
+      <GameResultOverlay :restart="props.restart" :show="state.status !== 'playing'" :title="statusText" :tone="resultTone" testid="game-result-overlay">
         <span v-if="state.status === 'won'" data-testid="clear-time">{{ elapsedSeconds }}초 만에 클리어했습니다</span>
       </GameResultOverlay>
     </div>
@@ -56,7 +56,7 @@ const TOUCH_MOVE_CANCEL_PX = 10
 // 컴포넌트가 마운트된 시점을 시작 시각으로 본다 — GamePage가 재시작마다 slot 전체를 재마운트하므로
 // 별도 reset 로직 없이 매 판마다 새로 잰다. elapsedSeconds는 화면 표시용(053 AC: "게임 종료 시 항상
 // 점수 표시") — 1초마다 갱신하고, 게임이 끝나면(승/패 무관) 그 시점의 값에서 멈춘다.
-const props = defineProps<{ submitScore?: (score: number) => void }>()
+const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void }>()
 const startedAt = Date.now()
 const elapsedSeconds = ref(0)
 let tickTimer: ReturnType<typeof setInterval> | null = null

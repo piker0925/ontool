@@ -23,7 +23,7 @@
         </button>
       </div>
 
-      <GameResultOverlay :show="state.status === 'over'" testid="game-over" title="게임 오버!" tone="lose"/>
+      <GameResultOverlay :restart="props.restart" :show="state.status === 'over'" testid="game-over" title="게임 오버!" tone="lose"/>
     </div>
 
     <p v-if="state.status !== 'over'" class="text-[11px] text-muted-foreground">방향키 또는 스와이프로 이동하세요</p>
@@ -37,7 +37,7 @@ import {useGameSound} from '../../composables/useGameSound'
 import GameResultOverlay from '../GameResultOverlay.vue'
 import GameStat from '../GameStat.vue'
 
-const props = defineProps<{ submitScore?: (score: number) => void }>()
+const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void }>()
 
 const {playSuccess, playFail} = useGameSound()
 

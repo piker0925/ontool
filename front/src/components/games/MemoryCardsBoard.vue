@@ -32,7 +32,7 @@
         </button>
       </div>
 
-      <GameResultOverlay :show="state.status === 'won'" testid="game-result-overlay" title="모든 쌍을 맞췄습니다!" tone="win">
+      <GameResultOverlay :restart="props.restart" :show="state.status === 'won'" testid="game-result-overlay" title="모든 쌍을 맞췄습니다!" tone="win">
         <span data-testid="final-moves">{{ moves }}번 만에 맞췄습니다</span>
       </GameResultOverlay>
     </div>
@@ -49,7 +49,7 @@ import GameStat from '../GameStat.vue'
 const PAIR_COUNT = 8
 const RESOLVE_DELAY_MS = 700
 
-const props = defineProps<{ submitScore?: (score: number) => void }>()
+const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void }>()
 
 const state = ref(createMemoryGame(PAIR_COUNT))
 const resolving = ref(false)

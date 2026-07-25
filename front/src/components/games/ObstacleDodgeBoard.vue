@@ -17,7 +17,7 @@
           @click="onJump"
           @touchstart.prevent="onJump"
       />
-      <GameResultOverlay :show="state.status === 'over'" testid="game-over" title="충돌했습니다!" tone="lose">
+      <GameResultOverlay :restart="props.restart" :show="state.status === 'over'" testid="game-over" title="충돌했습니다!" tone="lose">
         <span data-testid="final-score">점수 {{ state.score }}</span>
       </GameResultOverlay>
     </div>
@@ -38,7 +38,7 @@ const BOARD_HEIGHT = 480
 const TICK_MS = 16
 const BIRD_X = 60
 
-const props = defineProps<{ submitScore?: (score: number) => void }>()
+const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void }>()
 
 const state = ref(createObstacleDodgeState(BOARD_WIDTH, BOARD_HEIGHT))
 const canvasRef = ref<HTMLCanvasElement | null>(null)

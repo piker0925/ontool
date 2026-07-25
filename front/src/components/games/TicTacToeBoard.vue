@@ -19,7 +19,7 @@
         </button>
       </div>
 
-      <GameResultOverlay :show="!!winner || draw" :title="statusText" :tone="resultTone" testid="game-result-overlay">
+      <GameResultOverlay :restart="props.restart" :show="!!winner || draw" :title="statusText" :tone="resultTone" testid="game-result-overlay">
         <span v-if="winner === HUMAN" data-testid="win-moves">{{ moveCount }}수 만에 승리했습니다</span>
       </GameResultOverlay>
     </div>
@@ -33,7 +33,7 @@ import {useGameSound} from '../../composables/useGameSound'
 import GameResultOverlay from '../GameResultOverlay.vue'
 import GameStat from '../GameStat.vue'
 
-const props = defineProps<{ submitScore?: (score: number) => void }>()
+const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void }>()
 
 const HUMAN = 'X'
 const COMPUTER = 'O'

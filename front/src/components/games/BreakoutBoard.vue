@@ -18,7 +18,7 @@
           @mousemove="onPointerMove"
           @touchmove.prevent="onPointerMove"
       />
-      <GameResultOverlay :show="state.status !== 'playing'" testid="game-over" :title="resultTitle" :tone="resultTone">
+      <GameResultOverlay :restart="props.restart" :show="state.status !== 'playing'" testid="game-over" :title="resultTitle" :tone="resultTone">
         <span data-testid="final-score">점수 {{ state.score }}</span>
       </GameResultOverlay>
     </div>
@@ -39,7 +39,7 @@ const BOARD_HEIGHT = 400
 const TICK_MS = 16
 const PADDLE_KEY_STEP = 16
 
-const props = defineProps<{ submitScore?: (score: number) => void }>()
+const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void }>()
 
 const state = ref(createBreakoutState(BOARD_WIDTH, BOARD_HEIGHT))
 const canvasRef = ref<HTMLCanvasElement | null>(null)

@@ -20,7 +20,7 @@
         </button>
       </div>
 
-      <GameResultOverlay :show="state.status === 'over'" testid="game-over" title="시간 종료!" tone="win">
+      <GameResultOverlay :restart="props.restart" :show="state.status === 'over'" testid="game-over" title="시간 종료!" tone="win">
         <span data-testid="final-score">{{ state.score }}마리 잡음</span>
       </GameResultOverlay>
     </div>
@@ -38,7 +38,7 @@ const HOLE_COUNT = 9
 const DURATION_MS = 30000
 const TICK_MS = 100
 
-const props = defineProps<{ submitScore?: (score: number) => void }>()
+const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void }>()
 
 const state = ref(createWhackAMoleState(HOLE_COUNT, DURATION_MS))
 const {playClick, playSuccess} = useGameSound()

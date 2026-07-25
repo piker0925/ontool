@@ -1,7 +1,7 @@
 <template>
   <GamePage description="움직이는 블록을 타이밍에 맞춰 탭해서 쌓아 올리세요" game-id="game-tower-stack" title="타워 쌓기">
-    <template #default="{ submitScore }">
-      <TowerStackBoard :submit-score="submitScore"/>
+    <template #default="{ submitScore, restart }">
+      <TowerStackBoard :restart="restart" :submit-score="submitScore"/>
     </template>
   </GamePage>
 </template>

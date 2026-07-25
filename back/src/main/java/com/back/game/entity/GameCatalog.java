@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * 17개 게임의 채점 규칙 레지스트리(053, 121). 프론트 shellComponents.ts / mock.ts 카탈로그의
+ * 16개 게임의 채점 규칙 레지스트리(053, 121). 프론트 shellComponents.ts / mock.ts 카탈로그의
  * 게임 moduleId와 정확히 일치해야 한다. minDurationMs는 각 게임을 "정상적으로 최소 1판" 진행하는 데
  * 걸리는 시간을 넉넉히 낮춰 잡았다 — 실제 플레이를 막지 않으면서 즉시 제출(위조/재생 공격)만 거른다.
  */
@@ -28,7 +28,7 @@ public final class GameCatalog {
             // 사람 수 + 컴퓨터 응답 지연(400ms) 이상. score는 "승리까지 둔 사람 수"(적을수록 좋음)
             Map.entry("game-tictactoe", new GameDefinition("game-tictactoe", false, 400, null, null)),
 
-            // --- 121: 캐주얼 게임 9종 ---
+            // --- 121: 캐주얼 게임 8종 (한글 단어맞추기는 166에서 드롭) ---
             // 움직이는 블록을 최소 한 번은 관찰하고 탭해야 첫 점수가 남 — 사람이 반응할 시간을 감안
             Map.entry("game-tower-stack", new GameDefinition("game-tower-stack", true, 300, null, null)),
             // 조각 선택 탭 + 배치 탭, 최소 두 번의 상호작용
@@ -45,10 +45,7 @@ public final class GameCatalog {
             // 최소 1수는 둬야 하므로 0은 물리적으로 불가능한 값
             Map.entry("game-water-sort", new GameDefinition("game-water-sort", false, 400, 1, null)),
             // 타일 클릭 최소 두 번(빈칸 인접 판정), score=이동 횟수(적을수록 좋음), 0수 완성은 불가능
-            Map.entry("game-sliding-puzzle", new GameDefinition("game-sliding-puzzle", false, 400, 1, null)),
-            // 2글자 입력 + 제출 버튼 클릭까지 타이핑 시간 포함, score=시도 횟수(적을수록 좋음),
-            // 최소 1회는 제출해야 승패가 갈리므로 0회는 불가능
-            Map.entry("game-word-guess", new GameDefinition("game-word-guess", false, 600, 1, null))
+            Map.entry("game-sliding-puzzle", new GameDefinition("game-sliding-puzzle", false, 400, 1, null))
     );
 
     private GameCatalog() {

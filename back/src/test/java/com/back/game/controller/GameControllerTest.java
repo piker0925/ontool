@@ -282,15 +282,15 @@ class GameControllerTest extends AbstractMySQLIntegrationTest {
     }
 
     @Test
-    void 신규_게임은_시도_횟수_0점_제출이_거부된다() throws Exception {
-        // 121: game-word-guess는 minScore=1 — 0회 완성은 물리적으로 불가능한 값이라 거부돼야 한다.
+    void 신규_게임은_이동_횟수_0점_제출이_거부된다() throws Exception {
+        // 121: game-sliding-puzzle은 minScore=1 — 0수 완성은 물리적으로 불가능한 값이라 거부돼야 한다.
         User user = saveUser("s12", "유저12");
         String accessToken = jwtProvider.issueAccessToken(user.getId());
-        String sessionToken = startSession("game-word-guess"); // minDurationMs=600
+        String sessionToken = startSession("game-sliding-puzzle"); // minDurationMs=400
 
-        Thread.sleep(650);
+        Thread.sleep(450);
 
-        mockMvc.perform(post("/api/v1/games/game-word-guess/scores")
+        mockMvc.perform(post("/api/v1/games/game-sliding-puzzle/scores")
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType("application/json")
                         .content(scoreBody(0, sessionToken)))

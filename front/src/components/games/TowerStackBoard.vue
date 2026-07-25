@@ -12,7 +12,7 @@
           @click="onPlace"
           @touchstart.prevent="onPlace"
       />
-      <GameResultOverlay :show="state.status === 'over'" testid="game-over" title="무너졌습니다!" tone="lose">
+      <GameResultOverlay :restart="props.restart" :show="state.status === 'over'" testid="game-over" title="무너졌습니다!" tone="lose">
         <span data-testid="final-height">높이 {{ state.score }}</span>
       </GameResultOverlay>
     </div>
@@ -34,7 +34,7 @@ const BLOCK_HEIGHT = 26
 const TOP_ROW_Y = 40
 const TICK_MS = 16
 
-const props = defineProps<{ submitScore?: (score: number) => void }>()
+const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void }>()
 
 const state = ref(createTowerStackState(BOARD_WIDTH))
 const canvasRef = ref<HTMLCanvasElement | null>(null)

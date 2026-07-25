@@ -21,7 +21,7 @@
         />
       </button>
 
-      <GameResultOverlay :show="solved" testid="game-clear" title="완성했습니다!" tone="win">
+      <GameResultOverlay :restart="props.restart" :show="solved" testid="game-clear" title="완성했습니다!" tone="win">
         <span data-testid="clear-moves">{{ moveCount }}번 만에 완성</span>
       </GameResultOverlay>
     </div>
@@ -48,7 +48,7 @@ const COLOR_CLASSES: Record<string, string> = {
   c4: 'bg-violet-500',
 }
 
-const props = defineProps<{ submitScore?: (score: number) => void }>()
+const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void }>()
 
 const tubes = ref<Tubes>(createPuzzle(COLOR_COUNT, EMPTY_TUBES))
 const selected = ref<number | null>(null)

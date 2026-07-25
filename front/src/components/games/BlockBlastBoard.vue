@@ -21,7 +21,7 @@
         </template>
       </div>
 
-      <GameResultOverlay :show="state.status === 'over'" testid="game-over" title="더 이상 놓을 자리가 없습니다!" tone="lose"/>
+      <GameResultOverlay :restart="props.restart" :show="state.status === 'over'" testid="game-over" title="더 이상 놓을 자리가 없습니다!" tone="lose"/>
     </div>
 
     <div class="flex gap-3" data-testid="tray">
@@ -62,7 +62,7 @@ import GameStat from '../GameStat.vue'
 
 const GRID_SIZE = 8
 
-const props = defineProps<{ submitScore?: (score: number) => void }>()
+const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void }>()
 
 const state = ref(createBlockBlastState())
 const selectedIndex = ref(0)

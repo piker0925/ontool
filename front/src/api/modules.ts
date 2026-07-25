@@ -1,4 +1,5 @@
 import type {Module} from '../types'
+import type {ZoneId} from '../config/zones'
 import {MOCK_MODULES} from './mock'
 import {FULL_SHELL_COMPONENTS} from '../config/shellComponents'
 
@@ -44,6 +45,36 @@ const BACKEND_WIRED_FRONTEND_TOOL_IDS = new Set([
 // useCount가 영원히 0으로 고정된다 — 이런 도구만 진입 시 사용 감지 ping을 보내야 한다.
 export function needsUsagePing(mod: Module): boolean {
     return !!mod.isFrontendOnly && !BACKEND_WIRED_FRONTEND_TOOL_IDS.has(mod.id)
+}
+
+// moduleId → 한글 name 조회(관리자 통계 탭 161 등, MOCK_MODULES 레지스트리 기준). 레지스트리에
+// 없는 id(폐기된 모듈 등)면 undefined — 호출부가 raw id로 폴백한다.
+export function moduleNameFor(moduleId: string): string | undefined {
+    return META_BY_ID.get(moduleId)?.name
+}
+
+// moduleId → 소속 구역(ADR-0030: 도구당 구역 1개). 레지스트리에 없거나 zones가 비어있으면 undefined.
+export function moduleZoneFor(moduleId: string): ZoneId | undefined {
+    return META_BY_ID.get(moduleId)?.zones[0]
+}
+
+// 이 모듈이 실제로 0이 아닌 failCount를 가질 수 있는지(관리자 통계 탭 "모듈 통계" 표의 실패율
+// 컬럼 전용). 백엔드 failCount는 저장 카운터가 아니라 job 테이블에서 status=FAILED로 실시간
+// 집계된다 — 즉 실제로 Job을 만들어 백엔드 큐를 타는 도구만 실패를 기록할 수 있다. Heavy
+// 도구(isHeavy)는 당연히 여기 해당하고, isFrontendOnly=true라도 useHeavyJob 등으로 백엔드에
+// 직접 배선된 BACKEND_WIRED_FRONTEND_TOOL_IDS 도구들도 마찬가지다. 그 외 순수 프론트 계산
+// 도구는 Job을 전혀 만들지 않으므로 failCount가 영원히 0으로 고정된다 — 그런 도구의 실패율
+// 셀은 0%가 아니라 "해당 없음"으로 표시해야 한다(0%로 두면 "실패 0건인 우수 도구"처럼 잘못
+// 읽힌다).
+export function moduleCanFail(moduleId: string): boolean {
+    return !!META_BY_ID.get(moduleId)?.isHeavy || BACKEND_WIRED_FRONTEND_TOOL_IDS.has(moduleId)
+}
+
+// canFail(moduleId)===true인 전체 모듈 id 목록(관리자 "모듈 통계" 표 전용) — 아직 한 번도
+// 쓰이지 않아 tool_stats 행 자체가 없는 모듈(예: 한 번도 Job이 생성되지 않은 Heavy 도구)도
+// "사용 없음"으로 표에 나타나야 하므로, /admin/stats 응답에 없는 id를 이 목록으로 보완한다.
+export function allFailableModuleIds(): string[] {
+    return MOCK_MODULES.filter(m => moduleCanFail(m.id)).map(m => m.id)
 }
 
 export function normalizeApiModules(data: Module[]): Module[] {

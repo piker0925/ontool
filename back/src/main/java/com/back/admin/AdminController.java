@@ -60,12 +60,14 @@ public class AdminController {
         return ResponseEntity.ok(suggestionService.findAll());
     }
 
+    // 시스템 전체 댓글은 무제한으로 쌓일 수 있어 findAll()을 그대로 노출하면 응답이 무한정
+    // 커진다 — /admin/users, /admin/action-logs와 같은 page/size 페이지네이션 패턴을 그대로 적용한다.
     @GetMapping("/comments")
-    public ResponseEntity<List<AdminCommentResponse>> getComments() {
-        List<AdminCommentResponse> comments = commentService.findAll().stream()
-                .map(AdminCommentResponse::from)
-                .toList();
-        return ResponseEntity.ok(comments);
+    public ResponseEntity<PageResponse<AdminCommentResponse>> getComments(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Page<AdminCommentResponse> comments = commentService.findRecent(page, size).map(AdminCommentResponse::from);
+        return ResponseEntity.ok(PageResponse.of(comments));
     }
 
     @DeleteMapping("/comments/{id}")

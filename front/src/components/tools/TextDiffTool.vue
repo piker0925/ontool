@@ -88,7 +88,7 @@
           <!-- 모드 토글 -->
           <div class="flex overflow-hidden rounded-lg border border-border">
             <button
-                :class="mode === 'side' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'"
+                :class="mode === 'side' ? 'bg-zone-accent-life text-white' : 'text-muted-foreground hover:bg-muted hover:text-foreground'"
                 class="px-2.5 py-1 text-[11px] font-medium transition-colors"
                 type="button"
                 @click="mode = 'side'"
@@ -96,7 +96,7 @@
               나란히
             </button>
             <button
-                :class="mode === 'inline' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'"
+                :class="mode === 'inline' ? 'bg-zone-accent-life text-white' : 'text-muted-foreground hover:bg-muted hover:text-foreground'"
                 class="px-2.5 py-1 text-[11px] font-medium transition-colors"
                 type="button"
                 @click="mode = 'inline'"
@@ -122,7 +122,7 @@
             <div
                 v-for="(row, i) in renderRows"
                 :key="i"
-                :class="row.blockIndex === currentBlock && row.blockIndex !== null ? 'outline outline-1 -outline-offset-1 outline-primary/50' : ''"
+                :class="row.blockIndex === currentBlock && row.blockIndex !== null ? 'outline outline-1 -outline-offset-1 outline-zone-accent-life/50' : ''"
                 :data-block="row.blockIndex ?? undefined"
                 class="grid grid-cols-2 gap-x-2"
             >
@@ -167,7 +167,7 @@
                 :key="i"
                 :class="[
                   lineClass(line.type),
-                  line.blockIndex === currentBlock && line.blockIndex !== null ? 'outline outline-1 -outline-offset-1 outline-primary/50' : '',
+                  line.blockIndex === currentBlock && line.blockIndex !== null ? 'outline outline-1 -outline-offset-1 outline-zone-accent-life/50' : '',
                 ]"
                 :data-block="line.blockIndex ?? undefined"
                 class="flex min-w-0 rounded-sm"

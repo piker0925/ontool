@@ -19,6 +19,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -56,6 +57,22 @@ class JobWorkerTest extends AbstractMySQLIntegrationTest {
         job.setParams(Map.of());
         job.setExpiresAt(java.time.LocalDateTime.now().plusHours(1));
         return jobRepository.save(job);
+    }
+
+    private Job pendingOwnedBy(String moduleId, String ownerToken) {
+        return jobRepository.save(buildPendingOwnedBy(moduleId, ownerToken));
+    }
+
+    /** 저장하지 않고 엔티티만 구성 — 여러 건을 saveAll로 한 트랜잭션에 묶어 넣을 때 쓴다. */
+    private Job buildPendingOwnedBy(String moduleId, String ownerToken) {
+        Job job = new Job();
+        job.setModuleId(moduleId);
+        job.setOwnerToken(ownerToken);
+        job.setStatus(JobStatus.PENDING);
+        job.setInputPaths(List.of());
+        job.setParams(Map.of());
+        job.setExpiresAt(java.time.LocalDateTime.now().plusHours(1));
+        return job;
     }
 
     @Test
@@ -127,6 +144,53 @@ class JobWorkerTest extends AbstractMySQLIntegrationTest {
         await().atMost(10, SECONDS).until(() ->
                 jobRepository.findAllById(List.of(a.getId(), b.getId(), c.getId())).stream()
                         .allMatch(j -> j.getStatus() == JobStatus.DONE));
+    }
+
+    @Test
+    void lane_rotatesOwnersAcrossTicks_soLateOwnerIsServedWithoutDrainingEarlierBacklog() {
+        // 127 배선(wiring) 검증 — HEAVY 레인 permit=2(test property). echo 모듈은 즉시 완료되므로
+        // BlockingModule과 달리 permit을 점유해 묶어두지 않고, 매 폴링 틱마다 실제로 다음 owner가
+        // 회전 선택되는지를 관찰할 수 있다. A·B가 먼저 각각 여러 건을 채우고, C가 가장 나중에(가장 최근
+        // created_at) 1건만 투입한다. selectFair의 rotate 로직 자체는 JobWorkerFairnessTest가 순수
+        // 함수로 커버하지만, dispatchLane이 lastServedOwner를 실제로 저장·재사용하는지는 이 테스트가
+        // 아니면 못 잡는다 — 예를 들어 lastServedOwner.put(...) 줄이 통째로 빠져도 순수 함수 테스트는
+        // 여전히 그린이지만, 그러면 C는 A·B 백로그(16건)가 전부 빠질 때까지 DONE이 안 된다.
+        //
+        // saveAll로 17건을 한 트랜잭션에 묶어 넣는다 — 폴링 주기(200ms)가 짧아, 개별 save()를 17번
+        // 나눠 호출하면 그 자체로 수십~백여 ms가 걸려 첫 폴링 틱이 셋업 도중(A만 존재하는 상태)에
+        // 끼어들 수 있다. 그러면 "owner 수 3 > permit 2"라는 전제 자체가 틱마다 달라져 이 테스트가
+        // 회귀를 못 잡는다(실측: saveAll 없이 개별 save로 짰을 때 mutation-test로 lastServedOwner.put을
+        // 지워봤더니 이 테스트가 여전히 그린이었다 — 셋업 타이밍 경합이 원인).
+        List<Job> batch = new ArrayList<>();
+        for (int i = 0; i < 8; i++) {
+            batch.add(buildPendingOwnedBy("echo", "A"));
+        }
+        for (int i = 0; i < 8; i++) {
+            batch.add(buildPendingOwnedBy("echo", "B"));
+        }
+        Job cToSave = buildPendingOwnedBy("echo", "C");
+        batch.add(cToSave);
+        jobRepository.saveAll(batch);
+        Job c = cToSave;
+
+        // C가 DONE이 되는 시점에도 A 또는 B의 PENDING 잔여가 남아있어야 한다 — 회전이 실제로 걸려
+        // C가 A·B 백로그를 다 소진하기 전에(두 번째 틱 안에) 서비스됐다는 뜻이다.
+        // 수정 전(회전 없음) 코드라면 C는 A·B의 16건이 전부 끝난 뒤에야 DONE이 되므로 이 조건이
+        // 성립하는 순간을 관찰하지 못하고 타임아웃된다.
+        await().atMost(10, SECONDS).pollInterval(java.time.Duration.ofMillis(50)).until(() -> {
+            boolean cDone = jobRepository.findById(c.getId())
+                    .map(j -> j.getStatus() == JobStatus.DONE)
+                    .orElse(false);
+            if (!cDone) {
+                return false;
+            }
+            long remainingBacklog = jobRepository.findAll().stream()
+                    .filter(j -> "echo".equals(j.getModuleId()))
+                    .filter(j -> "A".equals(j.getOwnerToken()) || "B".equals(j.getOwnerToken()))
+                    .filter(j -> j.getStatus() == JobStatus.PENDING)
+                    .count();
+            return remainingBacklog > 0;
+        });
     }
 
     private long runningCount(String moduleId) {

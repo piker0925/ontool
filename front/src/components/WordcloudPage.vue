@@ -6,7 +6,7 @@
           v-for="t in TABS"
           :key="t.id"
           :class="tab === t.id
-          ? 'bg-primary text-primary-foreground'
+          ? 'bg-zone-accent-fun text-white'
           : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'"
           class="shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors sm:flex-1"
           @click="tab = t.id"
@@ -18,7 +18,7 @@
       <label class="text-[11px] font-medium text-muted-foreground">텍스트</label>
       <textarea
           v-model="input"
-          class="min-h-32 resize-y rounded-xl border border-border bg-card p-4 font-mono text-[13px] text-foreground outline-none placeholder:text-muted-foreground/40 focus:border-ring"
+          class="min-h-32 resize-y rounded-xl border border-border bg-card p-4 font-mono text-[13px] text-foreground outline-none placeholder:text-muted-foreground/40 focus:border-zone-accent-fun"
           placeholder="분석할 텍스트를 입력하세요..."
       />
     </div>
@@ -70,7 +70,7 @@ import {layoutWordcloud, type WordcloudColorTier} from '../utils/wordcloudLayout
 
 // 빈도 등급별 색상 — 겹치는 단어끼리도 등급 차이로 구분되도록 진하기를 달리한다 (테마 토큰만 사용).
 const COLOR_TIER_CLASS: Record<WordcloudColorTier, string> = {
-  high: 'fill-primary',
+  high: 'fill-zone-accent-fun',
   mid: 'fill-foreground',
   low: 'fill-muted-foreground',
 }

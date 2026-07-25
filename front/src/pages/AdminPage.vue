@@ -2,8 +2,14 @@
   <div class="mx-auto max-w-5xl px-6 py-8">
     <h1 class="mb-6 text-xl font-semibold text-foreground">관리자 페이지</h1>
 
+    <!-- 세션에 남은 인증정보를 검증하는 동안(새로고침 직후) — 로그인 폼이 잠깐 보였다 사라지는 걸 방지 -->
+    <div v-if="checkingAuth" class="flex items-center gap-2 p-6 text-sm text-muted-foreground">
+      <Loader2 class="size-4 animate-spin"/>
+      확인 중…
+    </div>
+
     <!-- 로그인 폼 -->
-    <div v-if="!authed" class="mx-auto max-w-md rounded-xl border border-border bg-card p-6 shadow-sm">
+    <div v-else-if="!authed" class="mx-auto max-w-md rounded-xl border border-border bg-card p-6 shadow-sm">
       <h2 class="mb-4 text-sm font-medium text-foreground">관리자 로그인</h2>
       <form class="flex flex-col gap-3" @submit.prevent="login">
         <input
@@ -430,6 +436,7 @@
 <script lang="ts" setup>
 import {ref, watch} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
+import {Loader2} from 'lucide-vue-next'
 import {apiClient} from '../api/client'
 import {COMMENT_REPORT_REASONS} from '../constants/commentReportReasons'
 import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter} from '../components/ui/dialog'
@@ -439,6 +446,9 @@ const password = ref('')
 const loginError = ref('')
 const authed = ref(false)
 let authHeader = sessionStorage.getItem('admin_auth') || ''
+// 세션에 인증정보가 있으면 유효성 확인 API 응답이 올 때까지 로그인 폼을 보여주지 않는다
+// (없으면 확인할 것도 없으므로 곧바로 로그인 폼).
+const checkingAuth = ref(!!authHeader)
 
 // --- 탭 상태 ---
 type TabId = 'stats' | 'users' | 'ops'
@@ -745,6 +755,9 @@ if (authHeader) {
         // 토큰이 유효하지 않으면 삭제
         sessionStorage.removeItem('admin_auth')
         authHeader = ''
+      })
+      .finally(() => {
+        checkingAuth.value = false
       })
 }
 </script>

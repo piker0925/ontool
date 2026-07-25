@@ -288,6 +288,41 @@ describe('AdminPage 탭-URL 동기화', () => {
     })
 })
 
+describe('AdminPage 새로고침 시 로그인 폼 깜빡임 방지', () => {
+    it('세션에 인증정보가 남아있으면, 검증 API 응답 전(마운트 직후)에는 로그인 폼이 보이지 않는다', async () => {
+        // 응답을 명시적으로 제어해 "검증 API가 아직 안 끝난 시점"을 실제 네트워크 지연처럼 만든다.
+        // (즉시 resolve되는 mock이면 await 한 번에 이미 응답이 처리돼버려 깜빡임 구간을 재현할 수 없다.)
+        let resolveStats: (value: { data: unknown[] }) => void = () => {
+        }
+        mockGet.mockImplementation((url: string) => {
+            if (url === '/admin/stats') return new Promise(resolve => { resolveStats = resolve })
+            return Promise.reject(new Error('unexpected GET ' + url))
+        })
+        sessionStorage.setItem('admin_auth', 'Basic ' + btoa('admin:password'))
+
+        const wrapper = await mountAdminPage()
+
+        // /admin/stats 검증이 아직 안 끝난 시점 — 로그인 폼도 대시보드도 아닌 확인 중 상태여야 한다.
+        expect(wrapper.find('form').exists()).toBe(false)
+        expect(wrapper.text()).not.toContain('모듈 통계')
+
+        resolveStats({data: []})
+        await flushPromises()
+
+        // 검증 완료 후에는 로그인 폼 없이 바로 대시보드가 보인다(재로그인 요구 없음).
+        expect(wrapper.find('form').exists()).toBe(false)
+        expect(wrapper.text()).toContain('모듈 통계')
+    })
+
+    it('세션에 인증정보가 없으면 마운트 직후 바로 로그인 폼이 보인다(불필요한 확인 중 상태 없음)', async () => {
+        mockAdminEndpoints()
+
+        const wrapper = await mountAdminPage()
+
+        expect(wrapper.find('form').exists()).toBe(true)
+    })
+})
+
 describe('AdminPage 댓글 신고 목록 — 댓글 삭제 버튼', () => {
     async function openReportListWithConfirm() {
         mockAdminEndpointsWithOneReport()

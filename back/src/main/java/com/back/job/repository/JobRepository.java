@@ -42,8 +42,12 @@ public interface JobRepository extends JpaRepository<Job, String> {
     /** 레인별 상태 개수 — 큐 깊이 게이트(036) 판정용. */
     int countByLaneAndStatus(Lane lane, JobStatus status);
 
-    /** 모듈별 상태 개수 — 관리자 통계의 실패 건수 집계용(060). */
-    int countByModuleIdAndStatus(String moduleId, JobStatus status);
+    // 관리자 통계 화면에서 모듈마다 실패 건수를 따로 조회하면 N+1이 되므로, 대상 모듈 id들을
+    // 한 번에 그룹핑해서 조회한다(109). RefreshTokenTheftEventRepository.countGroupedByUserIdIn과 동일한 패턴.
+    @Query("select j.moduleId as moduleId, count(j) as count from Job j " +
+            "where j.moduleId in :moduleIds and j.status = :status group by j.moduleId")
+    List<ModuleFailCount> countGroupedByModuleIdInAndStatus(
+            @Param("moduleIds") Collection<String> moduleIds, @Param("status") JobStatus status);
 
     List<Job> findAllByExpiresAtBefore(LocalDateTime now);
 
@@ -88,4 +92,9 @@ public interface JobRepository extends JpaRepository<Job, String> {
             "FROM job WHERE batch_id = :batchId",
             nativeQuery = true)
     BatchStats getBatchStats(@Param("batchId") String batchId);
+
+    interface ModuleFailCount {
+        String getModuleId();
+        Long getCount();
+    }
 }

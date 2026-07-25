@@ -1,7 +1,9 @@
 import {describe, expect, it} from 'vitest'
 import {
     annualToMonthly,
+    calcAnnualLeaveDays,
     calcAverageDailyWage,
+    calcWeeklyHolidayPay,
     daysBetweenInclusive,
     threeMonthPeriodDays,
     calcMonthlyNetPay,
@@ -197,5 +199,48 @@ describe('calcMonthlyNetPayWithNonTaxable', () => {
 
     it('비과세 소득이 0이면 calcMonthlyNetPay와 결과가 동일(하위호환)', () => {
         expect(calcMonthlyNetPayWithNonTaxable(2_500_000, 0, 1)).toEqual(calcMonthlyNetPay(2_500_000, 1))
+    })
+})
+
+describe('calcAnnualLeaveDays (연차, 근로기준법 §60)', () => {
+    it('입사 6개월차(1년 미만)는 개근 개월수만큼 발생 — 6일', () => {
+        expect(calcAnnualLeaveDays(6)).toBe(6)
+    })
+
+    it('1년 미만 최대 11일을 넘지 않음(11개월차도 11일)', () => {
+        expect(calcAnnualLeaveDays(11)).toBe(11)
+    })
+
+    it('근속 1~2년차는 기본 15일', () => {
+        expect(calcAnnualLeaveDays(12)).toBe(15)
+        expect(calcAnnualLeaveDays(23)).toBe(15)
+    })
+
+    it('근속 3년차부터 매 2년마다 1일씩 가산 — 3년차 16일, 5년차 17일', () => {
+        expect(calcAnnualLeaveDays(36)).toBe(16)
+        expect(calcAnnualLeaveDays(60)).toBe(17)
+    })
+
+    it('가산휴가를 포함해 최대 25일을 넘지 않음(21년차 이상)', () => {
+        expect(calcAnnualLeaveDays(21 * 12)).toBe(25)
+        expect(calcAnnualLeaveDays(40 * 12)).toBe(25)
+    })
+})
+
+describe('calcWeeklyHolidayPay (주휴수당)', () => {
+    it('소정근로시간 주 40시간 / 시급 10,320원 → 하루 8시간분 82,560원', () => {
+        expect(calcWeeklyHolidayPay(40, 10_320)).toBe(82_560)
+    })
+
+    it('소정근로시간이 40시간을 초과해도 8시간분에서 상한(초과분 반영 안 함)', () => {
+        expect(calcWeeklyHolidayPay(52, 10_320)).toBe(82_560)
+    })
+
+    it('소정근로시간이 주 20시간(40시간의 절반)이면 지급시간도 절반인 4시간분', () => {
+        expect(calcWeeklyHolidayPay(20, 10_320)).toBe(Math.round(4 * 10_320))
+    })
+
+    it('소정근로시간이 15시간 미만이면 지급 대상 아님(0원)', () => {
+        expect(calcWeeklyHolidayPay(14, 10_320)).toBe(0)
     })
 })

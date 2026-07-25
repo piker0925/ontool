@@ -170,3 +170,35 @@ export function calcMonthlyNetPay(monthlySalary: number, dependents: number, chi
         netPay: monthlySalary - totalDeductions,
     }
 }
+
+const MAX_ANNUAL_LEAVE_DAYS_UNDER_1YEAR = 11
+const BASE_ANNUAL_LEAVE_DAYS = 15
+const MAX_ANNUAL_LEAVE_DAYS = 25
+
+/**
+ * 근로기준법 §60 연차유급휴가 일수.
+ * - 계속근로 1년 미만: 1개월 개근마다 1일씩 발생(최대 11일)
+ * - 1년 이상: 15일 + (근속연수-1)/2 를 내림한 만큼 가산, 최대 25일(§60②③)
+ */
+export function calcAnnualLeaveDays(monthsOfService: number): number {
+    if (monthsOfService < 12) {
+        return Math.min(Math.floor(monthsOfService), MAX_ANNUAL_LEAVE_DAYS_UNDER_1YEAR)
+    }
+    const yearsOfService = Math.floor(monthsOfService / 12)
+    const bonusDays = Math.floor((yearsOfService - 1) / 2)
+    return Math.min(BASE_ANNUAL_LEAVE_DAYS + bonusDays, MAX_ANNUAL_LEAVE_DAYS)
+}
+
+const WEEKLY_HOLIDAY_MIN_SCHEDULED_HOURS = 15
+const WEEKLY_HOLIDAY_STANDARD_HOURS = 40
+const WEEKLY_HOLIDAY_PAID_HOURS = 8
+
+/**
+ * 주휴수당 — 1주 소정근로시간이 15시간 이상이고 개근한 경우 지급.
+ * 지급시간 = min(소정근로시간, 40시간) / 40 × 8시간, 금액 = 지급시간 × 시급.
+ */
+export function calcWeeklyHolidayPay(weeklyScheduledHours: number, hourlyWage: number): number {
+    if (weeklyScheduledHours < WEEKLY_HOLIDAY_MIN_SCHEDULED_HOURS) return 0
+    const paidHours = Math.min(weeklyScheduledHours, WEEKLY_HOLIDAY_STANDARD_HOURS) / WEEKLY_HOLIDAY_STANDARD_HOURS * WEEKLY_HOLIDAY_PAID_HOURS
+    return Math.round(paidHours * hourlyWage)
+}

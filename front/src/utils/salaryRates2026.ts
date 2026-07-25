@@ -29,3 +29,9 @@ export const LONG_TERM_CARE_RATE_OF_HEALTH_INSURANCE = 0.1314
  * 신뢰도 낮음 표시: 고용노동부 고시 원문 직접 확인은 못 했고 다수 2차 출처(세무·인사 정보 사이트) 일치로 확인.
  */
 export const EMPLOYMENT_INSURANCE_EMPLOYEE_RATE = 0.009
+
+/** 구직급여(실업급여) 1일 상한액 — 2026-01-01 이직자부터 적용(2019년 이후 6년 만의 인상, 66,000원→68,100원). */
+export const UNEMPLOYMENT_BENEFIT_DAILY_CAP_2026 = 68_100
+
+/** 구직급여 1일 하한액 = 이직 당시 최저시급(10,320원) × 80% × 8시간. 별도 고시 원문은 못 찾았고 2차 출처 다수 일치로 확인. */
+export const UNEMPLOYMENT_BENEFIT_DAILY_FLOOR_2026 = 66_048

@@ -1,5 +1,8 @@
 import {describe, expect, it} from 'vitest'
 import {
+    calcInstallment,
+    calcRequiredMonthlySavings,
+    compoundInterest,
     conversionRateFromDepositAndRent,
     depositMaturity,
     depositToMonthlyRent,
@@ -96,5 +99,40 @@ describe('부가세 (공급가액 ↔ 부가세포함가)', () => {
 
     it('부가세포함가 1,100,000원 → 공급가액 1,000,000원으로 정확히 역산', () => {
         expect(totalToSupply(1_100_000)).toBe(1_000_000)
+    })
+})
+
+describe('compoundInterest (복리)', () => {
+    it('원금 10,000,000원 / 연 6% / 12개월 / 월복리 → 이자 616,778원, 만기수령액 10,616,778원', () => {
+        expect(compoundInterest(10_000_000, 6, 12)).toEqual({principalTotal: 10_000_000, interest: 616_778, maturityAmount: 10_616_778})
+    })
+
+    it('같은 조건에서 복리 이자가 단리(depositMaturity) 이자보다 큼(복리 효과 확인)', () => {
+        const compound = compoundInterest(10_000_000, 6, 12)
+        const simple = depositMaturity(10_000_000, 6, 12)
+        expect(compound.interest).toBeGreaterThan(simple.interest)
+    })
+})
+
+describe('calcInstallment (할부)', () => {
+    it('원금 1,200,000원 / 연 수수료율 12% / 6개월 → 매월 207,058원, 총수수료 42,348원, 총납부액 1,242,348원', () => {
+        expect(calcInstallment(1_200_000, 12, 6)).toEqual({monthlyPayment: 207_058, totalFee: 42_348, totalPayment: 1_242_348})
+    })
+
+    it('수수료율이 0%면 수수료 없이 원금을 균등 분할한 것과 같음', () => {
+        const result = calcInstallment(1_200_000, 0, 6)
+        expect(result).toEqual({monthlyPayment: 200_000, totalFee: 0, totalPayment: 1_200_000})
+    })
+})
+
+describe('calcRequiredMonthlySavings (목표 저축액 역산)', () => {
+    it('목표 12,780,000원 / 연 12% / 12개월 → 필요 월 저축액 1,000,000원(savingsMaturity와 왕복 일관성)', () => {
+        const required = calcRequiredMonthlySavings(12_780_000, 12, 12)
+        expect(required).toBe(1_000_000)
+        expect(savingsMaturity(required, 12, 12).maturityAmount).toBe(12_780_000)
+    })
+
+    it('이자율이 0%면 목표금액을 개월수로 균등 분할한 값과 같음', () => {
+        expect(calcRequiredMonthlySavings(12_000_000, 0, 12)).toBe(1_000_000)
     })
 })

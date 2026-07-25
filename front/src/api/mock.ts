@@ -568,6 +568,57 @@ export const MOCK_MODULES: Module[] = [
         description: '컴퓨터를 상대로 3x3 판에서 한 줄을 먼저 만드는 삼목 게임',
         kind: 'game', zones: ['fun'],
     },
+    // 121: 캐주얼 게임 10종 추가.
+    {
+        id: 'game-sliding-puzzle', name: '슬라이딩 퍼즐', category: '게임', isHeavy: false, isFrontendOnly: true,
+        description: '4x4 판에서 빈칸으로 타일을 밀어 1부터 15까지 순서대로 맞추는 퍼즐',
+        kind: 'game', zones: ['fun'],
+    },
+    {
+        id: 'game-idle-clicker', name: '방치형 클리커', category: '게임', isHeavy: false, isFrontendOnly: true,
+        description: '클릭으로 코인을 모으고 업그레이드로 자동 수익을 늘리는 방치형 게임',
+        kind: 'game', zones: ['fun'],
+    },
+    {
+        id: 'game-whack-a-mole', name: '두더지잡기', category: '게임', isHeavy: false, isFrontendOnly: true,
+        description: '제한 시간 안에 무작위로 나타나는 두더지를 최대한 많이 클릭/탭하는 게임',
+        kind: 'game', zones: ['fun'],
+    },
+    {
+        id: 'game-word-guess', name: '단어 맞추기', category: '게임', isHeavy: false, isFrontendOnly: true,
+        description: '정해진 글자 수의 한국어 단어를 몇 번의 시도 안에 맞히는 워들류 게임',
+        kind: 'game', zones: ['fun'],
+    },
+    {
+        id: 'game-tower-stack', name: '타워 쌓기', category: '게임', isHeavy: false, isFrontendOnly: true,
+        description: '좌우로 움직이는 블록을 타이밍에 맞춰 탭해서 쌓아 올리는 게임',
+        kind: 'game', zones: ['fun'],
+    },
+    {
+        id: 'game-block-blast', name: '블록 블라스트', category: '게임', isHeavy: false, isFrontendOnly: true,
+        description: '블록을 그리드에 놓아 가로·세로 줄을 채우면 없애는 그리드 퍼즐',
+        kind: 'game', zones: ['fun'],
+    },
+    {
+        id: 'game-match3', name: '매치3 퍼즐', category: '게임', isHeavy: false, isFrontendOnly: true,
+        description: '인접한 타일을 교환해 같은 종류 3개 이상을 맞춰 없애는 퍼즐',
+        kind: 'game', zones: ['fun'],
+    },
+    {
+        id: 'game-breakout', name: '벽돌깨기', category: '게임', isHeavy: false, isFrontendOnly: true,
+        description: '패들로 공을 튕겨 위쪽 벽돌을 전부 깨는 고전 아케이드 게임',
+        kind: 'game', zones: ['fun'],
+    },
+    {
+        id: 'game-obstacle-dodge', name: '장애물 피하기', category: '게임', isHeavy: false, isFrontendOnly: true,
+        description: '탭이나 스페이스바로 점프해서 계속 나타나는 장애물을 피하는 플래피버드류 게임',
+        kind: 'game', zones: ['fun'],
+    },
+    {
+        id: 'game-water-sort', name: '워터소트 퍼즐', category: '게임', isHeavy: false, isFrontendOnly: true,
+        description: '여러 시험관에 섞인 색깔을 같은 색끼리 모아 분리하는 퍼즐',
+        kind: 'game', zones: ['fun'],
+    },
     // 게임은 아니지만 078의 상주형 게임 페이지 모델(GamePage)을 그대로 재사용한다 — kind는 'tool'(생략)로
     // 두어 게임 카테고리에 섞이지 않게 하고, 생산성 도구로 분류한다(component 로더는 여전히
     // shellComponents.ts를 거친다 — 렌더은 kind가 아니라 component로 결정되므로 무관, ADR-0026).

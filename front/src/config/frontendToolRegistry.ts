@@ -63,6 +63,10 @@ export const FRONTEND_TOOL_COMPONENTS: Record<string, FrontendToolEntry> = {
     'favicon-generator': {load: () => import('../components/tools/FaviconGeneratorTool.vue'), layout: 'narrow'},
     'image-to-ascii': {load: () => import('../components/tools/ImageToAsciiTool.vue'), layout: 'narrow'},
     'exif-viewer': {load: () => import('../components/tools/ExifViewerTool.vue'), layout: 'narrow'},
+    'hangul-romanizer': {load: () => import('../components/tools/HangulRomanizerTool.vue'), layout: 'narrow'},
+    'special-char-picker': {load: () => import('../components/tools/SpecialCharPickerTool.vue'), layout: 'narrow'},
+    'keyboard-typo-fixer': {load: () => import('../components/tools/KeyboardTypoFixerTool.vue'), layout: 'narrow'},
+    'char-counter': {load: () => import('../components/tools/CharCounterTool.vue'), layout: 'narrow'},
 
     'json-formatter': {load: () => import('../components/UnifiedJsonPage.vue'), layout: 'wide'},
     'data-convert': {load: () => import('../components/UnifiedConvertPage.vue'), layout: 'wide'},

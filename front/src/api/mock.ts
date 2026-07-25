@@ -68,6 +68,30 @@ export const MOCK_MODULES: Module[] = [
         zones: ['life'],
     },
     {
+        id: 'hangul-romanizer', name: '한글 이름 로마자 변환기', category: '텍스트', isHeavy: false, isFrontendOnly: true,
+        description: '국립국어원 로마자 표기법 기준으로 한글 이름을 영문으로 변환',
+        keywords: ['로마자', '영문 이름', 'romanization', '여권 영문 이름'],
+        zones: ['life'],
+    },
+    {
+        id: 'special-char-picker', name: '특수문자·이모지 모음', category: '텍스트', isHeavy: false, isFrontendOnly: true,
+        description: '카테고리별 특수문자·이모지를 클릭 한 번으로 복사',
+        keywords: ['특수문자', '이모지', '카오모지', 'symbol', 'emoji'],
+        zones: ['life'],
+    },
+    {
+        id: 'keyboard-typo-fixer', name: '한영타 변환기', category: '텍스트', isHeavy: false, isFrontendOnly: true,
+        description: '키보드 배열을 안 바꾸고 잘못 입력한 문장을 원래 의도한 글자로 되돌리기',
+        keywords: ['한영타', '오타 변환', 'dkssud', '한영 전환'],
+        zones: ['life'],
+    },
+    {
+        id: 'char-counter', name: '글자수 세기', category: '텍스트', isHeavy: false, isFrontendOnly: true,
+        description: '공백 포함/제외 글자 수·바이트 수·단어 수·줄 수 동시 표시',
+        keywords: ['글자수', '글자 수 세기', '자소서 글자수', 'word count'],
+        zones: ['life'],
+    },
+    {
         id: 'regex-tester', name: 'Regex 테스터', category: '텍스트', isHeavy: false, isFrontendOnly: true,
         description: '정규표현식 실시간 테스트', keywords: ['regex', 'regexp', '정규식', '정규표현식'],
         zones: ['dev'],

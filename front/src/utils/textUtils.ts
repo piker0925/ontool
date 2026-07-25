@@ -5,6 +5,29 @@ export function countChars(text: string): { chars: number; words: number; bytes:
     return {chars, words, bytes}
 }
 
+export interface CharStatsDetailed {
+    charsWithSpace: number
+    charsWithoutSpace: number
+    bytes: number
+    words: number
+    lines: number
+}
+
+// 글자수 세기 도구용 — countChars보다 세분화된 통계(공백 제외 글자 수, 줄 수 포함).
+// 기존 countChars는 UnifiedTextUtilsPage(dev 존)의 "글자 수" 탭이 이미 쓰고 있어 그대로 둔다.
+export function countCharsDetailed(text: string): CharStatsDetailed {
+    if (text === '') {
+        return {charsWithSpace: 0, charsWithoutSpace: 0, bytes: 0, words: 0, lines: 0}
+    }
+    return {
+        charsWithSpace: text.length,
+        charsWithoutSpace: text.replace(/\s/g, '').length,
+        bytes: new TextEncoder().encode(text).length,
+        words: text.trim() === '' ? 0 : text.trim().split(/\s+/).length,
+        lines: text.split('\n').length,
+    }
+}
+
 // ── 한영 변환 (두벌식) ────────────────────────────────────────────────────────
 
 const CHOSUNG = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ']
@@ -60,6 +83,20 @@ function buildSyllable(cho: string, jung: string, jong = ''): string {
     const ji = JONGSUNG.indexOf(jong)
     if (ci < 0 || vi < 0 || ji < 0) return cho + jung + jong
     return String.fromCharCode(SYLLABLE_BASE + (ci * 21 + vi) * 28 + ji)
+}
+
+// 한/영 오타 변환 방향을 문자 구성비로 추정한다.
+// 한글이 더 많으면(영문으로 치려다 한글 자판으로 친 경우) ko-en, 그 반대(라틴 문자가 더 많으면
+// 한글로 치려다 영문 자판으로 친 경우)면 en-ko. 신호가 없으면(둘 다 0, 동률) en-ko를 기본값으로 한다.
+export function detectKeyboardDirection(text: string): 'ko-en' | 'en-ko' {
+    let hangulCount = 0
+    let latinCount = 0
+    for (const ch of text) {
+        const code = ch.charCodeAt(0)
+        if (code >= SYLLABLE_BASE && code <= 0xD7A3) hangulCount++
+        else if (/[a-zA-Z]/.test(ch)) latinCount++
+    }
+    return hangulCount > latinCount ? 'ko-en' : 'en-ko'
 }
 
 export function convertKeyboard(text: string, direction: 'ko-en' | 'en-ko'): string {

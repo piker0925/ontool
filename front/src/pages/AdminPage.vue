@@ -102,6 +102,43 @@
                 <h3 class="mb-3 text-xs font-medium text-muted-foreground">일별 신규 가입자</h3>
                 <LineChart :data="dailySignupChartData" value-label="가입"/>
               </div>
+              <!-- 구역별 사용량 분포(161) — ToolStats를 모듈 레지스트리 zones와 조인해 구역별 합산 -->
+              <div>
+                <h3 class="mb-3 text-xs font-medium text-muted-foreground">구역별 사용량 분포</h3>
+                <DonutChart :data="zoneUsageDonutChartData" :value-formatter="v => v.toLocaleString()"/>
+              </div>
+            </div>
+          </section>
+
+          <!-- 모듈별 실패율 랭킹(161) — 같은 stats 목록의 failCount/useCount 비율 기준 -->
+          <section class="rounded-xl border border-border bg-card shadow-sm">
+            <div class="border-b border-border px-5 py-3">
+              <h2 class="text-sm font-medium text-foreground">모듈별 실패율 랭킹</h2>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                <tr class="border-b border-border bg-muted/50 text-left text-xs text-muted-foreground">
+                  <th class="px-5 py-3 font-medium">순위</th>
+                  <th class="px-5 py-3 font-medium">모듈</th>
+                  <th class="px-5 py-3 font-medium text-right">사용 횟수</th>
+                  <th class="px-5 py-3 font-medium text-right">실패</th>
+                  <th class="px-5 py-3 font-medium text-right">실패율</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-if="moduleFailRateRankingData.length === 0">
+                  <td class="px-5 py-6 text-center text-muted-foreground" colspan="5">데이터 없음</td>
+                </tr>
+                <tr v-for="(r, i) in moduleFailRateRankingData" :key="r.moduleId" class="border-b border-border last:border-0 hover:bg-muted/20">
+                  <td class="px-5 py-3 text-muted-foreground">{{ i + 1 }}</td>
+                  <td class="px-5 py-3 text-foreground">{{ r.name }}</td>
+                  <td class="px-5 py-3 text-right text-foreground">{{ r.useCount.toLocaleString() }}</td>
+                  <td class="px-5 py-3 text-right text-destructive">{{ r.failCount.toLocaleString() }}</td>
+                  <td class="px-5 py-3 text-right font-medium text-destructive">{{ (r.failRate * 100).toFixed(1) }}%</td>
+                </tr>
+                </tbody>
+              </table>
             </div>
           </section>
 
@@ -263,14 +300,14 @@
           </section>
         </div>
 
-        <!-- 3. 운영 탭 -->
-        <div v-if="currentTab === 'ops'" class="flex flex-col gap-6">
-          
+        <!-- 3. 작업 큐 탭 (161 — 기존 "운영" 탭 분할) -->
+        <div v-if="currentTab === 'jobQueue'" class="flex flex-col gap-6">
+
           <!-- 작업 큐(Jobs) 모니터링 -->
           <section class="rounded-xl border border-border bg-card shadow-sm">
             <div class="flex items-center justify-between border-b border-border px-5 py-3">
               <h2 class="text-sm font-medium text-foreground">진행 중인 작업 (Jobs)</h2>
-              <button class="text-xs text-muted-foreground hover:text-foreground" @click="loadOps">새로고침</button>
+              <button class="text-xs text-muted-foreground hover:text-foreground" @click="loadJobQueue">새로고침</button>
             </div>
             <div class="overflow-x-auto">
               <table class="w-full text-sm">
@@ -306,6 +343,10 @@
               </table>
             </div>
           </section>
+        </div>
+
+        <!-- 4. 커뮤니티 관리 탭 (161 — 기존 "운영" 탭 분할) -->
+        <div v-if="currentTab === 'community'" class="flex flex-col gap-6">
 
           <!-- 건의사항 -->
           <section class="rounded-xl border border-border bg-card shadow-sm">
@@ -433,6 +474,10 @@
               </li>
             </ul>
           </section>
+        </div>
+
+        <!-- 5. 감사 로그 탭 (161 — 기존 "운영" 탭 분할) -->
+        <div v-if="currentTab === 'auditLog'" class="flex flex-col gap-6">
 
           <!-- 관리자 액션 감사로그 — 타임라인이 표와 같은 정보(시각·액션·대상 ID)를 그대로 담으면서
                시간 흐름·액션 종류를 더 잘 드러내므로 표를 완전히 대체한다(118 acceptance criteria 판단). -->
@@ -445,7 +490,6 @@
               <ActionLogTimeline :items="actionLogTimelineItems" :legend="actionLogLegend"/>
             </div>
           </section>
-
         </div>
       </div>
     </div>
@@ -522,6 +566,8 @@ import GaugeMeter from '../components/charts/GaugeMeter.vue'
 import StackedAreaChart from '../components/charts/StackedAreaChart.vue'
 import LineChart from '../components/charts/LineChart.vue'
 import ActionLogTimeline, {type TimelineItem, type TimelineLegendEntry} from '../components/charts/ActionLogTimeline.vue'
+import {moduleCanFail, moduleNameFor, moduleZoneFor} from '../api/modules'
+import {moduleFailRateRanking, moduleUsageChartData as moduleUsageChartDataOf, zoneUsageDonutData} from './adminStatsDerivations'
 
 const username = ref('')
 const password = ref('')
@@ -533,11 +579,15 @@ let authHeader = sessionStorage.getItem('admin_auth') || ''
 const checkingAuth = ref(!!authHeader)
 
 // --- 탭 상태 ---
-type TabId = 'stats' | 'users' | 'ops'
+// 161: 기존 "운영" 탭 하나에 성격이 다른 6개 섹션(Job 큐·건의사항·댓글 관리·댓글신고 2종·감사로그)이
+// 눌러담겨 있던 것을 3개 탭으로 분할(ADR-0035 — 사이드바·라우트 전환은 반려, 상단 탭 개수만 늘림).
+type TabId = 'stats' | 'users' | 'jobQueue' | 'community' | 'auditLog'
 const tabs = [
   {id: 'stats', name: '통계'},
   {id: 'users', name: '유저 관리'},
-  {id: 'ops', name: '운영 (큐·피드백)'},
+  {id: 'jobQueue', name: '작업 큐'},
+  {id: 'community', name: '커뮤니티 관리'},
+  {id: 'auditLog', name: '감사 로그'},
 ]
 
 const route = useRoute()
@@ -689,13 +739,21 @@ const commentReports = ref<CommentReportItem[]>([])
 const reportStatusFilter = ref('')
 const reportReasonFilter = ref('')
 const reportUserAggregates = ref<CommentReportUserAggregateItem[]>([])
+// 커뮤니티 관리 탭(161)은 소스가 4개(건의사항/댓글/신고 개별/신고 유저별 누적)라 특정 배열의
+// .length === 0만으로는 "첫 방문 여부"를 정확히 판단할 수 없다 — 전용 플래그로 가드한다.
+const communityLoaded = ref(false)
 
 // --- 대시보드 차트 파생 데이터(118) ---
-// 모듈 사용량 막대는 값 기준 정렬 — 단일 계열(색 하나)이라 정렬해도 "색이 순위를 따라가는" 문제가 없다.
-// 화면 밀도를 위해 상위 10개만 보여준다.
-const moduleUsageChartData = computed(() =>
-    [...stats.value].sort((a, b) => b.useCount - a.useCount).slice(0, 10)
-        .map(s => ({label: s.moduleId, value: s.useCount})))
+// 순수 파생 로직은 adminStatsDerivations.ts로 분리해 단위 테스트한다(161) — 여기서는 이미 불러온
+// stats/모듈 레지스트리를 그 함수들에 연결하기만 한다.
+const moduleUsageChartData = computed(() => moduleUsageChartDataOf(stats.value, moduleNameFor))
+
+// "모듈별 실패율 랭킹"(161) — 같은 stats 목록의 failCount/useCount 비율 기준, 이미 불러온 데이터의 재가공.
+// canFail로 순수 프론트 계산 도구(failCount가 구조상 영원히 0)를 후보에서 제외한다.
+const moduleFailRateRankingData = computed(() => moduleFailRateRanking(stats.value, moduleNameFor, moduleCanFail))
+
+// "구역별 사용량 분포"(161) — stats를 모듈 레지스트리의 zones[0](ADR-0030)과 조인해 구역별 useCount 합산.
+const zoneUsageDonutChartData = computed(() => zoneUsageDonutData(stats.value, moduleZoneFor))
 
 const laneDonutData = computed(() => {
   const byLane = new Map(dashboardStats.value?.laneDistribution.map(d => [d.lane, d.count]) ?? [])
@@ -742,7 +800,11 @@ function switchTab(tab: TabId) {
   if (tab === 'stats' && stats.value.length === 0) loadStats()
   if (tab === 'stats' && dashboardStats.value === null) loadDashboardStats()
   if (tab === 'users' && users.value.length === 0) loadUsers()
-  if (tab === 'ops' && jobs.value.length === 0) loadOps()
+  if (tab === 'jobQueue' && jobs.value.length === 0) loadJobQueue()
+  // 커뮤니티 관리는 건의사항/댓글/댓글신고 2종, 총 4개의 독립된 소스를 한 번에 불러온다 —
+  // 그중 하나(예: 건의사항)만 비어 있는 상태로 잘못 판단하지 않도록 전용 플래그로 첫 방문만 가드한다.
+  if (tab === 'community' && !communityLoaded.value) loadCommunity()
+  if (tab === 'auditLog' && actionLogs.value.length === 0) loadActionLogs()
 }
 
 async function loadStats() {
@@ -899,23 +961,31 @@ async function confirmDeleteUser() {
   }
 }
 
-async function loadOps() {
+// --- 작업 큐 탭 ---
+async function loadJobQueue() {
+  try {
+    const res = await apiClient.get<JobItem[]>('/admin/jobs?status=PENDING,RUNNING', {headers: {Authorization: authHeader}})
+    jobs.value = res.data
+  } catch (e) {
+    console.error('Failed to load jobs', e)
+  }
+}
+
+// --- 커뮤니티 관리 탭 ---
+async function loadCommunity() {
   const headers = {Authorization: authHeader}
   try {
-    const [jobsRes, sugRes, comRes, logRes] = await Promise.allSettled([
-      apiClient.get<JobItem[]>('/admin/jobs?status=PENDING,RUNNING', {headers}),
+    const [sugRes, comRes] = await Promise.allSettled([
       apiClient.get<SuggestionItem[]>('/admin/suggestions', {headers}),
       apiClient.get<CommentItem[]>('/admin/comments', {headers}),
-      apiClient.get('/admin/action-logs', {headers}),
     ])
-    if (jobsRes.status === 'fulfilled') jobs.value = jobsRes.value.data
     if (sugRes.status === 'fulfilled') suggestions.value = sugRes.value.data
     if (comRes.status === 'fulfilled') comments.value = comRes.value.data
-    if (logRes.status === 'fulfilled') actionLogs.value = logRes.value.data.content
   } catch (e) {
-    console.error('Failed to load ops data', e)
+    console.error('Failed to load community data', e)
   }
   await Promise.allSettled([loadCommentReports(), loadReportUserAggregates()])
+  communityLoaded.value = true
 }
 
 // --- 댓글 신고(099) ---

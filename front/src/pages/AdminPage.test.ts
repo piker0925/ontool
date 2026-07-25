@@ -304,16 +304,16 @@ describe('AdminPage 유저 관리 — 회원 정지(056)', () => {
 })
 
 describe('AdminPage 댓글 관리', () => {
-    it('운영 탭으로 전환하면 전체 댓글 목록을 불러와 모듈 id와 함께 렌더링한다', async () => {
+    it('커뮤니티 관리 탭으로 전환하면 전체 댓글 목록을 불러와 모듈 id와 함께 렌더링한다', async () => {
         mockAdminEndpoints()
 
         const wrapper = await mountAdminPage()
         await loginAsAdmin(wrapper)
 
-        // 댓글 관리는 "운영" 탭 안에 있다 — 관리자 화면이 3탭(통계/유저 관리/운영) 구조로
-        // 리팩터링되면서 탭별 지연 로딩이 됐다(AI_SYNC.md 2026-07-18).
-        const opsTab = wrapper.findAll('button').find(b => b.text().includes('운영'))
-        await opsTab?.trigger('click')
+        // 댓글 관리는 "커뮤니티 관리" 탭 안에 있다 — 관리자 화면이 5탭(통계/유저 관리/작업 큐/
+        // 커뮤니티 관리/감사 로그) 구조로 리팩터링되면서(161) 옛 "운영" 탭이 3개로 쪼개졌다.
+        const communityTab = wrapper.findAll('button').find(b => b.text().includes('커뮤니티 관리'))
+        await communityTab?.trigger('click')
         await flushPromises()
 
         expect(mockGet).toHaveBeenCalledWith('/admin/comments', expect.anything())
@@ -323,20 +323,84 @@ describe('AdminPage 댓글 관리', () => {
 })
 
 describe('AdminPage 관리자 액션 로그', () => {
-    it('운영 탭으로 전환하면 액션 로그 목록을 불러와 액션 타입·대상 id와 함께 렌더링한다', async () => {
+    it('감사 로그 탭으로 전환하면 액션 로그 목록을 불러와 액션 타입·대상 id와 함께 렌더링한다', async () => {
         mockAdminEndpoints()
 
         const wrapper = await mountAdminPage()
         await loginAsAdmin(wrapper)
 
-        const opsTab = wrapper.findAll('button').find(b => b.text().includes('운영'))
-        await opsTab?.trigger('click')
+        const auditLogTab = wrapper.findAll('button').find(b => b.text().includes('감사 로그'))
+        await auditLogTab?.trigger('click')
         await flushPromises()
 
         expect(mockGet).toHaveBeenCalledWith('/admin/action-logs', expect.anything())
         // 118: 표를 타임라인으로 대체하면서 원시 enum 대신 한글 라벨로 보여준다.
         expect(wrapper.text()).toContain('댓글 삭제')
         expect(wrapper.text()).toContain('대상 ID 5')
+    })
+})
+
+describe('AdminPage 작업 큐 탭', () => {
+    it('작업 큐 탭으로 전환하면 Job 목록만 불러오고(다른 탭 데이터는 요청하지 않음) 렌더링한다', async () => {
+        mockGet.mockImplementation((url: string) => {
+            if (url === '/admin/stats') return Promise.resolve({data: []})
+            if (url.startsWith('/admin/jobs')) {
+                return Promise.resolve({
+                    data: [{id: 'job-1', moduleId: 'pdf-merge', lane: 'HEAVY', status: 'RUNNING', createdAt: '2026-07-25T09:00:00'}],
+                })
+            }
+            return Promise.reject(new Error('unexpected GET ' + url))
+        })
+
+        const wrapper = await mountAdminPage()
+        await loginAsAdmin(wrapper)
+        const jobQueueTab = wrapper.findAll('button').find(b => b.text().includes('작업 큐'))
+        await jobQueueTab?.trigger('click')
+        await flushPromises()
+
+        expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('/admin/jobs'), expect.anything())
+        expect(mockGet).not.toHaveBeenCalledWith('/admin/comments', expect.anything())
+        expect(mockGet).not.toHaveBeenCalledWith('/admin/action-logs', expect.anything())
+        expect(wrapper.text()).toContain('pdf-merge')
+    })
+})
+
+describe('AdminPage 커뮤니티 관리 탭 — 지연 로딩', () => {
+    it('첫 방문 시 건의사항·댓글·신고 개별 목록·신고 유저별 누적 4개를 전부 불러온다', async () => {
+        mockAdminEndpoints()
+
+        const wrapper = await mountAdminPage()
+        await loginAsAdmin(wrapper)
+        const communityTab = wrapper.findAll('button').find(b => b.text().includes('커뮤니티 관리'))
+        await communityTab?.trigger('click')
+        await flushPromises()
+
+        expect(mockGet).toHaveBeenCalledWith('/admin/suggestions', expect.anything())
+        expect(mockGet).toHaveBeenCalledWith('/admin/comments', expect.anything())
+        expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('/admin/comment-reports/users'), expect.anything())
+        expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('/admin/comment-reports'), expect.anything())
+        // 다른 탭(작업 큐·감사 로그) 데이터는 아직 요청하지 않아야 한다.
+        expect(mockGet).not.toHaveBeenCalledWith(expect.stringContaining('/admin/jobs'), expect.anything())
+        expect(mockGet).not.toHaveBeenCalledWith('/admin/action-logs', expect.anything())
+    })
+
+    it('재방문 시(이미 로드됨) 데이터를 다시 불러오지 않는다', async () => {
+        mockAdminEndpoints()
+
+        const wrapper = await mountAdminPage()
+        await loginAsAdmin(wrapper)
+        const communityTab = wrapper.findAll('button').find(b => b.text().includes('커뮤니티 관리'))
+        const statsTab = wrapper.findAll('button').find(b => b.text().includes('통계'))
+        await communityTab?.trigger('click')
+        await flushPromises()
+
+        const callCountAfterFirstVisit = mockGet.mock.calls.filter(c => c[0] === '/admin/suggestions').length
+
+        await statsTab?.trigger('click')
+        await communityTab?.trigger('click')
+        await flushPromises()
+
+        expect(mockGet.mock.calls.filter(c => c[0] === '/admin/suggestions').length).toBe(callCountAfterFirstVisit)
     })
 })
 
@@ -351,20 +415,20 @@ describe('AdminPage 탭-URL 동기화', () => {
         // 기본값은 통계 탭 — 쿼리가 없다.
         expect(router.currentRoute.value.query.tab).toBeUndefined()
 
-        const opsTab = wrapper.findAll('button').find(b => b.text().includes('운영'))
-        await opsTab?.trigger('click')
+        const auditLogTab = wrapper.findAll('button').find(b => b.text().includes('감사 로그'))
+        await auditLogTab?.trigger('click')
         await flushPromises()
 
-        expect(router.currentRoute.value.query.tab).toBe('ops')
+        expect(router.currentRoute.value.query.tab).toBe('auditLog')
 
         // 재마운트(새로고침 흉내) — sessionStorage에 남은 admin_auth로 자동 로그인되고(실제 새로고침과 동일),
-        // 같은 쿼리로 열면 통계가 아니라 운영 탭이 바로 보여야 한다.
+        // 같은 쿼리로 열면 통계가 아니라 감사 로그 탭이 바로 보여야 한다.
         wrapper.unmount()
-        const reloaded = await mountAdminPage(newRouter(), {tab: 'ops'})
+        const reloaded = await mountAdminPage(newRouter(), {tab: 'auditLog'})
         await flushPromises()
 
         expect(mockGet).toHaveBeenCalledWith('/admin/action-logs', expect.anything())
-        // 통계 탭의 "모듈 통계" 제목은 안 보이고, 운영 탭 내용만 보여야 한다(기본값 stats로 되돌아가지 않았다는 대조 확인).
+        // 통계 탭의 "모듈 통계" 제목은 안 보이고, 감사 로그 탭 내용만 보여야 한다(기본값 stats로 되돌아가지 않았다는 대조 확인).
         expect(reloaded.text()).not.toContain('모듈 통계')
         expect(reloaded.text()).toContain('관리자 액션 로그')
     })
@@ -421,8 +485,8 @@ describe('AdminPage 댓글 신고 목록 — 댓글 삭제 버튼', () => {
 
         const wrapper = await mountAdminPage()
         await loginAsAdmin(wrapper)
-        const opsTab = wrapper.findAll('button').find(b => b.text().includes('운영'))
-        await opsTab?.trigger('click')
+        const communityTab = wrapper.findAll('button').find(b => b.text().includes('커뮤니티 관리'))
+        await communityTab?.trigger('click')
         await flushPromises()
 
         const deleteBtn = wrapper.findAll('button').find(b => b.text() === '댓글 삭제')
@@ -483,8 +547,8 @@ describe('AdminPage 댓글 신고 목록 — 댓글 삭제 버튼 비활성화',
     async function openReportList() {
         const wrapper = await mountAdminPage()
         await loginAsAdmin(wrapper)
-        const opsTab = wrapper.findAll('button').find(b => b.text().includes('운영'))
-        await opsTab?.trigger('click')
+        const communityTab = wrapper.findAll('button').find(b => b.text().includes('커뮤니티 관리'))
+        await communityTab?.trigger('click')
         await flushPromises()
         return wrapper
     }

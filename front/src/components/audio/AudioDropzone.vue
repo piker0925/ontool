@@ -23,6 +23,7 @@
 <script lang="ts" setup>
 import {ref} from 'vue'
 import {audioBufferLikeToPcm} from '../../utils/audioDecode'
+import {sniffWavSampleRate} from '../../utils/wavSampleRateSniff'
 import type {PcmAudio} from '../../utils/audioTypes'
 
 const emit = defineEmits<{
@@ -42,7 +43,7 @@ async function decodeFile(file: File) {
     const arrayBuffer = await file.arrayBuffer()
     const AudioContextCtor = window.AudioContext ?? (window as unknown as {webkitAudioContext?: typeof AudioContext}).webkitAudioContext
     if (!AudioContextCtor) throw new Error('이 브라우저는 오디오 처리를 지원하지 않습니다')
-    const ctx = new AudioContextCtor()
+    const ctx = createAudioContext(AudioContextCtor, arrayBuffer)
     try {
       const audioBuffer = await ctx.decodeAudioData(arrayBuffer)
       const pcm = audioBufferLikeToPcm(audioBuffer)
@@ -57,6 +58,25 @@ async function decodeFile(file: File) {
   } finally {
     loading.value = false
   }
+}
+
+/**
+ * WAV 파일이면 헤더에서 원본 샘플레이트를 읽어 AudioContext를 그 값으로 만든다 — 그러면
+ * decodeAudioData가 하드웨어 기본 샘플레이트로 강제 리샘플링하지 않는다(이슈 110, wavSampleRateSniff
+ * 참조). mp3 등 비-WAV 입력이거나, 브라우저가 그 샘플레이트를 지원하지 않아 생성자가 던지면
+ * (스펙상 UA가 지원 안 하는 값이면 NotSupportedError) 기본 AudioContext로 폴백한다 — 이 경우
+ * 여전히 하드웨어 기본 샘플레이트로 리샘플링되지만, 이전과 동일한 동작이라 회귀가 아니다.
+ */
+function createAudioContext(ctor: typeof AudioContext, arrayBuffer: ArrayBuffer): AudioContext {
+  const nativeSampleRate = sniffWavSampleRate(arrayBuffer)
+  if (nativeSampleRate != null) {
+    try {
+      return new ctor({sampleRate: nativeSampleRate})
+    } catch {
+      // 폴백 — 아래 기본 생성자로 진행
+    }
+  }
+  return new ctor()
 }
 
 function onDrop(e: DragEvent) {

@@ -39,6 +39,19 @@ describe('encodeWav', () => {
 })
 
 describe('encodeMp3', () => {
+    // 128kbps였던 기본값을 110 실측(원음 대비 SNR 14.36dB→192kbps 26.58dB, 파일 크기·인코딩
+    // 시간 부담은 미미)을 근거로 192kbps로 올렸다 — 값 자체를 회귀 방지로 고정한다.
+    it('kbps를 생략하면 기본값 192kbps로 인코딩한다', () => {
+        const audio: PcmAudio = {interleaved: generateSineWave(440, 0.3, 44100, 0.5, 2), sampleRate: 44100, channels: 2}
+
+        const withDefault = encodeMp3(audio)
+        const explicit192 = encodeMp3(audio, 192)
+        const explicit128 = encodeMp3(audio, 128)
+
+        expect(Array.from(withDefault)).toEqual(Array.from(explicit192))
+        expect(Array.from(withDefault)).not.toEqual(Array.from(explicit128))
+    })
+
     it('유효한 MP3 프레임 동기 헤더로 시작하는 비어있지 않은 바이트를 생성한다', () => {
         const audio: PcmAudio = {interleaved: generateSineWave(440, 0.5, 44100, 0.5, 2), sampleRate: 44100, channels: 2}
         const mp3 = encodeMp3(audio)

@@ -98,6 +98,29 @@ A·B의 PENDING 백로그가 완전히 빌 때까지(이 실험에서는 거의 
 이 결과가 이슈 127(라운드로빈 소유자 확장 수정)의 **before 증거**다. 원본 데이터:
 [`raw/scenario2/timeseries.csv`](raw/scenario2/timeseries.csv), [`raw/scenario2/all-jobs.tsv`](raw/scenario2/all-jobs.tsv)
 
+### 2-후속. HEAVY 레인(permit=2), 소유자 3명 — 127 수정 후 재측정 (before/after)
+
+127이 `JobWorker`에 레인별 `lastServedOwner`(마지막으로 서비스한 소유자)를 기억해, 다음 틱은 그
+다음 소유자부터 owner 순회를 시작하도록(회전) 고쳤다. 같은 하네스(같은 스크립트, `N_A=20 N_B=20
+N_C=3`)로 재실행한 결과(측정: 2026-07-25, 로컬):
+
+| 항목 | Before(127 이전, 위 표) | After(127 이후) |
+|---|---|---|
+| C의 첫 작업이 PENDING을 벗어난 시각 | 56.6초 | **4.0초** |
+| 그 시점 A/B 잔여 PENDING | 0건 / 1건 (**A·B 백로그가 이미 거의 다 빈 뒤에야** C 진입) | **18건 / 19건** (A·B 백로그가 여전히 두터운 상태에서 C 진입) |
+| C의 3건이 전부 DONE된 시각 | 61.7초 (A+B가 완전히 빈 59.1초 **직후**) | **10.7초** (A+B는 총 40건 중 34건이나 남은 상태) |
+| A+B 백로그가 완전히 빈 시각 | 59.1초 | 70.1초 (총 처리량은 거의 동일 — 처리 순서만 진짜 라운드로빈으로 바뀜) |
+
+**해석**: C는 더 이상 A·B의 40건 백로그가 빌 때까지 기다리지 않는다 — 두 번째 폴링 틱(기본 주기
+3초, 관측 4.0초)에 바로 서비스되고, A·B가 각각 18·19건이나 남아있는 상태에서도 회전이 개입해
+C를 끼워 넣었다. A+B의 총 소요 시간(59.1초→70.1초)이 약간 늘어난 건 처리량 저하가 아니라
+**공정성 확보의 예상된 트레이드오프**다 — 매 틱 permit 2개 중 하나를 C에게 양보하는 틱이 있으면
+그만큼 A·B 몫 처리가 뒤로 밀린다(총 작업 43건을 permit 2개로 처리하는 총량 자체는 거의 동일,
+순서가 owner 단위 FIFO에서 진짜 라운드로빈으로 바뀐 것뿐이다). 원본 데이터:
+[`raw/scenario2-after-127/timeseries.csv`](raw/scenario2-after-127/timeseries.csv),
+[`raw/scenario2-after-127/all-jobs.tsv`](raw/scenario2-after-127/all-jobs.tsv),
+[`raw/scenario2-after-127/summary.txt`](raw/scenario2-after-127/summary.txt)
+
 ### 3. VIDEO 레인(permit=1), 소유자 2명 — 최악 대기시간
 
 A가 video-to-gif 8건 투입, B가 뒤늦게 1건 투입.
@@ -157,5 +180,5 @@ B의 최악 대기시간은 permit·틱 주기(약 3초)로 결정되지, 처리
          COUNT(*) AS sample_size
   FROM job WHERE started_at IS NOT NULL AND created_at > NOW() - INTERVAL 30 DAY;
   ```
-- **127(라운드로빈 소유자 확장 버그 수정) 완료 후 재측정**: 이 벤치마크는 127의 **before** 증거다. 127
-  머지 후 같은 하네스(특히 시나리오 2)로 재실행해 before/after 비교표를 이 문서와 README에 추가해야 한다.
+- ~~127(라운드로빈 소유자 확장 버그 수정) 완료 후 재측정~~ — 완료. 시나리오 2를 같은 하네스로 재실행한
+  before/after 비교표를 위 "2-후속" 절에 추가했다(측정 2026-07-25).

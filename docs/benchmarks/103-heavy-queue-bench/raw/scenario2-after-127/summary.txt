@@ -1,0 +1,3 @@
+N_A=20 N_B=20 N_C=3
+C's first job left PENDING at elapsed=4.0s
+A+B backlog fully drained at elapsed=70.1s

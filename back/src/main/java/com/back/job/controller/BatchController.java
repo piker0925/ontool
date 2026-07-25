@@ -7,9 +7,11 @@ import com.back.job.dto.BatchProgressResponse;
 import com.back.job.entity.Job;
 import com.back.job.entity.JobStatus;
 import com.back.job.repository.BatchStats;
+import com.back.job.service.BatchZipNamer;
 import com.back.job.service.JobService;
 import com.back.job.service.ZipEntryNamer;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -53,7 +56,7 @@ public class BatchController {
                 ZipEntryNamer namer = new ZipEntryNamer();
                 for (Job job : doneJobs) {
                     String key = job.getResultKey();
-                    zip.putNextEntry(new ZipEntry(namer.nameFor(firstInputPath(job), key)));
+                    zip.putNextEntry(new ZipEntry(namer.nameFor(job.firstInputPath(), key)));
                     try (InputStream in = fileStorage.openStream(key)) {
                         in.transferTo(zip);
                     }
@@ -62,14 +65,17 @@ public class BatchController {
             }
         };
 
+        // zip 파일 자체의 이름: batch-{UUID}.zip이 아니라 첫 완료 작업의 원본 베이스명 기반(112).
+        String firstInputPath = doneJobs.isEmpty() ? "" : doneJobs.get(0).firstInputPath();
+        String zipFilename = BatchZipNamer.nameFor(firstInputPath, doneJobs.size(), id);
+        String contentDisposition = ContentDisposition.attachment()
+                .filename(zipFilename, StandardCharsets.UTF_8)
+                .build()
+                .toString();
+
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=batch-" + id + ".zip")
+                .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition)
                 .body(body);
-    }
-
-    private static String firstInputPath(Job job) {
-        List<String> inputs = job.getInputPaths();
-        return (inputs == null || inputs.isEmpty()) ? "" : inputs.get(0);
     }
 }

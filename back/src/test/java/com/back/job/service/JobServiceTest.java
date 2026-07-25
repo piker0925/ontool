@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import com.back.global.exception.AppException;
 import com.back.global.exception.ErrorCode;
@@ -92,5 +93,38 @@ class JobServiceTest {
     void assertWithinQuota_nullOwner_isSkipped() {
         JobService service = new JobService(jobRepository, toolStatsService, Duration.ofMinutes(30), 20);
         assertThatCode(() -> service.assertWithinQuota(null, 999)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void displayFilenameFor_jobId를_찾으면_원본파일명_기반_이름을_돌려준다() {
+        JobService service = new JobService(jobRepository, toolStatsService, Duration.ofMinutes(30), 20);
+        Job job = new Job();
+        job.setInputPaths(List.of("/uploads/temp/x/invoice.pdf"));
+        when(jobRepository.findById("job-1")).thenReturn(Optional.of(job));
+
+        String filename = service.displayFilenameFor("job-1/result.txt", "result.txt");
+
+        assertThat(filename).isEqualTo("invoice.txt");
+    }
+
+    @Test
+    void displayFilenameFor_job을_못찾으면_fallback을_돌려준다() {
+        // "찾으면 원본명"과 "못 찾으면 fallback"을 같은 키 모양으로 구분 — 하나만 검증하면
+        // findById 결과와 무관하게 항상 같은 값이 나오는 구현도 통과해버린다.
+        JobService service = new JobService(jobRepository, toolStatsService, Duration.ofMinutes(30), 20);
+        when(jobRepository.findById("missing")).thenReturn(Optional.empty());
+
+        String filename = service.displayFilenameFor("missing/result.txt", "result.txt");
+
+        assertThat(filename).isEqualTo("result.txt");
+    }
+
+    @Test
+    void displayFilenameFor_키에_구분자가_없으면_조회없이_fallback을_돌려준다() {
+        JobService service = new JobService(jobRepository, toolStatsService, Duration.ofMinutes(30), 20);
+
+        String filename = service.displayFilenameFor("no-slash-key", "fallback.txt");
+
+        assertThat(filename).isEqualTo("fallback.txt");
     }
 }

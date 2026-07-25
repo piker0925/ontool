@@ -80,6 +80,25 @@ public class JobService {
                 .orElseThrow(() -> new AppException(ErrorCode.JOB_NOT_FOUND));
     }
 
+    /**
+     * 저장 키(jobId/result.ext)로 다운로드 표시용 파일명을 만든다(112) — 원본 입력 파일명 기반,
+     * 038의 {@link ZipEntryNamer}(정화·Zip Slip 방지 포함)를 재사용한다. 키 형식이 아니거나, job을
+     * 못 찾거나, 원본 입력이 없으면(경로 정화 후 빈 이름 등) fallback을 그대로 돌려준다. 저장 키의
+     * jobId/원본 파일명 매핑은 이 서비스가 소유하는 지식이라 컨트롤러가 아니라 여기서 판단한다.
+     */
+    public String displayFilenameFor(String key, String fallback) {
+        int sep = key.indexOf('/');
+        if (sep < 0) {
+            return fallback;
+        }
+        String jobId = key.substring(0, sep);
+        return jobRepository.findById(jobId)
+                .map(Job::firstInputPath)
+                .filter(input -> !input.isEmpty())
+                .map(input -> new ZipEntryNamer().nameFor(input, key))
+                .orElse(fallback);
+    }
+
     /** 같은 레인에서 이 작업 앞에 대기 중인 PENDING 수(대략치). RUNNING 이후면 0. */
     public int queuePosition(Job job) {
         if (job.getStatus() != JobStatus.PENDING) {
@@ -103,7 +122,7 @@ public class JobService {
     }
 
     public List<Job> getBatchJobs(String batchId) {
-        return jobRepository.findAllByBatchId(batchId);
+        return jobRepository.findAllByBatchIdOrderByCreatedAtAsc(batchId);
     }
 
     public BatchStats getBatchStats(String batchId) {

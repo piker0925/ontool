@@ -55,6 +55,8 @@ import GameStat from '../GameStat.vue'
 
 const SECRET_LENGTH = 3
 
+const props = defineProps<{ submitScore?: (score: number) => void }>()
+
 const secret = ref(generateSecret(SECRET_LENGTH))
 const guessInput = ref('')
 const history = ref<Array<{ guess: number[]; result: GuessResult }>>([])
@@ -76,6 +78,8 @@ function submitGuess() {
   if (isWin(result, SECRET_LENGTH)) {
     won.value = true
     playSuccess()
+    // 053: 숫자야구는 자체 점수가 없으므로 "정답까지 걸린 시도 횟수(낮을수록 좋음)"를 점수로 쓴다.
+    props.submitScore?.(history.value.length)
   } else {
     playClick()
   }

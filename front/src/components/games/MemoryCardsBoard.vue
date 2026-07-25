@@ -1,6 +1,7 @@
 <template>
   <div class="flex flex-col items-center gap-4 py-6">
     <GameStat v-if="state.status !== 'won'" testid="status" text="카드 두 장을 뒤집어 같은 짝을 찾아보세요" tone="neutral"/>
+    <GameStat label="시도 횟수" testid="moves" :value="moves"/>
 
     <div class="relative">
       <div class="grid grid-cols-4 gap-2" data-testid="board">
@@ -31,7 +32,9 @@
         </button>
       </div>
 
-      <GameResultOverlay :show="state.status === 'won'" testid="game-result-overlay" title="모든 쌍을 맞췄습니다!" tone="win"/>
+      <GameResultOverlay :show="state.status === 'won'" testid="game-result-overlay" title="모든 쌍을 맞췄습니다!" tone="win">
+        <span data-testid="final-moves">{{ moves }}번 만에 맞췄습니다</span>
+      </GameResultOverlay>
     </div>
   </div>
 </template>
@@ -46,8 +49,12 @@ import GameStat from '../GameStat.vue'
 const PAIR_COUNT = 8
 const RESOLVE_DELAY_MS = 700
 
+const props = defineProps<{ submitScore?: (score: number) => void }>()
+
 const state = ref(createMemoryGame(PAIR_COUNT))
 const resolving = ref(false)
+// 053: 카드짝맞추기는 자체 점수가 없으므로 "짝을 맞춘 시도 횟수(낮을수록 좋음)"를 점수로 쓴다.
+const moves = ref(0)
 let resolveTimer: ReturnType<typeof setTimeout> | null = null
 
 const {playClick, playSuccess, playFail} = useGameSound()
@@ -62,6 +69,7 @@ function onFlip(id: number) {
   playClick()
   if (state.value.flippedIds.length === 2) {
     resolving.value = true
+    moves.value++
     const [aId, bId] = state.value.flippedIds
     const isMatch = state.value.cards.find(c => c.id === aId)?.value === state.value.cards.find(c => c.id === bId)?.value
     resolveTimer = setTimeout(() => {
@@ -69,6 +77,7 @@ function onFlip(id: number) {
       resolving.value = false
       if (isMatch) playSuccess()
       else playFail()
+      if (state.value.status === 'won') props.submitScore?.(moves.value)
     }, RESOLVE_DELAY_MS)
   }
 }

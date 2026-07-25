@@ -59,6 +59,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/comments/*").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/v1/comments/*/report").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout").authenticated()
+                // 053: 게임 점수 등록은 로그인 사용자만 — 세션 발급·리더보드 조회는 permitAll 기본값 그대로 둔다.
+                .requestMatchers(HttpMethod.POST, "/api/v1/games/*/scores").authenticated()
                 .anyRequest().permitAll()
             )
             .exceptionHandling(handling -> handling

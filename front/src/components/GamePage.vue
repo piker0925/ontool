@@ -8,6 +8,17 @@
 
       <div class="ml-auto flex items-center gap-2">
         <button
+            v-if="gameId"
+            :aria-pressed="showLeaderboard"
+            class="flex items-center gap-1.5 rounded-full border border-border px-3 py-1 font-mono text-[12px] text-muted-foreground transition-colors hover:border-zone-accent/40 hover:text-zone-accent"
+            data-testid="game-leaderboard-toggle"
+            type="button"
+            @click="showLeaderboard = !showLeaderboard"
+        >
+          <Trophy aria-hidden="true" class="size-3.5"/>
+          순위표
+        </button>
+        <button
             :aria-label="muted ? '효과음 켜기' : '효과음 끄기'"
             :aria-pressed="muted"
             class="flex size-8 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-zone-accent/40 hover:text-zone-accent"
@@ -28,28 +39,84 @@
       </div>
     </div>
 
+    <GameLeaderboardPanel v-if="gameId && showLeaderboard" ref="leaderboardPanelRef" :game-id="gameId"/>
+
     <div :key="restartKey" class="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-6">
       <slot :submit-score="submitScore"/>
     </div>
+
+    <!-- 053: 게임 종료(submitScore 호출) 이후에만 뜨는 로그인 유인 문구. 비로그인 상태에서만 보인다 —
+         로그인 사용자는 자동 등록되고 토스트로 결과를 알리므로 이 문구가 필요 없다. -->
+    <p
+        v-if="gameId && loginHintVisible && !isLoggedIn"
+        aria-live="polite"
+        class="text-center text-[12px] text-muted-foreground"
+        data-testid="game-login-hint"
+    >
+      로그인하면 순위표에 자동으로 등록돼요
+    </p>
   </div>
 </template>
 
 <script lang="ts" setup>
 import {ref} from 'vue'
-import {RotateCcw, Volume2, VolumeX} from 'lucide-vue-next'
+import {RotateCcw, Trophy, Volume2, VolumeX} from 'lucide-vue-next'
+import {toast} from 'vue-sonner'
 import {useGameSound} from '../composables/useGameSound'
+import {useAuth} from '../composables/useAuth'
+import {startGameSession, submitGameScore} from '../api/games'
+import GameLeaderboardPanel from './GameLeaderboardPanel.vue'
 
-defineProps<{ title: string; description?: string }>()
+// gameId는 GameCatalog(백엔드)에 등록된 8개 게임에서만 넘어온다 — 뽀모도로처럼 점수 개념이 없는
+// FULL_SHELL_COMPONENTS 입주 모듈은 gameId 없이 GamePage를 쓰고, 그 경우 순위표·제출 로직 전체가
+// 조용히 비활성화된다(053 스코프 밖).
+const props = defineProps<{ title: string; description?: string; gameId?: string }>()
 
 const {muted, toggleMuted} = useGameSound()
+const {isLoggedIn} = useAuth()
 
 // key를 바꿔 slot 콘텐츠를 통째로 재마운트한다 — 게임마다 개별 reset()을 구현하지 않아도
 // "재시작 시 상태 완전 초기화"가 항상 보장된다.
 const restartKey = ref(0)
+const showLeaderboard = ref(false)
+const loginHintVisible = ref(false)
+const leaderboardPanelRef = ref<InstanceType<typeof GameLeaderboardPanel> | null>(null)
+
+// 게임 시작(최초 마운트·재시작)마다 서버 세션 토큰을 새로 받는다 — 점수 제출 시 서버가 이 토큰의
+// 발급 시각으로부터 "최소 플레이 시간"을 검증한다(GameScoreService, 053). 발급 실패는 조용히
+// 무시한다 — 세션 없이도 게임 자체(표시)는 항상 정상 동작해야 하고, 제출 시점에 토큰이 없으면
+// submitScore가 자동으로 건너뛴다.
+let sessionToken: string | null = null
+async function refreshSession() {
+  sessionToken = null
+  if (!props.gameId) return
+  try {
+    sessionToken = await startGameSession(props.gameId)
+  } catch {
+    sessionToken = null
+  }
+}
+refreshSession()
+
 function restart() {
   restartKey.value++
+  loginHintVisible.value = false
+  refreshSession()
 }
 
-// 053(게임 랭킹, v3 보류)에서 실제 제출 로직이 붙을 자리 — 지금은 훅만 존재.
-function submitScore(_score: number) {}
+// 게임이 끝났을 때 각 보드 컴포넌트가 자신의 도메인 고유 점수 값(2048 점수, 반응속도 ms, 시도 횟수 등)
+// 그대로 호출한다 — "높을수록/낮을수록 좋다"의 방향은 백엔드 GameCatalog가 게임별로 판단한다.
+async function submitScore(score: number) {
+  if (!props.gameId) return
+  loginHintVisible.value = true
+  if (!isLoggedIn.value || !sessionToken) return
+  try {
+    await submitGameScore(props.gameId, score, sessionToken)
+    toast.success('순위표에 등록됐어요')
+    leaderboardPanelRef.value?.reload()
+  } catch (e: unknown) {
+    const err = e as { response?: { data?: { message?: string } } }
+    toast.error(err.response?.data?.message ?? '점수 등록에 실패했습니다. 다시 시작해 새로 도전해 주세요.')
+  }
+}
 </script>

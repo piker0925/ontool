@@ -6,6 +6,7 @@ import com.back.comment.service.CommentService;
 import com.back.global.response.PageResponse;
 import com.back.job.entity.JobStatus;
 import com.back.job.service.JobService;
+import com.back.stats.entity.ToolStats;
 import com.back.stats.service.ToolStatsService;
 import com.back.suggestion.entity.Suggestion;
 import com.back.suggestion.service.SuggestionService;
@@ -38,8 +39,12 @@ public class AdminController {
 
     @GetMapping("/stats")
     public ResponseEntity<List<AdminToolStatsResponse>> getStats() {
-        List<AdminToolStatsResponse> stats = toolStatsService.findAll().stream()
-                .map(s -> AdminToolStatsResponse.from(s, toolStatsService.getFailCount(s.getModuleId())))
+        List<ToolStats> allStats = toolStatsService.findAll();
+        List<String> moduleIds = allStats.stream().map(ToolStats::getModuleId).toList();
+        // 모듈마다 실패 건수를 따로 조회하면 N+1이 되므로, 현재 목록의 모듈 id들만 모아 한 번에 배치 조회한다.
+        Map<String, Long> failCounts = toolStatsService.getFailCounts(moduleIds);
+        List<AdminToolStatsResponse> stats = allStats.stream()
+                .map(s -> AdminToolStatsResponse.from(s, failCounts.getOrDefault(s.getModuleId(), 0L)))
                 .toList();
         return ResponseEntity.ok(stats);
     }

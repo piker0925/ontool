@@ -8,7 +8,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -22,9 +25,17 @@ public class ToolStatsService {
         return toolStatsRepository.findAll();
     }
 
+    // 관리자 통계 목록에서 모듈별 실패 건수를 한 번의 쿼리로 배치 조회한다(N+1 방지, 109).
+    // 결과 맵에는 실패 건수가 있는 모듈만 담긴다 — 호출부는 getOrDefault(moduleId, 0L)로 읽는다.
     @Transactional(readOnly = true)
-    public long getFailCount(String moduleId) {
-        return jobRepository.countByModuleIdAndStatus(moduleId, JobStatus.FAILED);
+    public Map<String, Long> getFailCounts(Collection<String> moduleIds) {
+        if (moduleIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, Long> counts = new HashMap<>();
+        jobRepository.countGroupedByModuleIdInAndStatus(moduleIds, JobStatus.FAILED)
+                .forEach(row -> counts.put(row.getModuleId(), row.getCount()));
+        return counts;
     }
 
     @Transactional

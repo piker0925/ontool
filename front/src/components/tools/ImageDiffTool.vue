@@ -1,15 +1,13 @@
 <template>
   <div class="flex flex-col gap-3 max-w-lg mx-auto w-full">
     <div class="flex gap-2">
-      <button class="flex-1 rounded-xl border border-dashed border-border bg-card px-3 py-6 text-[12px] text-muted-foreground transition-colors hover:border-zone-accent-files/50 hover:text-zone-accent-files"
-              @click="inputA?.click()">{{ fileNameA || '이미지 A 선택' }}
-      </button>
-      <button class="flex-1 rounded-xl border border-dashed border-border bg-card px-3 py-6 text-[12px] text-muted-foreground transition-colors hover:border-zone-accent-files/50 hover:text-zone-accent-files"
-              @click="inputB?.click()">{{ fileNameB || '이미지 B 선택' }}
-      </button>
+      <div class="flex-1">
+        <UploadDropzone :label="fileNameA || '이미지 A 선택'" accept="image/*" size="compact" @select="onFilesSelectedA"/>
+      </div>
+      <div class="flex-1">
+        <UploadDropzone :label="fileNameB || '이미지 B 선택'" accept="image/*" size="compact" @select="onFilesSelectedB"/>
+      </div>
     </div>
-    <input ref="inputA" accept="image/*" class="hidden" type="file" @change="onFileChangeA"/>
-    <input ref="inputB" accept="image/*" class="hidden" type="file" @change="onFileChangeB"/>
 
     <div v-show="diffRatio !== null" class="rounded-xl border border-zone-accent-files/20 bg-zone-accent-files/10 p-4">
       <p class="text-[13px] text-foreground">차이 픽셀 비율: <span class="font-mono font-semibold text-zone-accent-files">{{ ((diffRatio ?? 0) * 100).toFixed(2) }}%</span></p>
@@ -27,9 +25,10 @@
 import {computed, ref, watch} from 'vue'
 import {diffImages} from '../../utils/imageDiff'
 import {useImageFileInput} from '../../composables/useImageFileInput'
+import UploadDropzone from '../UploadDropzone.vue'
 
-const {fileInput: inputA, imageEl: imageA, fileName: fileNameA, error: errorA, onFileChange: onFileChangeA} = useImageFileInput()
-const {fileInput: inputB, imageEl: imageB, fileName: fileNameB, error: errorB, onFileChange: onFileChangeB} = useImageFileInput()
+const {imageEl: imageA, fileName: fileNameA, error: errorA, onFilesSelected: onFilesSelectedA} = useImageFileInput()
+const {imageEl: imageB, fileName: fileNameB, error: errorB, onFilesSelected: onFilesSelectedB} = useImageFileInput()
 const canvasEl = ref<HTMLCanvasElement | null>(null)
 const diffRatio = ref<number | null>(null)
 const sizeMismatchError = ref('')

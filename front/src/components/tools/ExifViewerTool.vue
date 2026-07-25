@@ -1,19 +1,12 @@
 <template>
   <div class="flex flex-col gap-3 max-w-lg mx-auto w-full">
-    <input ref="fileInput" accept="image/*" class="hidden" type="file" @change="onFileChange"/>
+    <UploadDropzone ref="dropzoneRef" :active="!fileName" :icon="ImageOff" accept="image/*" label="이미지를 선택하세요" @select="onFilesSelected"/>
 
-    <button v-if="!fileName"
-            class="flex h-40 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-card text-[13px] text-muted-foreground transition-colors hover:border-zone-accent-files/50 hover:text-zone-accent-files"
-            @click="fileInput?.click()">
-      <ImageOff class="size-6 text-muted-foreground/60"/>
-      이미지를 선택하세요
-    </button>
-
-    <template v-else>
+    <template v-if="fileName">
       <div class="flex items-center justify-between gap-2 rounded-xl border border-border bg-card px-4 py-2.5">
         <span class="truncate text-[13px] text-foreground">{{ fileName }}</span>
         <button class="shrink-0 rounded-lg border border-border bg-card px-3 py-1.5 text-[12px] text-foreground/80 transition-colors hover:bg-accent"
-                @click="fileInput?.click()">다시 선택
+                @click="dropzoneRef?.open()">다시 선택
         </button>
       </div>
 
@@ -144,16 +137,16 @@
 import {ref} from 'vue'
 import {AlertTriangle, Aperture, ArrowRight, Camera, Clock, Image, ImageOff, MapPin, ShieldAlert} from 'lucide-vue-next'
 import {formatCameraLabel, mapExifToDisplay, type ExifDisplayData} from '../../utils/exifView'
+import UploadDropzone from '../UploadDropzone.vue'
 
-const fileInput = ref<HTMLInputElement | null>(null)
+const dropzoneRef = ref<InstanceType<typeof UploadDropzone> | null>(null)
 const fileName = ref('')
 const loading = ref(false)
 const error = ref('')
 const display = ref<ExifDisplayData | null>(null)
 
-async function onFileChange(e: Event) {
-  const input = e.target as HTMLInputElement
-  const file = input.files?.[0]
+async function onFilesSelected(files: File[]) {
+  const file = files[0]
   if (!file) return
 
   fileName.value = file.name
@@ -162,7 +155,6 @@ async function onFileChange(e: Event) {
 
   if (!file.type.startsWith('image/')) {
     error.value = '이미지 파일이 아닙니다. 이미지를 선택해주세요.'
-    input.value = ''
     return
   }
 
@@ -175,7 +167,6 @@ async function onFileChange(e: Event) {
     error.value = '메타데이터를 읽는 중 문제가 발생했습니다. 손상되었거나 지원하지 않는 이미지 형식일 수 있습니다.'
   } finally {
     loading.value = false
-    input.value = ''
   }
 }
 </script>

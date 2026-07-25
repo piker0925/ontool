@@ -1,11 +1,6 @@
 <template>
   <div class="flex flex-col gap-3 max-w-lg mx-auto w-full">
-    <input ref="fileInput" accept="image/*" class="hidden" type="file" @change="onFileChange"/>
-
-    <button v-if="!imageEl"
-            class="flex h-40 items-center justify-center rounded-xl border border-dashed border-border bg-card text-[13px] text-muted-foreground transition-colors hover:border-zone-accent-files/50 hover:text-zone-accent-files"
-            @click="fileInput?.click()">이미지를 선택하세요
-    </button>
+    <UploadDropzone :active="!imageEl" accept="image/*" label="이미지를 선택하세요" @select="onFilesSelected"/>
 
     <div v-show="!!imageEl" class="flex gap-0.5 rounded-lg bg-muted p-0.5">
       <button v-for="opt in TYPES" :key="opt.v"
@@ -27,6 +22,7 @@
 import {ref, watch} from 'vue'
 import {applyColorblindFilter, type ColorblindType} from '../../utils/colorblindSim'
 import {useImageFileInput} from '../../composables/useImageFileInput'
+import UploadDropzone from '../UploadDropzone.vue'
 
 const TYPES: { v: ColorblindType; l: string }[] = [
   {v: 'protanopia', l: '적색맹'},
@@ -34,7 +30,7 @@ const TYPES: { v: ColorblindType; l: string }[] = [
   {v: 'tritanopia', l: '청색맹'},
 ]
 
-const {fileInput, imageEl, error, onFileChange} = useImageFileInput()
+const {imageEl, error, onFilesSelected} = useImageFileInput()
 const canvasEl = ref<HTMLCanvasElement | null>(null)
 const type = ref<ColorblindType>('protanopia')
 

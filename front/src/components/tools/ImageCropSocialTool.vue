@@ -1,11 +1,6 @@
 <template>
   <div class="flex flex-col gap-3 max-w-lg mx-auto w-full">
-    <input ref="fileInput" accept="image/*" class="hidden" type="file" @change="onFileChange"/>
-
-    <button v-if="!imageEl"
-            class="flex h-40 items-center justify-center rounded-xl border border-dashed border-border bg-card text-[13px] text-muted-foreground transition-colors hover:border-zone-accent-files/50 hover:text-zone-accent-files"
-            @click="fileInput?.click()">이미지를 선택하세요
-    </button>
+    <UploadDropzone ref="dropzoneRef" :active="!imageEl" accept="image/*" label="이미지를 선택하세요" @select="onFilesSelected"/>
 
     <div v-show="!!imageEl" class="flex flex-wrap gap-1.5">
       <button v-for="preset in SOCIAL_CROP_PRESETS" :key="preset.id"
@@ -24,7 +19,7 @@
               @click="downloadCropped">크롭 이미지 다운로드
       </button>
       <button class="rounded-xl border border-border bg-card px-4 py-2.5 text-[13px] text-foreground transition-colors hover:border-zone-accent-files/50"
-              @click="fileInput?.click()">다른 이미지
+              @click="dropzoneRef?.open()">다른 이미지
       </button>
     </div>
 
@@ -36,8 +31,10 @@
 import {ref, watch} from 'vue'
 import {computeCenteredCropRect, SOCIAL_CROP_PRESETS, type SocialCropPreset} from '../../utils/imageCrop'
 import {useImageFileInput} from '../../composables/useImageFileInput'
+import UploadDropzone from '../UploadDropzone.vue'
 
-const {fileInput, imageEl, error, onFileChange} = useImageFileInput()
+const {imageEl, error, onFilesSelected} = useImageFileInput()
+const dropzoneRef = ref<InstanceType<typeof UploadDropzone> | null>(null)
 const canvasEl = ref<HTMLCanvasElement | null>(null)
 const selectedPreset = ref<SocialCropPreset>(SOCIAL_CROP_PRESETS[0])
 

@@ -1,13 +1,8 @@
 <template>
   <div class="flex flex-col gap-3 max-w-lg mx-auto w-full">
-    <input ref="fileInput" accept="image/*" class="hidden" type="file" @change="onFileChange"/>
+    <UploadDropzone :active="!imageEl" accept="image/*" label="이미지를 선택하세요" @select="onFilesSelected"/>
 
-    <button v-if="!imageEl"
-            class="flex h-40 items-center justify-center rounded-xl border border-dashed border-border bg-card text-[13px] text-muted-foreground transition-colors hover:border-zone-accent-files/50 hover:text-zone-accent-files"
-            @click="fileInput?.click()">이미지를 선택하세요
-    </button>
-
-    <template v-else>
+    <template v-if="imageEl">
       <div class="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-4">
         <img v-for="s in SIZES" :key="s" :height="Math.min(s, 48)" :src="imageEl?.src" :width="Math.min(s, 48)" alt="" class="rounded border border-border"/>
       </div>
@@ -26,10 +21,11 @@ import {ref} from 'vue'
 import JSZip from 'jszip'
 import {encodeIco, type FaviconImage} from '../../utils/faviconGen'
 import {useImageFileInput} from '../../composables/useImageFileInput'
+import UploadDropzone from '../UploadDropzone.vue'
 
 const SIZES = [16, 32, 48, 180]
 
-const {fileInput, imageEl, error, onFileChange} = useImageFileInput()
+const {imageEl, error, onFilesSelected} = useImageFileInput()
 const generating = ref(false)
 
 function renderPng(img: HTMLImageElement, size: number): Promise<Uint8Array> {

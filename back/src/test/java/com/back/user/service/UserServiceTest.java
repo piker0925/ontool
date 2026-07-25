@@ -12,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -162,5 +163,41 @@ class UserServiceTest {
                 .isInstanceOf(AppException.class)
                 .extracting(e -> ((AppException) e).getErrorCode())
                 .isEqualTo(ErrorCode.USER_NOT_FOUND);
+    }
+
+    @Test
+    void getDailySignups_날짜별로_합치고_데이터없는_날은_0으로_채운다() {
+        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.LocalDate yesterday = today.minusDays(1);
+        // 그저께는 리포지토리가 아무 행도 안 돌려준다 — 0으로 채워져야 한다.
+        when(userRepository.countGroupedByDateSince(any())).thenReturn(List.of(
+                dailySignupRow(yesterday, 4L),
+                dailySignupRow(today, 2L)
+        ));
+
+        List<com.back.user.dto.DailySignupCount> result = userService.getDailySignups(3);
+
+        assertThat(result).hasSize(3);
+        assertThat(result.get(0).date()).isEqualTo(today.minusDays(2));
+        assertThat(result.get(0).count()).isZero();
+        assertThat(result.stream().filter(r -> r.date().equals(yesterday)).findFirst().orElseThrow().count()).isEqualTo(4L);
+        assertThat(result.stream().filter(r -> r.date().equals(today)).findFirst().orElseThrow().count()).isEqualTo(2L);
+    }
+
+    @Test
+    void getDailySignups_days가_상한을_넘으면_90일로_잘린다() {
+        when(userRepository.countGroupedByDateSince(any())).thenReturn(List.of());
+
+        List<com.back.user.dto.DailySignupCount> result = userService.getDailySignups(10_000);
+
+        assertThat(result).hasSize(90);
+    }
+
+    // Spring Data 프로젝션은 getX() 접근자 이름에 의존하므로, 레코드 컴포넌트 이름을 그대로
+    // getDate/getCount로 지어 컴파일러가 생성하는 접근자가 인터페이스를 그대로 만족하게 한다.
+    private static UserRepository.DailySignupRow dailySignupRow(java.time.LocalDate date, long count) {
+        record Row(java.time.LocalDate getDate, Long getCount) implements UserRepository.DailySignupRow {
+        }
+        return new Row(date, count);
     }
 }

@@ -128,4 +128,25 @@ class AdmissionControlTest {
 
         assertThatCode(() -> ac.assertCapacityAvailable(Lane.HEAVY)).doesNotThrowAnyException();
     }
+
+    @Test
+    void queueDepthSnapshot_레인별_pending_running_threshold를_모두_구분해서_담는다(@TempDir Path dir) {
+        JobRepository repo = mock(JobRepository.class);
+        when(repo.countByLaneAndStatus(Lane.HEAVY, JobStatus.PENDING)).thenReturn(3);
+        when(repo.countByLaneAndStatus(Lane.HEAVY, JobStatus.RUNNING)).thenReturn(2);
+        when(repo.countByLaneAndStatus(Lane.VIDEO, JobStatus.PENDING)).thenReturn(7);
+        when(repo.countByLaneAndStatus(Lane.VIDEO, JobStatus.RUNNING)).thenReturn(1);
+
+        AdmissionControl ac = new AdmissionControl(repo, dir.toString(), 999_999L, 200, 10);
+
+        AdmissionControl.QueueDepth snapshot = ac.queueDepthSnapshot();
+
+        // 네 값이 전부 달라야 뒤바뀜(HEAVY↔VIDEO, pending↔running)을 잡아낼 수 있다.
+        assertThat(snapshot.heavyPending()).isEqualTo(3);
+        assertThat(snapshot.heavyRunning()).isEqualTo(2);
+        assertThat(snapshot.heavyThreshold()).isEqualTo(200);
+        assertThat(snapshot.videoPending()).isEqualTo(7);
+        assertThat(snapshot.videoRunning()).isEqualTo(1);
+        assertThat(snapshot.videoThreshold()).isEqualTo(10);
+    }
 }

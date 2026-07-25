@@ -2,6 +2,8 @@ package com.back.user.service;
 
 import com.back.global.exception.AppException;
 import com.back.global.exception.ErrorCode;
+import com.back.global.util.DashboardDateRange;
+import com.back.user.dto.DailySignupCount;
 import com.back.user.entity.AuthProvider;
 import com.back.user.entity.User;
 import com.back.user.entity.UserStatus;
@@ -14,6 +16,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -85,5 +93,33 @@ public class UserService {
         }
         int cutIndex = trimmed.offsetByCodePoints(0, NICKNAME_MAX_LENGTH);
         return trimmed.substring(0, cutIndex);
+    }
+
+    /** 어드민 대시보드(118) — 가입 경로(provider)별 전체 유저 분포. 그룹 집계는 리포지토리에 그대로 위임한다. */
+    @Transactional(readOnly = true)
+    public List<UserRepository.ProviderCount> getProviderDistribution() {
+        return userRepository.countGroupedByProvider();
+    }
+
+    /**
+     * 어드민 대시보드(118) — 최근 days일 일별 신규 가입자 수. 데이터 없는 날짜도 0으로 채워
+     * 라인 차트에 구멍이 생기지 않게 한다(job의 getDailyJobCounts와 같은 방식, 118).
+     */
+    @Transactional(readOnly = true)
+    public List<DailySignupCount> getDailySignups(int days) {
+        int clampedDays = DashboardDateRange.clampDays(days);
+        LocalDate today = LocalDate.now();
+        LocalDate start = today.minusDays(clampedDays - 1L);
+
+        Map<LocalDate, Long> byDate = new HashMap<>();
+        for (UserRepository.DailySignupRow row : userRepository.countGroupedByDateSince(start.atStartOfDay())) {
+            byDate.merge(row.getDate(), row.getCount(), Long::sum);
+        }
+
+        List<DailySignupCount> result = new ArrayList<>();
+        for (LocalDate d = start; !d.isAfter(today); d = d.plusDays(1)) {
+            result.add(new DailySignupCount(d, byDate.getOrDefault(d, 0L)));
+        }
+        return result;
     }
 }

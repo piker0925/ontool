@@ -59,7 +59,52 @@
       <div class="flex flex-col gap-6">
         
         <!-- 1. 통계 탭 -->
-        <div v-if="currentTab === 'stats'">
+        <div v-if="currentTab === 'stats'" class="flex flex-col gap-6">
+
+          <!-- 시각화 요약(118) — 아래 표들을 한눈에 보기 위한 요약. 표는 정밀한 값 확인용으로 그대로 둔다. -->
+          <section class="rounded-xl border border-border bg-card shadow-sm">
+            <div class="flex items-center justify-between border-b border-border px-5 py-3">
+              <h2 class="text-sm font-medium text-foreground">대시보드 요약</h2>
+              <button class="text-xs text-muted-foreground hover:text-foreground" @click="refreshStatsTab">새로고침</button>
+            </div>
+            <div class="grid grid-cols-1 gap-x-8 gap-y-6 p-5 lg:grid-cols-2">
+              <div>
+                <h3 class="mb-3 text-xs font-medium text-muted-foreground">모듈별 사용량 (상위 10)</h3>
+                <BarChart :data="moduleUsageChartData" :value-formatter="v => v.toLocaleString()"/>
+              </div>
+              <div>
+                <h3 class="mb-3 text-xs font-medium text-muted-foreground">레인별 처리 분포</h3>
+                <DonutChart :data="laneDonutData"/>
+              </div>
+              <div>
+                <h3 class="mb-3 text-xs font-medium text-muted-foreground">가입 경로 비율</h3>
+                <DonutChart :data="providerDonutData" :donut="false"/>
+              </div>
+              <div class="flex flex-col justify-center gap-4">
+                <h3 class="text-xs font-medium text-muted-foreground">큐 적체</h3>
+                <template v-if="dashboardStats">
+                  <GaugeMeter
+                      label="HEAVY 레인" :pending="dashboardStats.heavyQueue.pending"
+                      :running="dashboardStats.heavyQueue.running" :threshold="dashboardStats.heavyQueue.threshold"
+                  />
+                  <GaugeMeter
+                      label="VIDEO 레인" :pending="dashboardStats.videoQueue.pending"
+                      :running="dashboardStats.videoQueue.running" :threshold="dashboardStats.videoQueue.threshold"
+                  />
+                </template>
+                <p v-else class="text-xs text-muted-foreground">불러오는 중…</p>
+              </div>
+              <div>
+                <h3 class="mb-3 text-xs font-medium text-muted-foreground">일별 Job 처리 (성공/실패)</h3>
+                <StackedAreaChart :data="dashboardStats?.dailyJobCounts ?? []"/>
+              </div>
+              <div>
+                <h3 class="mb-3 text-xs font-medium text-muted-foreground">일별 신규 가입자</h3>
+                <LineChart :data="dailySignupChartData" value-label="가입"/>
+              </div>
+            </div>
+          </section>
+
           <section class="rounded-xl border border-border bg-card shadow-sm">
             <div class="flex items-center justify-between border-b border-border px-5 py-3">
               <h2 class="text-sm font-medium text-foreground">모듈 통계</h2>
@@ -389,34 +434,15 @@
             </ul>
           </section>
 
-          <!-- 관리자 액션 감사로그 -->
+          <!-- 관리자 액션 감사로그 — 타임라인이 표와 같은 정보(시각·액션·대상 ID)를 그대로 담으면서
+               시간 흐름·액션 종류를 더 잘 드러내므로 표를 완전히 대체한다(118 acceptance criteria 판단). -->
           <section class="rounded-xl border border-border bg-card shadow-sm">
             <div class="flex items-center justify-between border-b border-border px-5 py-3">
               <h2 class="text-sm font-medium text-foreground">관리자 액션 로그</h2>
               <button class="text-xs text-muted-foreground hover:text-foreground" @click="loadActionLogs">새로고침</button>
             </div>
-            <div class="overflow-x-auto">
-              <table class="w-full text-sm">
-                <thead>
-                <tr class="border-b border-border bg-muted/50 text-left text-xs text-muted-foreground">
-                  <th class="px-5 py-3 font-medium">시각</th>
-                  <th class="px-5 py-3 font-medium">액션</th>
-                  <th class="px-5 py-3 font-medium">대상 ID</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr v-if="actionLogs.length === 0">
-                  <td class="px-5 py-6 text-center text-muted-foreground" colspan="3">기록 없음</td>
-                </tr>
-                <tr v-for="log in actionLogs" :key="log.id" class="border-b border-border last:border-0 hover:bg-muted/20">
-                  <td class="px-5 py-3 text-muted-foreground">{{ formatDate(log.performedAt) }}</td>
-                  <td class="px-5 py-3">
-                    <span class="rounded bg-secondary/50 px-2 py-1 text-xs font-medium text-secondary-foreground">{{ log.actionType }}</span>
-                  </td>
-                  <td class="px-5 py-3 font-mono text-xs text-foreground/80">{{ log.targetId }}</td>
-                </tr>
-                </tbody>
-              </table>
+            <div class="p-5">
+              <ActionLogTimeline :items="actionLogTimelineItems" :legend="actionLogLegend"/>
             </div>
           </section>
 
@@ -484,12 +510,18 @@
 </template>
 
 <script lang="ts" setup>
-import {ref, watch} from 'vue'
+import {computed, ref, watch} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {Loader2} from 'lucide-vue-next'
 import {apiClient} from '../api/client'
 import {COMMENT_REPORT_REASONS} from '../constants/commentReportReasons'
 import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter} from '../components/ui/dialog'
+import BarChart from '../components/charts/BarChart.vue'
+import DonutChart from '../components/charts/DonutChart.vue'
+import GaugeMeter from '../components/charts/GaugeMeter.vue'
+import StackedAreaChart from '../components/charts/StackedAreaChart.vue'
+import LineChart from '../components/charts/LineChart.vue'
+import ActionLogTimeline, {type TimelineItem, type TimelineLegendEntry} from '../components/charts/ActionLogTimeline.vue'
 
 const username = ref('')
 const password = ref('')
@@ -592,8 +624,54 @@ interface CommentReportUserAggregateItem {
   reasonCounts: Record<string, number>
 }
 
+// --- 대시보드 차트(118) ---
+interface QueueDepthItem {
+  pending: number
+  running: number
+  threshold: number
+}
+
+interface DailyJobCountItem {
+  date: string
+  doneCount: number
+  failCount: number
+}
+
+interface DailySignupItem {
+  date: string
+  count: number
+}
+
+interface DashboardStats {
+  laneDistribution: {lane: string; count: number}[]
+  providerDistribution: {provider: string; count: number}[]
+  heavyQueue: QueueDepthItem
+  videoQueue: QueueDepthItem
+  dailyJobCounts: DailyJobCountItem[]
+  dailySignups: DailySignupItem[]
+}
+
+// 레인·가입경로는 항상 이 고정 순서로 도넛에 넘긴다 — 값 크기로 재정렬하면 카테고리 색이
+// 순위를 따라 뒤바뀐다(dataviz: 색은 항목을 따라가지, 순위를 따라가지 않는다).
+const LANE_ORDER = ['HEAVY', 'VIDEO'] as const
+const LANE_LABELS: Record<string, string> = {HEAVY: 'Heavy', VIDEO: 'Video'}
+const PROVIDER_ORDER = ['GOOGLE', 'KAKAO'] as const
+const PROVIDER_LABELS: Record<string, string> = {GOOGLE: 'Google', KAKAO: 'Kakao'}
+
+// 관리자 액션 타입도 마찬가지로 항상 고정 인덱스를 쓴다 — 이 로그 페이지에 어떤 액션이
+// 나타나는지와 무관하게 같은 액션은 항상 같은 색이어야 한다.
+const ACTION_TYPE_ORDER = ['FORCE_LOGOUT', 'COMMENT_DELETE', 'MEMBER_SUSPEND', 'MEMBER_UNSUSPEND', 'ACCOUNT_FORCE_DELETE'] as const
+const ACTION_TYPE_LABELS: Record<string, string> = {
+  FORCE_LOGOUT: '강제 로그아웃',
+  COMMENT_DELETE: '댓글 삭제',
+  MEMBER_SUSPEND: '회원 정지',
+  MEMBER_UNSUSPEND: '정지 해제',
+  ACCOUNT_FORCE_DELETE: '계정 강제삭제',
+}
+
 // --- 상태 변수 ---
 const stats = ref<StatItem[]>([])
+const dashboardStats = ref<DashboardStats | null>(null)
 
 const users = ref<UserItem[]>([])
 const searchQuery = ref('')
@@ -611,6 +689,38 @@ const commentReports = ref<CommentReportItem[]>([])
 const reportStatusFilter = ref('')
 const reportReasonFilter = ref('')
 const reportUserAggregates = ref<CommentReportUserAggregateItem[]>([])
+
+// --- 대시보드 차트 파생 데이터(118) ---
+// 모듈 사용량 막대는 값 기준 정렬 — 단일 계열(색 하나)이라 정렬해도 "색이 순위를 따라가는" 문제가 없다.
+// 화면 밀도를 위해 상위 10개만 보여준다.
+const moduleUsageChartData = computed(() =>
+    [...stats.value].sort((a, b) => b.useCount - a.useCount).slice(0, 10)
+        .map(s => ({label: s.moduleId, value: s.useCount})))
+
+const laneDonutData = computed(() => {
+  const byLane = new Map(dashboardStats.value?.laneDistribution.map(d => [d.lane, d.count]) ?? [])
+  return LANE_ORDER.map(lane => ({label: LANE_LABELS[lane], value: byLane.get(lane) ?? 0}))
+})
+
+const providerDonutData = computed(() => {
+  const byProvider = new Map(dashboardStats.value?.providerDistribution.map(d => [d.provider, d.count]) ?? [])
+  return PROVIDER_ORDER.map(p => ({label: PROVIDER_LABELS[p], value: byProvider.get(p) ?? 0}))
+})
+
+const dailySignupChartData = computed(() =>
+    (dashboardStats.value?.dailySignups ?? []).map(d => ({date: d.date, value: d.count})))
+
+const actionLogTimelineItems = computed<TimelineItem[]>(() =>
+    actionLogs.value.map(log => ({
+      id: log.id,
+      label: ACTION_TYPE_LABELS[log.actionType] ?? log.actionType,
+      detail: `대상 ID ${log.targetId}`,
+      date: log.performedAt,
+      colorIndex: Math.max(0, ACTION_TYPE_ORDER.indexOf(log.actionType as typeof ACTION_TYPE_ORDER[number])),
+    })))
+
+const actionLogLegend = computed<TimelineLegendEntry[]>(() =>
+    ACTION_TYPE_ORDER.map((type, i) => ({label: ACTION_TYPE_LABELS[type], colorIndex: i})))
 
 // --- 인증 ---
 async function login() {
@@ -630,6 +740,7 @@ async function login() {
 function switchTab(tab: TabId) {
   currentTab.value = tab
   if (tab === 'stats' && stats.value.length === 0) loadStats()
+  if (tab === 'stats' && dashboardStats.value === null) loadDashboardStats()
   if (tab === 'users' && users.value.length === 0) loadUsers()
   if (tab === 'ops' && jobs.value.length === 0) loadOps()
 }
@@ -641,6 +752,20 @@ async function loadStats() {
   } catch (e) {
     console.error('Failed to load stats', e)
   }
+}
+
+async function loadDashboardStats() {
+  try {
+    const res = await apiClient.get<DashboardStats>('/admin/stats/dashboard', {headers: {Authorization: authHeader}})
+    dashboardStats.value = res.data
+  } catch (e) {
+    console.error('Failed to load dashboard stats', e)
+  }
+}
+
+function refreshStatsTab() {
+  loadStats()
+  loadDashboardStats()
 }
 
 async function loadUsers() {

@@ -8,15 +8,18 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -29,9 +32,17 @@ class JobRepositoryTest extends AbstractMySQLIntegrationTest {
     @Autowired
     PlatformTransactionManager txManager;
 
+    @Autowired
+    JdbcTemplate jdbcTemplate;
+
     @BeforeEach
     void cleanup() {
         jobRepository.deleteAll();
+    }
+
+    /** createdAt은 @PrePersist 전용이라 엔티티 세터로 과거 날짜를 강제할 수 없다 — 저장 후 직접 갱신한다. */
+    private void forceCreatedAt(String jobId, LocalDateTime createdAt) {
+        jdbcTemplate.update("UPDATE job SET created_at = ? WHERE id = ?", createdAt, jobId);
     }
 
     @Test
@@ -103,5 +114,67 @@ class JobRepositoryTest extends AbstractMySQLIntegrationTest {
         job.setStatus(status);
         job.setExpiresAt(LocalDateTime.now().plusHours(1));
         jobRepository.save(job);
+    }
+
+    private Job saveJobReturning(Lane lane, JobStatus status) {
+        Job job = new Job();
+        job.setModuleId("image-to-pdf");
+        job.setLane(lane);
+        job.setStatus(status);
+        job.setExpiresAt(LocalDateTime.now().plusHours(1));
+        return jobRepository.save(job);
+    }
+
+    @Test
+    void countGroupedByLane_상태와_무관하게_레인별_전체_개수를_센다() {
+        saveJob(Lane.HEAVY, JobStatus.DONE);
+        saveJob(Lane.HEAVY, JobStatus.PENDING); // 상태는 달라도 같은 레인이면 합산돼야 함
+        saveJob(Lane.VIDEO, JobStatus.RUNNING);
+
+        Map<Lane, Long> counts = jobRepository.countGroupedByLane().stream()
+                .collect(Collectors.toMap(JobRepository.LaneCount::getLane, JobRepository.LaneCount::getCount));
+
+        assertThat(counts).containsEntry(Lane.HEAVY, 2L).containsEntry(Lane.VIDEO, 1L);
+    }
+
+    @Test
+    void countGroupedByDateAndStatusSince_날짜와_상태로_그룹핑하고_진행중_상태와_범위밖_날짜는_제외한다() {
+        LocalDate today = LocalDate.now();
+
+        Job doneYesterday1 = saveJobReturning(Lane.HEAVY, JobStatus.DONE);
+        Job doneYesterday2 = saveJobReturning(Lane.HEAVY, JobStatus.DONE); // 같은 (날짜,상태) 버킷 — 합산돼야 함
+        Job failedYesterday = saveJobReturning(Lane.HEAVY, JobStatus.FAILED); // 같은 날짜, 다른 상태 — 따로 집계돼야 함
+        Job doneToday = saveJobReturning(Lane.VIDEO, JobStatus.DONE);
+        Job pendingToday = saveJobReturning(Lane.HEAVY, JobStatus.PENDING); // 아직 결과 미확정 — 제외돼야 함
+        Job doneTooOld = saveJobReturning(Lane.HEAVY, JobStatus.DONE); // 조회 범위 밖 — 제외돼야 함
+
+        forceCreatedAt(doneYesterday1.getId(), today.minusDays(1).atTime(9, 0));
+        forceCreatedAt(doneYesterday2.getId(), today.minusDays(1).atTime(20, 0));
+        forceCreatedAt(failedYesterday.getId(), today.minusDays(1).atTime(10, 0));
+        forceCreatedAt(doneToday.getId(), today.atTime(8, 0));
+        forceCreatedAt(pendingToday.getId(), today.atTime(8, 30));
+        forceCreatedAt(doneTooOld.getId(), today.minusDays(10).atTime(9, 0));
+
+        List<JobRepository.DailyStatusCount> rows =
+                jobRepository.countGroupedByDateAndStatusSince(today.minusDays(3).atStartOfDay());
+
+        assertThat(rows).extracting(JobRepository.DailyStatusCount::getStatus)
+                .doesNotContain(JobStatus.PENDING, JobStatus.RUNNING);
+        assertThat(rows).noneMatch(r -> r.getDate().equals(today.minusDays(10)));
+
+        var yesterdayDone = rows.stream()
+                .filter(r -> r.getDate().equals(today.minusDays(1)) && r.getStatus() == JobStatus.DONE)
+                .findFirst().orElseThrow();
+        assertThat(yesterdayDone.getCount()).isEqualTo(2L);
+
+        var yesterdayFailed = rows.stream()
+                .filter(r -> r.getDate().equals(today.minusDays(1)) && r.getStatus() == JobStatus.FAILED)
+                .findFirst().orElseThrow();
+        assertThat(yesterdayFailed.getCount()).isEqualTo(1L);
+
+        var todayDone = rows.stream()
+                .filter(r -> r.getDate().equals(today) && r.getStatus() == JobStatus.DONE)
+                .findFirst().orElseThrow();
+        assertThat(todayDone.getCount()).isEqualTo(1L);
     }
 }

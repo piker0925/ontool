@@ -1,6 +1,8 @@
 package com.back.job.service;
 
+import com.back.job.dto.DailyJobCount;
 import com.back.job.entity.Job;
+import com.back.job.entity.JobStatus;
 import com.back.job.repository.JobRepository;
 import com.back.stats.service.ToolStatsService;
 import com.back.tool.model.Lane;
@@ -11,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -126,5 +129,52 @@ class JobServiceTest {
         String filename = service.displayFilenameFor("no-slash-key", "fallback.txt");
 
         assertThat(filename).isEqualTo("fallback.txt");
+    }
+
+    @Test
+    void getDailyJobCounts_같은날짜의_성공_실패를_합치고_데이터없는_날은_0으로_채운다() {
+        JobService service = new JobService(jobRepository, toolStatsService, Duration.ofMinutes(30), 20);
+        LocalDate today = LocalDate.now();
+        LocalDate yesterday = today.minusDays(1);
+        // 그저께는 리포지토리가 아무 행도 안 돌려준다 — 0으로 채워져야 한다(그래프에 구멍 방지).
+        when(jobRepository.countGroupedByDateAndStatusSince(any())).thenReturn(List.of(
+                dailyStatusCount(yesterday, JobStatus.DONE, 5),
+                dailyStatusCount(yesterday, JobStatus.FAILED, 2),
+                dailyStatusCount(today, JobStatus.DONE, 1)
+        ));
+
+        List<DailyJobCount> result = service.getDailyJobCounts(3);
+
+        assertThat(result).hasSize(3); // 그저께, 어제, 오늘
+        DailyJobCount twoDaysAgo = result.get(0);
+        assertThat(twoDaysAgo.date()).isEqualTo(today.minusDays(2));
+        assertThat(twoDaysAgo.doneCount()).isZero();
+        assertThat(twoDaysAgo.failCount()).isZero();
+
+        DailyJobCount y = result.stream().filter(r -> r.date().equals(yesterday)).findFirst().orElseThrow();
+        assertThat(y.doneCount()).isEqualTo(5);
+        assertThat(y.failCount()).isEqualTo(2);
+
+        DailyJobCount t = result.stream().filter(r -> r.date().equals(today)).findFirst().orElseThrow();
+        assertThat(t.doneCount()).isEqualTo(1);
+        assertThat(t.failCount()).isZero();
+    }
+
+    @Test
+    void getDailyJobCounts_days가_상한을_넘으면_90일로_잘린다() {
+        JobService service = new JobService(jobRepository, toolStatsService, Duration.ofMinutes(30), 20);
+        when(jobRepository.countGroupedByDateAndStatusSince(any())).thenReturn(List.of());
+
+        List<DailyJobCount> result = service.getDailyJobCounts(10_000);
+
+        assertThat(result).hasSize(90);
+    }
+
+    // Spring Data 프로젝션 인터페이스는 getX() 접근자 이름 규약에 의존하므로, 레코드 컴포넌트 이름을
+    // 그대로 getDate/getStatus/getCount로 지어 컴파일러가 생성하는 접근자가 인터페이스를 그대로 만족하게 한다.
+    private static JobRepository.DailyStatusCount dailyStatusCount(LocalDate date, JobStatus status, long count) {
+        record Row(LocalDate getDate, JobStatus getStatus, Long getCount) implements JobRepository.DailyStatusCount {
+        }
+        return new Row(date, status, count);
     }
 }

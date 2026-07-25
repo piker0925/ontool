@@ -2,6 +2,8 @@ package com.back.job.service;
 
 import com.back.global.exception.AppException;
 import com.back.global.exception.ErrorCode;
+import com.back.global.util.DashboardDateRange;
+import com.back.job.dto.DailyJobCount;
 import com.back.job.entity.Job;
 import com.back.job.entity.JobStatus;
 import com.back.job.repository.BatchStats;
@@ -14,7 +16,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -142,5 +147,37 @@ public class JobService {
     /** 결과 보관 기간이 지났는지 — 지났으면 파일은 이미 청소됐을 수 있다(row는 회원 Job이라 보존됨, 050). */
     public boolean isExpired(Job job) {
         return LocalDateTime.now().isAfter(job.getExpiresAt());
+    }
+
+    /** 어드민 대시보드(118) — 레인별 전체 처리 분포. 그룹 집계는 리포지토리에 그대로 위임한다. */
+    public List<JobRepository.LaneCount> getLaneDistribution() {
+        return jobRepository.countGroupedByLane();
+    }
+
+    /**
+     * 어드민 대시보드(118) — 최근 days일 일별 성공/실패 집계. 리포지토리가 돌려주는 (날짜,상태) 행을
+     * 하루 단위로 합치고, 데이터가 없는 날짜도 0으로 채워 넣어 라인 차트에 구멍이 생기지 않게 한다.
+     */
+    public List<DailyJobCount> getDailyJobCounts(int days) {
+        int clampedDays = DashboardDateRange.clampDays(days);
+        LocalDate today = LocalDate.now();
+        LocalDate start = today.minusDays(clampedDays - 1L);
+
+        Map<LocalDate, long[]> byDate = new HashMap<>();
+        for (JobRepository.DailyStatusCount row : jobRepository.countGroupedByDateAndStatusSince(start.atStartOfDay())) {
+            long[] bucket = byDate.computeIfAbsent(row.getDate(), d -> new long[2]);
+            if (row.getStatus() == JobStatus.DONE) {
+                bucket[0] += row.getCount();
+            } else if (row.getStatus() == JobStatus.FAILED) {
+                bucket[1] += row.getCount();
+            }
+        }
+
+        List<DailyJobCount> result = new ArrayList<>();
+        for (LocalDate d = start; !d.isAfter(today); d = d.plusDays(1)) {
+            long[] bucket = byDate.getOrDefault(d, new long[2]);
+            result.add(new DailyJobCount(d, bucket[0], bucket[1]));
+        }
+        return result;
     }
 }

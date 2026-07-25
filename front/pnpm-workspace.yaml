@@ -2,6 +2,7 @@ packages:
   - '.'
 
 allowBuilds:
+  maplibre-gl: true
   vue-demi: false
 
 overrides:

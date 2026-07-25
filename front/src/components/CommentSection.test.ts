@@ -94,3 +94,54 @@ describe('CommentSection 인라인 알림 배너 — aria-live', () => {
         expect(banner.attributes('aria-live')).toBe('assertive')
     })
 })
+
+describe('CommentSection 댓글 등록 실패 — 056 정지 사유 표시', () => {
+    async function mountAndTypeComment() {
+        accessToken.value = 'token'
+        user.value = {id: 1, provider: 'GOOGLE', nickname: 'tester', email: null, createdAt: '2026-07-01T00:00:00'}
+        mockGet.mockResolvedValueOnce({data: []})
+        const wrapper = mount(CommentSection, {props: {moduleId: 'sha256'}})
+        await flushPromises()
+
+        await wrapper.find('textarea[aria-label="댓글 내용"]').setValue('테스트 댓글')
+        const submitBtn = wrapper.findAll('button').find(b => b.text() === '댓글 등록')
+        return {wrapper, submitBtn}
+    }
+
+    it('정지된 유저가 작성 시도하면 서버가 내려준 정지 사유 메시지를 그대로 보여준다(침묵 실패 아님)', async () => {
+        mockPost.mockRejectedValueOnce({
+            response: {status: 403, data: {code: 'USER_SUSPENDED', message: '정지된 계정은 댓글을 작성할 수 없습니다.'}},
+        })
+        const {wrapper, submitBtn} = await mountAndTypeComment()
+
+        await submitBtn?.trigger('click')
+        await flushPromises()
+
+        expect(wrapper.text()).toContain('정지된 계정은 댓글을 작성할 수 없습니다.')
+        const banner = wrapper.find('[role="alert"]')
+        expect(banner.exists()).toBe(true)
+    })
+
+    it('그 외 사유로 작성 실패하면 일반 실패 메시지를 보여준다(회귀 없음 — 침묵 실패로 되돌아가지 않음)', async () => {
+        mockPost.mockRejectedValueOnce({response: {status: 500}})
+        const {wrapper, submitBtn} = await mountAndTypeComment()
+
+        await submitBtn?.trigger('click')
+        await flushPromises()
+
+        expect(wrapper.text()).toContain('댓글 등록에 실패했습니다.')
+        expect(wrapper.find('[role="alert"]').exists()).toBe(true)
+    })
+
+    it('작성에 성공하면 에러 배너 없이 목록이 갱신된다(정상 경로 회귀 없음)', async () => {
+        mockPost.mockResolvedValueOnce({})
+        const {wrapper, submitBtn} = await mountAndTypeComment()
+        mockGet.mockResolvedValueOnce({data: ONE_COMMENT})
+
+        await submitBtn?.trigger('click')
+        await flushPromises()
+
+        expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+        expect(wrapper.text()).toContain('좋은 도구네요')
+    })
+})

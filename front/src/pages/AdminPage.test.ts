@@ -218,9 +218,10 @@ describe('AdminPage 유저 관리 — 계정 삭제 모달', () => {
 describe('AdminPage 유저 관리 — 회원 정지(056)', () => {
     async function openUsersTab(status: 'ACTIVE' | 'SUSPENDED') {
         mockAdminEndpointsWithOneUser(status)
-        vi.spyOn(window, 'confirm').mockReturnValue(true)
 
-        const wrapper = await mountAdminPage()
+        const router = newRouter()
+        await router.push('/admin')
+        const wrapper = mount(AdminPage, {attachTo: document.body, global: {plugins: [router]}})
         await loginAsAdmin(wrapper)
         const usersTab = wrapper.findAll('button').find(b => b.text().includes('유저 관리'))
         await usersTab?.trigger('click')
@@ -229,7 +230,11 @@ describe('AdminPage 유저 관리 — 회원 정지(056)', () => {
         return wrapper
     }
 
-    it('정지 안 된 유저는 "정지" 버튼이 보이고, 누르면 POST /admin/users/{id}/suspend를 호출하고 목록을 다시 불러온다', async () => {
+    function modalButton(text: string) {
+        return Array.from(document.body.querySelectorAll('button')).find(b => b.textContent === text)
+    }
+
+    it('정지 안 된 유저는 "정지" 버튼이 보이고, 누르면 확인 모달이 뜨고 확정하면 POST /admin/users/{id}/suspend를 호출하고 목록을 다시 불러온다', async () => {
         mockPost.mockResolvedValueOnce({})
         const wrapper = await openUsersTab('ACTIVE')
 
@@ -241,12 +246,21 @@ describe('AdminPage 유저 관리 — 회원 정지(056)', () => {
         await suspendBtn?.trigger('click')
         await flushPromises()
 
+        // 브라우저 기본 confirm() 대신 자체 모달이 떠야 한다.
+        const dialogContent = document.body.querySelector('[data-slot="dialog-content"]')
+        expect(dialogContent).not.toBeNull()
+        expect(mockPost).not.toHaveBeenCalled()
+
+        modalButton('정지')?.dispatchEvent(new MouseEvent('click', {bubbles: true}))
+        await flushPromises()
+
         expect(mockPost).toHaveBeenCalledWith('/admin/users/42/suspend', {}, expect.anything())
         // 정지 후 배지가 반영되려면 목록을 다시 불러와야 한다 — 로그인 시 1회 + 정지 후 1회.
         expect(mockGet.mock.calls.filter(c => (c[0] as string).startsWith('/admin/users')).length).toBeGreaterThanOrEqual(2)
+        wrapper.unmount()
     })
 
-    it('정지된 유저는 닉네임 옆에 "정지됨" 배지가 보이고, "정지 해제" 버튼을 누르면 POST /admin/users/{id}/unsuspend를 호출한다', async () => {
+    it('정지된 유저는 닉네임 옆에 "정지됨" 배지가 보이고, "정지 해제" 확정을 누르면 POST /admin/users/{id}/unsuspend를 호출한다', async () => {
         mockPost.mockResolvedValueOnce({})
         const wrapper = await openUsersTab('SUSPENDED')
 
@@ -257,19 +271,24 @@ describe('AdminPage 유저 관리 — 회원 정지(056)', () => {
 
         await unsuspendBtn?.trigger('click')
         await flushPromises()
+        modalButton('정지 해제')?.dispatchEvent(new MouseEvent('click', {bubbles: true}))
+        await flushPromises()
 
         expect(mockPost).toHaveBeenCalledWith('/admin/users/42/unsuspend', {}, expect.anything())
+        wrapper.unmount()
     })
 
-    it('취소하면 정지 요청을 보내지 않는다', async () => {
+    it('모달에서 취소를 누르면 정지 요청을 보내지 않는다', async () => {
         const wrapper = await openUsersTab('ACTIVE')
-        vi.spyOn(window, 'confirm').mockReturnValue(false)
 
         const suspendBtn = wrapper.findAll('button').find(b => b.text() === '정지')
         await suspendBtn?.trigger('click')
         await flushPromises()
+        modalButton('취소')?.dispatchEvent(new MouseEvent('click', {bubbles: true}))
+        await flushPromises()
 
         expect(mockPost).not.toHaveBeenCalled()
+        wrapper.unmount()
     })
 })
 

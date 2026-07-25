@@ -452,6 +452,34 @@
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <!-- 되돌릴 수 있는 관리자 액션 공용 확인 모달(강제 로그아웃·정지·정지해제) — 브라우저 기본 confirm() 대체 -->
+    <Dialog :open="confirmAction !== null" @update:open="v => { if (!v) confirmAction = null }">
+      <DialogContent v-if="confirmAction">
+        <DialogHeader>
+          <DialogTitle>{{ confirmAction.title }}</DialogTitle>
+          <DialogDescription class="pt-4">{{ confirmAction.description }}</DialogDescription>
+        </DialogHeader>
+        <DialogFooter class="mt-4 sm:justify-end gap-2 sm:gap-0">
+          <button
+            class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
+            @click="confirmAction = null"
+          >
+            취소
+          </button>
+          <button
+            :class="confirmAction.variant === 'destructive'
+              ? 'bg-destructive text-destructive-foreground hover:opacity-90'
+              : 'bg-primary text-primary-foreground hover:opacity-90'"
+            class="rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+            :disabled="confirmActionRunning"
+            @click="runConfirmAction"
+          >
+            {{ confirmActionRunning ? '처리 중…' : confirmAction.confirmLabel }}
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
@@ -639,41 +667,84 @@ function changePage(newPage: number) {
   loadUsers()
 }
 
-async function forceLogoutUser(id: number, nickname: string) {
-  if (!confirm(`'${nickname}'(ID:${id}) 유저를 정말 강제 로그아웃 하시겠습니까?\n이 작업은 즉시 모든 기기에서 토큰을 만료시킵니다.`)) return
+// --- 되돌릴 수 있는 관리자 액션(강제 로그아웃·정지·정지해제) 공용 확인 모달 ---
+// 브라우저 기본 confirm()은 스타일을 못 입혀 다른 화면과 이질감이 크다 — 계정 삭제(100)의 자체
+// 모달과 같은 톤으로 통일하되, 액션마다 모달을 새로 만들지 않도록 제목·설명·버튼만 갈아끼운다.
+interface ConfirmAction {
+  title: string
+  description: string
+  confirmLabel: string
+  variant: 'destructive' | 'default'
+  run: () => Promise<boolean>
+}
 
+const confirmAction = ref<ConfirmAction | null>(null)
+const confirmActionRunning = ref(false)
+
+async function runConfirmAction() {
+  if (!confirmAction.value) return
+  confirmActionRunning.value = true
   try {
-    await apiClient.post(`/admin/users/${id}/force-logout`, {}, {headers: {Authorization: authHeader}})
-    alert('성공적으로 강제 로그아웃 되었습니다.')
-  } catch (e) {
-    alert('로그아웃 처리에 실패했습니다.')
-    console.error(e)
+    const succeeded = await confirmAction.value.run()
+    if (succeeded) confirmAction.value = null
+  } finally {
+    confirmActionRunning.value = false
   }
 }
 
-// --- 회원 정지(056) — 댓글 작성만 막는다, 로그인·좋아요는 그대로. 되돌릴 수 있는 조치라 강제 로그아웃과
-// 같은 confirm() 수준으로 충분하고, 계정 삭제 같은 자체 모달까지는 필요 없다.
-async function suspendUser(id: number, nickname: string) {
-  if (!confirm(`'${nickname}'(ID:${id}) 유저를 정지하시겠습니까?\n정지되면 댓글 작성이 막힙니다(로그인·좋아요는 그대로 가능).`)) return
-
+// 세 액션(강제 로그아웃·정지·정지해제) 모두 "POST 후 실패하면 alert"라는 같은 모양이라 한 곳에 둔다.
+async function postAdminAction(url: string, failMessage: string): Promise<boolean> {
   try {
-    await apiClient.post(`/admin/users/${id}/suspend`, {}, {headers: {Authorization: authHeader}})
-    await loadUsers()
+    await apiClient.post(url, {}, {headers: {Authorization: authHeader}})
+    return true
   } catch (e) {
-    alert('정지 처리에 실패했습니다.')
+    alert(failMessage)
     console.error(e)
+    return false
   }
 }
 
-async function unsuspendUser(id: number, nickname: string) {
-  if (!confirm(`'${nickname}'(ID:${id}) 유저의 정지를 해제하시겠습니까?`)) return
+function forceLogoutUser(id: number, nickname: string) {
+  confirmAction.value = {
+    title: `'${nickname}'(ID:${id}) 유저를 강제 로그아웃 하시겠습니까?`,
+    description: '이 작업은 즉시 모든 기기에서 토큰을 만료시킵니다.',
+    confirmLabel: '강제 로그아웃',
+    variant: 'destructive',
+    run: async () => {
+      const succeeded = await postAdminAction(`/admin/users/${id}/force-logout`, '로그아웃 처리에 실패했습니다.')
+      if (succeeded) alert('성공적으로 강제 로그아웃 되었습니다.')
+      return succeeded
+    },
+  }
+}
 
-  try {
-    await apiClient.post(`/admin/users/${id}/unsuspend`, {}, {headers: {Authorization: authHeader}})
-    await loadUsers()
-  } catch (e) {
-    alert('정지 해제에 실패했습니다.')
-    console.error(e)
+// 회원 정지(056) — 댓글 작성만 막는다, 로그인·좋아요는 그대로. 계정 삭제(100)와 달리 되돌릴 수
+// 있는 조치라 비가역 경고 문구까지는 필요 없고, 위 공용 모달로 충분하다.
+function suspendUser(id: number, nickname: string) {
+  confirmAction.value = {
+    title: `'${nickname}'(ID:${id}) 유저를 정지하시겠습니까?`,
+    description: '정지되면 댓글 작성이 막힙니다. 로그인·좋아요는 그대로 가능하며, 언제든 다시 해제할 수 있습니다.',
+    confirmLabel: '정지',
+    variant: 'destructive',
+    run: async () => {
+      const succeeded = await postAdminAction(`/admin/users/${id}/suspend`, '정지 처리에 실패했습니다.')
+      if (succeeded) await loadUsers()
+      return succeeded
+    },
+  }
+}
+
+function unsuspendUser(id: number, nickname: string) {
+  confirmAction.value = {
+    title: `'${nickname}'(ID:${id}) 유저의 정지를 해제하시겠습니까?`,
+    description: '해제하면 즉시 댓글 작성이 다시 가능해집니다.',
+    confirmLabel: '정지 해제',
+    variant: 'default',
+    run: async () => {
+      const succeeded = await postAdminAction(`/admin/users/${id}/unsuspend`, '정지 해제에 실패했습니다.')
+      if (succeeded) await loadUsers()
+      return succeeded
+    },
   }
 }
 

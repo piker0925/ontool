@@ -216,8 +216,14 @@ async function submitComment() {
     await apiClient.post(`/api/v1/tools/${props.moduleId}/comments`, {content: newContent.value})
     newContent.value = ''
     await loadComments()
-  } catch {
-    // 제출 실패 시 조용히 무시
+  } catch (e: any) {
+    // 056: 정지된 유저는 이유를 알아야 재시도하지 않는다 — 서버 메시지를 그대로 보여준다.
+    if (e?.response?.data?.code === 'USER_SUSPENDED') {
+      showFeedback('error', e.response.data.message)
+    } else {
+      showFeedback('error', '댓글 등록에 실패했습니다.')
+    }
+    console.error('Failed to submit comment', e)
   } finally {
     submitting.value = false
   }

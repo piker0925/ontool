@@ -73,10 +73,6 @@
                 <BarChart :data="moduleUsageChartData" :value-formatter="v => v.toLocaleString()"/>
               </div>
               <div>
-                <h3 class="mb-3 text-xs font-medium text-muted-foreground">레인별 처리 분포</h3>
-                <DonutChart :data="laneDonutData"/>
-              </div>
-              <div>
                 <h3 class="mb-3 text-xs font-medium text-muted-foreground">가입 경로 비율</h3>
                 <DonutChart :data="providerDonutData" :donut="false"/>
               </div>
@@ -93,6 +89,13 @@
                   />
                 </template>
                 <p v-else class="text-xs text-muted-foreground">불러오는 중…</p>
+                <!-- 큐 적체 게이지(요약) ↔ 작업 큐 탭(상세 목록) 연결 — 둘이 같은 데이터의 요약/상세 관계라는 게
+                     기존엔 드러나지 않았다. 탭 전환 함수를 그대로 재사용해 클릭 시 데이터도 같이 지연 로드된다. -->
+                <p class="text-xs text-muted-foreground">
+                  상세 목록은
+                  <button class="text-primary underline hover:no-underline" @click="switchTab('jobQueue')">작업 큐</button>
+                  탭에서 확인
+                </p>
               </div>
               <div>
                 <h3 class="mb-3 text-xs font-medium text-muted-foreground">일별 Job 처리 (성공/실패)</h3>
@@ -110,38 +113,9 @@
             </div>
           </section>
 
-          <!-- 모듈별 실패율 랭킹(161) — 같은 stats 목록의 failCount/useCount 비율 기준 -->
-          <section class="rounded-xl border border-border bg-card shadow-sm">
-            <div class="border-b border-border px-5 py-3">
-              <h2 class="text-sm font-medium text-foreground">모듈별 실패율 랭킹</h2>
-            </div>
-            <div class="overflow-x-auto">
-              <table class="w-full text-sm">
-                <thead>
-                <tr class="border-b border-border bg-muted/50 text-left text-xs text-muted-foreground">
-                  <th class="px-5 py-3 font-medium">순위</th>
-                  <th class="px-5 py-3 font-medium">모듈</th>
-                  <th class="px-5 py-3 font-medium text-right">사용 횟수</th>
-                  <th class="px-5 py-3 font-medium text-right">실패</th>
-                  <th class="px-5 py-3 font-medium text-right">실패율</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr v-if="moduleFailRateRankingData.length === 0">
-                  <td class="px-5 py-6 text-center text-muted-foreground" colspan="5">데이터 없음</td>
-                </tr>
-                <tr v-for="(r, i) in moduleFailRateRankingData" :key="r.moduleId" class="border-b border-border last:border-0 hover:bg-muted/20">
-                  <td class="px-5 py-3 text-muted-foreground">{{ i + 1 }}</td>
-                  <td class="px-5 py-3 text-foreground">{{ r.name }}</td>
-                  <td class="px-5 py-3 text-right text-foreground">{{ r.useCount.toLocaleString() }}</td>
-                  <td class="px-5 py-3 text-right text-destructive">{{ r.failCount.toLocaleString() }}</td>
-                  <td class="px-5 py-3 text-right font-medium text-destructive">{{ (r.failRate * 100).toFixed(1) }}%</td>
-                </tr>
-                </tbody>
-              </table>
-            </div>
-          </section>
-
+          <!-- 모듈 통계 — 예전엔 "모듈별 실패율 랭킹" 미니 표가 따로 있었으나, 정보가 겹쳐서
+               이 표 하나로 합쳤다(정렬 가능한 컬럼 헤더로 랭킹 역할도 겸함). 실패율은 canFail인
+               모듈만 계산되고, 그 외에는 "-"(해당 없음)/"사용 없음"으로 명확히 구분해 보여준다. -->
           <section class="rounded-xl border border-border bg-card shadow-sm">
             <div class="flex items-center justify-between border-b border-border px-5 py-3">
               <h2 class="text-sm font-medium text-foreground">모듈 통계</h2>
@@ -151,21 +125,27 @@
               <table class="w-full text-sm">
                 <thead>
                 <tr class="border-b border-border bg-muted/50 text-left text-xs text-muted-foreground">
-                  <th class="px-5 py-3 font-medium">모듈 ID</th>
-                  <th class="px-5 py-3 font-medium text-right">사용 횟수</th>
-                  <th class="px-5 py-3 font-medium text-right">좋아요</th>
-                  <th class="px-5 py-3 font-medium text-right">실패</th>
+                  <th class="cursor-pointer select-none px-5 py-3 font-medium" @click="setStatsSort('name')">모듈{{ statsSortIndicator('name') }}</th>
+                  <th class="cursor-pointer select-none px-5 py-3 text-right font-medium" @click="setStatsSort('useCount')">사용 횟수{{ statsSortIndicator('useCount') }}</th>
+                  <th class="cursor-pointer select-none px-5 py-3 text-right font-medium" @click="setStatsSort('likeCount')">좋아요{{ statsSortIndicator('likeCount') }}</th>
+                  <th class="cursor-pointer select-none px-5 py-3 text-right font-medium" @click="setStatsSort('failCount')">실패{{ statsSortIndicator('failCount') }}</th>
+                  <th class="cursor-pointer select-none px-5 py-3 text-right font-medium" @click="setStatsSort('failRate')">실패율{{ statsSortIndicator('failRate') }}</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr v-if="stats.length === 0">
-                  <td class="px-5 py-6 text-center text-muted-foreground" colspan="4">데이터 없음</td>
+                <tr v-if="sortedModuleStatsRows.length === 0">
+                  <td class="px-5 py-6 text-center text-muted-foreground" colspan="5">데이터 없음</td>
                 </tr>
-                <tr v-for="s in stats" :key="s.moduleId" class="border-b border-border last:border-0 hover:bg-muted/20">
-                  <td class="px-5 py-3 font-mono text-xs text-foreground/80">{{ s.moduleId }}</td>
-                  <td class="px-5 py-3 text-right text-foreground">{{ s.useCount.toLocaleString() }}</td>
-                  <td class="px-5 py-3 text-right text-foreground">{{ s.likeCount.toLocaleString() }}</td>
-                  <td class="px-5 py-3 text-right text-destructive">{{ s.failCount.toLocaleString() }}</td>
+                <tr v-for="r in sortedModuleStatsRows" :key="r.moduleId" class="border-b border-border last:border-0 hover:bg-muted/20">
+                  <td class="px-5 py-3 text-foreground">{{ r.name }}</td>
+                  <td class="px-5 py-3 text-right text-foreground">{{ r.useCount.toLocaleString() }}</td>
+                  <td class="px-5 py-3 text-right text-foreground">{{ r.likeCount.toLocaleString() }}</td>
+                  <td class="px-5 py-3 text-right text-destructive">{{ r.failCount.toLocaleString() }}</td>
+                  <td class="px-5 py-3 text-right font-medium" :class="r.failRate !== null ? 'text-destructive' : 'text-muted-foreground'">
+                    <template v-if="r.failRate !== null">{{ (r.failRate * 100).toFixed(1) }}%</template>
+                    <template v-else-if="r.canFail">사용 없음</template>
+                    <template v-else>-</template>
+                  </td>
                 </tr>
                 </tbody>
               </table>
@@ -298,6 +278,38 @@
               </button>
             </div>
           </section>
+
+          <!-- 댓글 신고 - 유저별 누적 집계 (056 정지 판단용) — 커뮤니티 콘텐츠 조정이 아니라
+               "이 유저를 정지할지" 판단을 돕는 유저 관리 관심사라 유저 관리 탭으로 옮겼다. -->
+          <section class="mt-6 rounded-xl border border-border bg-card shadow-sm">
+            <div class="flex items-center justify-between border-b border-border px-5 py-3">
+              <h2 class="text-sm font-medium text-foreground">댓글 신고 - 유저별 누적</h2>
+              <button class="text-xs text-muted-foreground hover:text-foreground" @click="loadReportUserAggregates">새로고침</button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                <tr class="border-b border-border bg-muted/50 text-left text-xs text-muted-foreground">
+                  <th class="px-5 py-3 font-medium">닉네임</th>
+                  <th class="px-5 py-3 font-medium text-right">누적 신고</th>
+                  <th class="px-5 py-3 font-medium">사유별 분포</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-if="reportUserAggregates.length === 0">
+                  <td class="px-5 py-6 text-center text-muted-foreground" colspan="3">신고 누적 유저가 없습니다.</td>
+                </tr>
+                <tr v-for="agg in reportUserAggregates" :key="agg.userId" class="border-b border-border last:border-0 hover:bg-muted/20">
+                  <td class="px-5 py-3 text-foreground">{{ agg.nickname }} <span class="text-xs text-muted-foreground">(ID:{{ agg.userId }})</span></td>
+                  <td class="px-5 py-3 text-right font-medium text-destructive">{{ agg.totalCount }}</td>
+                  <td class="px-5 py-3 text-xs text-muted-foreground">
+                    <span v-for="(cnt, reason) in agg.reasonCounts" :key="reason" class="mr-2">{{ reason }}: {{ cnt }}</span>
+                  </td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
         </div>
 
         <!-- 3. 작업 큐 탭 (161 — 기존 "운영" 탭 분할) -->
@@ -362,10 +374,13 @@
             </ul>
           </section>
 
-          <!-- 최근 댓글 -->
+          <!-- 최근 댓글 — 시스템 전체 댓글은 무제한으로 쌓일 수 있어(백엔드 페이지네이션 추가,
+               161 이후 라운드) 여기서는 최근 몇 개만 미리보기로 보여주고, 전체는 "전체보기" 모달의
+               자체 페이지네이션으로 확인한다(기본으로 무제한 목록을 로드/렌더링하지 않음). -->
           <section class="rounded-xl border border-border bg-card shadow-sm">
-            <div class="border-b border-border px-5 py-3">
-              <h2 class="text-sm font-medium text-foreground">댓글 관리</h2>
+            <div class="flex items-center justify-between border-b border-border px-5 py-3">
+              <h2 class="text-sm font-medium text-foreground">댓글 관리 (최근 {{ COMMENTS_PREVIEW_SIZE }}개)</h2>
+              <button class="text-xs text-muted-foreground hover:text-foreground" @click="openCommentsModal">전체보기</button>
             </div>
             <ul class="divide-y divide-border">
               <li v-if="comments.length === 0" class="px-5 py-6 text-center text-sm text-muted-foreground">댓글 없음</li>
@@ -383,37 +398,6 @@
                 </button>
               </li>
             </ul>
-          </section>
-
-          <!-- 댓글 신고 - 유저별 누적 집계 (056 정지 판단용) -->
-          <section class="rounded-xl border border-border bg-card shadow-sm">
-            <div class="flex items-center justify-between border-b border-border px-5 py-3">
-              <h2 class="text-sm font-medium text-foreground">댓글 신고 - 유저별 누적</h2>
-              <button class="text-xs text-muted-foreground hover:text-foreground" @click="loadReportUserAggregates">새로고침</button>
-            </div>
-            <div class="overflow-x-auto">
-              <table class="w-full text-sm">
-                <thead>
-                <tr class="border-b border-border bg-muted/50 text-left text-xs text-muted-foreground">
-                  <th class="px-5 py-3 font-medium">닉네임</th>
-                  <th class="px-5 py-3 font-medium text-right">누적 신고</th>
-                  <th class="px-5 py-3 font-medium">사유별 분포</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr v-if="reportUserAggregates.length === 0">
-                  <td class="px-5 py-6 text-center text-muted-foreground" colspan="3">신고 누적 유저가 없습니다.</td>
-                </tr>
-                <tr v-for="agg in reportUserAggregates" :key="agg.userId" class="border-b border-border last:border-0 hover:bg-muted/20">
-                  <td class="px-5 py-3 text-foreground">{{ agg.nickname }} <span class="text-xs text-muted-foreground">(ID:{{ agg.userId }})</span></td>
-                  <td class="px-5 py-3 text-right font-medium text-destructive">{{ agg.totalCount }}</td>
-                  <td class="px-5 py-3 text-xs text-muted-foreground">
-                    <span v-for="(cnt, reason) in agg.reasonCounts" :key="reason" class="mr-2">{{ reason }}: {{ cnt }}</span>
-                  </td>
-                </tr>
-                </tbody>
-              </table>
-            </div>
           </section>
 
           <!-- 댓글 신고 - 개별 목록 -->
@@ -550,6 +534,49 @@
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <!-- 댓글 전체보기 모달 — 시스템 전체 댓글은 무제한으로 쌓일 수 있어(161 이후 라운드) 미리보기
+         목록과 별개로, 여기서만 자체 페이지네이션으로 전체를 확인한다(모달을 열 때만 로드). -->
+    <Dialog v-model:open="commentsModalOpen">
+      <DialogContent class="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>댓글 전체보기 <span class="text-sm font-normal text-muted-foreground">(총 {{ commentsModalTotalElements }}개)</span></DialogTitle>
+        </DialogHeader>
+        <ul class="max-h-[60vh] divide-y divide-border overflow-y-auto">
+          <li v-if="commentsModalItems.length === 0" class="py-6 text-center text-sm text-muted-foreground">댓글 없음</li>
+          <li v-for="c in commentsModalItems" :key="c.id" class="flex items-start justify-between gap-4 py-4 hover:bg-muted/10">
+            <div>
+              <span class="mb-1 inline-block rounded bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">{{ c.moduleId }}</span>
+              <p class="text-sm text-foreground mt-1">{{ c.content }}</p>
+              <p class="mt-1.5 text-xs text-muted-foreground">{{ formatDate(c.createdAt) }}</p>
+            </div>
+            <button
+                class="ml-4 shrink-0 rounded-md border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                @click="deleteComment(c.id)"
+            >
+              삭제
+            </button>
+          </li>
+        </ul>
+        <div class="flex items-center justify-between border-t border-border pt-3" v-if="commentsModalTotalPages > 0">
+          <button
+              :disabled="commentsModalPage === 0"
+              @click="changeCommentsModalPage(commentsModalPage - 1)"
+              class="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted disabled:opacity-50"
+          >
+            이전
+          </button>
+          <span class="text-sm text-muted-foreground">{{ commentsModalPage + 1 }} / {{ commentsModalTotalPages }}</span>
+          <button
+              :disabled="commentsModalPage >= commentsModalTotalPages - 1"
+              @click="changeCommentsModalPage(commentsModalPage + 1)"
+              class="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted disabled:opacity-50"
+          >
+            다음
+          </button>
+        </div>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
@@ -566,8 +593,14 @@ import GaugeMeter from '../components/charts/GaugeMeter.vue'
 import StackedAreaChart from '../components/charts/StackedAreaChart.vue'
 import LineChart from '../components/charts/LineChart.vue'
 import ActionLogTimeline, {type TimelineItem, type TimelineLegendEntry} from '../components/charts/ActionLogTimeline.vue'
-import {moduleCanFail, moduleNameFor, moduleZoneFor} from '../api/modules'
-import {moduleFailRateRanking, moduleUsageChartData as moduleUsageChartDataOf, zoneUsageDonutData} from './adminStatsDerivations'
+import {allFailableModuleIds, moduleCanFail, moduleNameFor, moduleZoneFor} from '../api/modules'
+import {
+  mergedModuleStatsRows,
+  moduleUsageChartData as moduleUsageChartDataOf,
+  sortModuleStatsRows,
+  zoneUsageDonutData,
+  type ModuleStatsSortKey,
+} from './adminStatsDerivations'
 
 const username = ref('')
 const password = ref('')
@@ -693,7 +726,6 @@ interface DailySignupItem {
 }
 
 interface DashboardStats {
-  laneDistribution: {lane: string; count: number}[]
   providerDistribution: {provider: string; count: number}[]
   heavyQueue: QueueDepthItem
   videoQueue: QueueDepthItem
@@ -701,10 +733,8 @@ interface DashboardStats {
   dailySignups: DailySignupItem[]
 }
 
-// 레인·가입경로는 항상 이 고정 순서로 도넛에 넘긴다 — 값 크기로 재정렬하면 카테고리 색이
+// 가입경로는 항상 이 고정 순서로 도넛에 넘긴다 — 값 크기로 재정렬하면 카테고리 색이
 // 순위를 따라 뒤바뀐다(dataviz: 색은 항목을 따라가지, 순위를 따라가지 않는다).
-const LANE_ORDER = ['HEAVY', 'VIDEO'] as const
-const LANE_LABELS: Record<string, string> = {HEAVY: 'Heavy', VIDEO: 'Video'}
 const PROVIDER_ORDER = ['GOOGLE', 'KAKAO'] as const
 const PROVIDER_LABELS: Record<string, string> = {GOOGLE: 'Google', KAKAO: 'Kakao'}
 
@@ -732,14 +762,24 @@ const totalUsers = ref(0)
 
 const jobs = ref<JobItem[]>([])
 const suggestions = ref<SuggestionItem[]>([])
+// 댓글 관리 미리보기(최근 N개) — 시스템 전체 댓글은 무제한이라 이 배열엔 절대 전체를 담지 않는다.
 const comments = ref<CommentItem[]>([])
 const actionLogs = ref<ActionLogItem[]>([])
+const COMMENTS_PREVIEW_SIZE = 5
+
+// 댓글 전체보기 모달 전용 상태 — 미리보기와 별개 페이지네이션(유저 목록과 같은 20개/페이지).
+const COMMENTS_MODAL_PAGE_SIZE = 20
+const commentsModalOpen = ref(false)
+const commentsModalItems = ref<CommentItem[]>([])
+const commentsModalPage = ref(0)
+const commentsModalTotalPages = ref(0)
+const commentsModalTotalElements = ref(0)
 
 const commentReports = ref<CommentReportItem[]>([])
 const reportStatusFilter = ref('')
 const reportReasonFilter = ref('')
 const reportUserAggregates = ref<CommentReportUserAggregateItem[]>([])
-// 커뮤니티 관리 탭(161)은 소스가 4개(건의사항/댓글/신고 개별/신고 유저별 누적)라 특정 배열의
+// 커뮤니티 관리 탭(161)은 소스가 3개(건의사항/댓글 미리보기/신고 개별)라 특정 배열의
 // .length === 0만으로는 "첫 방문 여부"를 정확히 판단할 수 없다 — 전용 플래그로 가드한다.
 const communityLoaded = ref(false)
 
@@ -748,17 +788,30 @@ const communityLoaded = ref(false)
 // stats/모듈 레지스트리를 그 함수들에 연결하기만 한다.
 const moduleUsageChartData = computed(() => moduleUsageChartDataOf(stats.value, moduleNameFor))
 
-// "모듈별 실패율 랭킹"(161) — 같은 stats 목록의 failCount/useCount 비율 기준, 이미 불러온 데이터의 재가공.
-// canFail로 순수 프론트 계산 도구(failCount가 구조상 영원히 0)를 후보에서 제외한다.
-const moduleFailRateRankingData = computed(() => moduleFailRateRanking(stats.value, moduleNameFor, moduleCanFail))
+// "모듈 통계" 표(161 이후 라운드) — 예전엔 별도 "모듈별 실패율 랭킹" 미니 표였으나 이 표로
+// 합쳤다. FAILABLE_MODULE_IDS는 정적 레지스트리 파생값이라 매 렌더마다 재계산할 필요 없이 한 번만 계산한다.
+const FAILABLE_MODULE_IDS = allFailableModuleIds()
+const statsSortKey = ref<ModuleStatsSortKey>('failRate')
+const statsSortDir = ref<'asc' | 'desc'>('desc')
+const moduleStatsRows = computed(() => mergedModuleStatsRows(stats.value, moduleNameFor, moduleCanFail, FAILABLE_MODULE_IDS))
+const sortedModuleStatsRows = computed(() => sortModuleStatsRows(moduleStatsRows.value, statsSortKey.value, statsSortDir.value))
+
+function setStatsSort(key: ModuleStatsSortKey) {
+  if (statsSortKey.value === key) {
+    statsSortDir.value = statsSortDir.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    statsSortKey.value = key
+    statsSortDir.value = key === 'name' ? 'asc' : 'desc'
+  }
+}
+
+function statsSortIndicator(key: ModuleStatsSortKey): string {
+  if (statsSortKey.value !== key) return ''
+  return statsSortDir.value === 'asc' ? ' ▲' : ' ▼'
+}
 
 // "구역별 사용량 분포"(161) — stats를 모듈 레지스트리의 zones[0](ADR-0030)과 조인해 구역별 useCount 합산.
 const zoneUsageDonutChartData = computed(() => zoneUsageDonutData(stats.value, moduleZoneFor))
-
-const laneDonutData = computed(() => {
-  const byLane = new Map(dashboardStats.value?.laneDistribution.map(d => [d.lane, d.count]) ?? [])
-  return LANE_ORDER.map(lane => ({label: LANE_LABELS[lane], value: byLane.get(lane) ?? 0}))
-})
 
 const providerDonutData = computed(() => {
   const byProvider = new Map(dashboardStats.value?.providerDistribution.map(d => [d.provider, d.count]) ?? [])
@@ -800,9 +853,11 @@ function switchTab(tab: TabId) {
   if (tab === 'stats' && stats.value.length === 0) loadStats()
   if (tab === 'stats' && dashboardStats.value === null) loadDashboardStats()
   if (tab === 'users' && users.value.length === 0) loadUsers()
+  // 댓글신고 유저별 누적(056 정지 판단용)은 유저 관리 탭 소속 — 유저 목록과 독립된 소스라 별도 가드.
+  if (tab === 'users' && reportUserAggregates.value.length === 0) loadReportUserAggregates()
   if (tab === 'jobQueue' && jobs.value.length === 0) loadJobQueue()
-  // 커뮤니티 관리는 건의사항/댓글/댓글신고 2종, 총 4개의 독립된 소스를 한 번에 불러온다 —
-  // 그중 하나(예: 건의사항)만 비어 있는 상태로 잘못 판단하지 않도록 전용 플래그로 첫 방문만 가드한다.
+  // 커뮤니티 관리는 건의사항/댓글 미리보기/댓글신고 개별목록, 총 3개의 독립된 소스를 한 번에
+  // 불러온다 — 그중 하나(예: 건의사항)만 비어 있는 상태로 잘못 판단하지 않도록 전용 플래그로 첫 방문만 가드한다.
   if (tab === 'community' && !communityLoaded.value) loadCommunity()
   if (tab === 'auditLog' && actionLogs.value.length === 0) loadActionLogs()
 }
@@ -973,19 +1028,51 @@ async function loadJobQueue() {
 
 // --- 커뮤니티 관리 탭 ---
 async function loadCommunity() {
-  const headers = {Authorization: authHeader}
   try {
-    const [sugRes, comRes] = await Promise.allSettled([
-      apiClient.get<SuggestionItem[]>('/admin/suggestions', {headers}),
-      apiClient.get<CommentItem[]>('/admin/comments', {headers}),
-    ])
-    if (sugRes.status === 'fulfilled') suggestions.value = sugRes.value.data
-    if (comRes.status === 'fulfilled') comments.value = comRes.value.data
+    const res = await apiClient.get<SuggestionItem[]>('/admin/suggestions', {headers: {Authorization: authHeader}})
+    suggestions.value = res.data
   } catch (e) {
-    console.error('Failed to load community data', e)
+    console.error('Failed to load suggestions', e)
   }
-  await Promise.allSettled([loadCommentReports(), loadReportUserAggregates()])
+  await Promise.allSettled([loadCommentsPreview(), loadCommentReports()])
   communityLoaded.value = true
+}
+
+// --- 댓글 관리(미리보기 + 전체보기 모달) ---
+// 시스템 전체 댓글은 무제한으로 쌓일 수 있어(백엔드 findAll() 무제한 반환 이슈 수정) 커뮤니티
+// 관리 탭에는 최근 몇 개만 미리보기로 불러온다. 전체 목록은 모달을 열 때만 별도 로드한다.
+async function loadCommentsPreview() {
+  try {
+    const res = await apiClient.get(`/admin/comments?page=0&size=${COMMENTS_PREVIEW_SIZE}`, {headers: {Authorization: authHeader}})
+    comments.value = res.data.content
+  } catch (e) {
+    console.error('Failed to load comments preview', e)
+  }
+}
+
+function openCommentsModal() {
+  commentsModalOpen.value = true
+  commentsModalPage.value = 0
+  loadCommentsModalPage()
+}
+
+async function loadCommentsModalPage() {
+  try {
+    const res = await apiClient.get(
+        `/admin/comments?page=${commentsModalPage.value}&size=${COMMENTS_MODAL_PAGE_SIZE}`,
+        {headers: {Authorization: authHeader}},
+    )
+    commentsModalItems.value = res.data.content
+    commentsModalTotalPages.value = res.data.totalPages
+    commentsModalTotalElements.value = res.data.totalElements
+  } catch (e) {
+    console.error('Failed to load comments modal page', e)
+  }
+}
+
+function changeCommentsModalPage(newPage: number) {
+  commentsModalPage.value = newPage
+  loadCommentsModalPage()
 }
 
 // --- 댓글 신고(099) ---
@@ -1035,11 +1122,15 @@ async function deleteComment(id: number, resolveReportId?: number) {
   if (!confirm('정말 삭제하시겠습니까?')) return
   try {
     await apiClient.delete(`/admin/comments/${id}`, {headers: {Authorization: authHeader}})
-    comments.value = comments.value.filter(c => c.id !== id)
   } catch {
     alert('삭제 실패')
     return
   }
+
+  // 미리보기는 페이지네이션된 목록이라 단순 splice로는 totalElements·다음 페이지 경계가 어긋난다 —
+  // 유저 목록·신고 목록과 같은 방식으로 재조회한다. 모달이 열려 있으면 현재 보던 페이지도 같이 갱신.
+  await loadCommentsPreview()
+  if (commentsModalOpen.value) await loadCommentsModalPage()
 
   if (resolveReportId != null) {
     try {

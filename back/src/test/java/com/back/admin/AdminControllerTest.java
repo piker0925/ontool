@@ -87,6 +87,7 @@ class AdminControllerTest extends AbstractMySQLIntegrationTest {
         refreshTokenTheftEventRepository.deleteAll();
         userRepository.deleteAll();
         adminActionLogRepository.deleteAll();
+        commentRepository.deleteAll();
         mockMvc = MockMvcBuilders.webAppContextSetup(wac)
                 .apply(springSecurity())
                 .build();
@@ -151,6 +152,56 @@ class AdminControllerTest extends AbstractMySQLIntegrationTest {
         assertThat(logs).hasSize(1);
         assertThat(logs.get(0).getActionType()).isEqualTo(AdminActionType.COMMENT_DELETE);
         assertThat(logs.get(0).getTargetId()).isEqualTo(saved.getId());
+    }
+
+    @Test
+    void getComments_size로_페이지네이션이_적용되고_최신순으로_정렬된다() throws Exception {
+        Comment c1 = new Comment();
+        c1.setModuleId("m1");
+        c1.setContent("첫번째");
+        commentRepository.save(c1);
+        Thread.sleep(5);
+        Comment c2 = new Comment();
+        c2.setModuleId("m2");
+        c2.setContent("두번째");
+        commentRepository.save(c2);
+        Thread.sleep(5);
+        Comment c3 = new Comment();
+        c3.setModuleId("m3");
+        c3.setContent("세번째");
+        commentRepository.save(c3);
+
+        mockMvc.perform(get("/admin/comments").param("size", "2").param("page", "0")
+                        .with(httpBasic("admin", "1234")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.totalElements").value(3))
+                .andExpect(jsonPath("$.totalPages").value(2))
+                .andExpect(jsonPath("$.content[0].content").value("세번째"))
+                .andExpect(jsonPath("$.content[1].content").value("두번째"));
+
+        mockMvc.perform(get("/admin/comments").param("size", "2").param("page", "1")
+                        .with(httpBasic("admin", "1234")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.page").value(1))
+                .andExpect(jsonPath("$.content[0].content").value("첫번째"));
+    }
+
+    @Test
+    void getComments_page_size_생략시_기본값으로_동작한다() throws Exception {
+        Comment comment = new Comment();
+        comment.setModuleId("test-module");
+        comment.setContent("기본값 확인용");
+        commentRepository.save(comment);
+
+        mockMvc.perform(get("/admin/comments")
+                        .with(httpBasic("admin", "1234")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.content[0].content").value("기본값 확인용"));
     }
 
     @Test

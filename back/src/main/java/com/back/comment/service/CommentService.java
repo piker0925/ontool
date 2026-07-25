@@ -9,6 +9,10 @@ import com.back.user.entity.User;
 import com.back.user.entity.UserStatus;
 import com.back.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +45,18 @@ public class CommentService {
     @Transactional(readOnly = true)
     public List<Comment> findAll() {
         return commentRepository.findAllByOrderByCreatedAtDesc();
+    }
+
+    /**
+     * 관리자 댓글 관리 페이지네이션 — findAll()은 시스템 전체 댓글을 무제한으로 반환해 데이터가
+     * 쌓이면 응답이 무한정 커진다. AdminActionLogService.findRecent와 동일한 패턴(최신순 정렬 +
+     * PageRequest)으로, 미리보기(최근 N개)와 "전체보기" 모달 양쪽에서 이 메서드 하나를 재사용한다.
+     */
+    @Transactional(readOnly = true)
+    public Page<Comment> findRecent(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size,
+                Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by(Sort.Direction.DESC, "id")));
+        return commentRepository.findAll(pageable);
     }
 
     @Transactional

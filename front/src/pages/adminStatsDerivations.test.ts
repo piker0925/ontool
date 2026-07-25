@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest'
-import {moduleFailRateRanking, moduleUsageChartData, zoneUsageDonutData} from './adminStatsDerivations'
-import type {AdminStatItem} from './adminStatsDerivations'
+import {mergedModuleStatsRows, moduleUsageChartData, sortModuleStatsRows, zoneUsageDonutData} from './adminStatsDerivations'
+import type {AdminStatItem, ModuleStatsRow} from './adminStatsDerivations'
 
 const NAME_BY_ID: Record<string, string> = {
     'pdf-merge': 'PDF 병합',
@@ -57,73 +57,86 @@ describe('moduleUsageChartData', () => {
     })
 })
 
-describe('moduleFailRateRanking', () => {
-    it('failCount/useCount 비율을 내림차순으로 랭킹한다 — 실패율이 낮은 모듈이 1위로 오지 않는다', () => {
+describe('mergedModuleStatsRows', () => {
+    it('canFail=true이고 사용된 모듈은 실패율을 계산한다', () => {
         const stats: AdminStatItem[] = [
-            {moduleId: 'low-fail', useCount: 100, likeCount: 0, failCount: 5},   // 5%
-            {moduleId: 'high-fail', useCount: 20, likeCount: 0, failCount: 10},  // 50%
+            {moduleId: 'pdf-merge', useCount: 20, likeCount: 3, failCount: 10}, // 50%
         ]
-        const canForBoth = () => true
 
-        const result = moduleFailRateRanking(stats, nameFor, canForBoth)
+        const result = mergedModuleStatsRows(stats, nameFor, canFor, [])
 
-        expect(result[0].moduleId).toBe('high-fail')
-        expect(result[0].failRate).toBeCloseTo(0.5)
-        expect(result[1].moduleId).toBe('low-fail')
-        expect(result[1].failRate).toBeCloseTo(0.05)
+        expect(result).toEqual([
+            {moduleId: 'pdf-merge', name: 'PDF 병합', useCount: 20, likeCount: 3, failCount: 10, canFail: true, failRate: 0.5},
+        ])
     })
 
-    it('useCount가 0인 모듈은 0/0 실패율이 정의되지 않으므로 랭킹에서 제외한다', () => {
+    it('canFail=false인 모듈(순수 프론트 계산 도구)은 useCount가 있어도 failRate가 null이다 — 0%로 잘못 표시하지 않는다', () => {
         const stats: AdminStatItem[] = [
-            {moduleId: 'unused', useCount: 0, likeCount: 0, failCount: 0},
-            {moduleId: 'used', useCount: 10, likeCount: 0, failCount: 1},
+            {moduleId: 'lotto-generator', useCount: 999, likeCount: 0, failCount: 999},
         ]
-        const canForBoth = () => true
 
-        const result = moduleFailRateRanking(stats, nameFor, canForBoth)
+        const result = mergedModuleStatsRows(stats, nameFor, canFor, [])
+
+        expect(result[0].canFail).toBe(false)
+        expect(result[0].failRate).toBeNull()
+    })
+
+    it('canFail=true인데 아직 tool_stats 행이 없는 모듈(failableModuleIds에만 있음)은 useCount=0 행으로 보완되고 failRate는 null(사용 없음)이다', () => {
+        const stats: AdminStatItem[] = [
+            {moduleId: 'pdf-merge', useCount: 20, likeCount: 3, failCount: 10},
+        ]
+        // pdf-watermark는 /admin/stats 응답엔 없지만(한 번도 안 쓰임) canFail=true인 failable 목록에 있다.
+        const result = mergedModuleStatsRows(stats, nameFor, canFor, ['pdf-merge', 'pdf-watermark'])
+
+        expect(result).toHaveLength(2)
+        const watermarkRow = result.find(r => r.moduleId === 'pdf-watermark')
+        expect(watermarkRow).toEqual({
+            moduleId: 'pdf-watermark', name: 'pdf-watermark', useCount: 0, likeCount: 0, failCount: 0,
+            canFail: true, failRate: null,
+        })
+    })
+
+    it('이미 stats에 있는 failable 모듈은 failableModuleIds로 중복 추가되지 않는다', () => {
+        const stats: AdminStatItem[] = [
+            {moduleId: 'pdf-merge', useCount: 20, likeCount: 3, failCount: 10},
+        ]
+
+        const result = mergedModuleStatsRows(stats, nameFor, canFor, ['pdf-merge'])
 
         expect(result).toHaveLength(1)
-        expect(result[0].moduleId).toBe('used')
+    })
+})
+
+describe('sortModuleStatsRows', () => {
+    const rows: ModuleStatsRow[] = [
+        {moduleId: 'b-tool', name: 'B 도구', useCount: 100, likeCount: 1, failCount: 10, canFail: true, failRate: 0.1},
+        {moduleId: 'a-tool', name: 'A 도구', useCount: 20, likeCount: 5, failCount: 10, canFail: true, failRate: 0.5},
+        {moduleId: 'c-tool', name: 'C 도구', useCount: 50, likeCount: 2, failCount: 0, canFail: false, failRate: null},
+        {moduleId: 'd-tool', name: 'D 도구', useCount: 0, likeCount: 0, failCount: 0, canFail: true, failRate: null},
+    ]
+
+    it('useCount 내림차순으로 정렬한다', () => {
+        const result = sortModuleStatsRows(rows, 'useCount', 'desc')
+        expect(result.map(r => r.moduleId)).toEqual(['b-tool', 'c-tool', 'a-tool', 'd-tool'])
     })
 
-    it('실패율이 같으면 failCount 내림차순으로 동률을 깬다', () => {
-        const stats: AdminStatItem[] = [
-            {moduleId: 'a', useCount: 10, likeCount: 0, failCount: 1},  // 10%
-            {moduleId: 'b', useCount: 100, likeCount: 0, failCount: 10}, // 10%, failCount 더 큼
-        ]
-        const canForBoth = () => true
-
-        const result = moduleFailRateRanking(stats, nameFor, canForBoth)
-
-        expect(result.map(r => r.moduleId)).toEqual(['b', 'a'])
+    it('name 오름차순으로 정렬한다', () => {
+        const result = sortModuleStatsRows(rows, 'name', 'asc')
+        expect(result.map(r => r.moduleId)).toEqual(['a-tool', 'b-tool', 'c-tool', 'd-tool'])
     })
 
-    // 백엔드 failCount는 저장 카운터가 아니라 job 테이블에서 status=FAILED로 실시간 집계된다 —
-    // Job을 아예 만들지 않는 순수 프론트 계산 도구는 useCount·failCount가 둘 다 있어 보여도
-    // (프론트 자체 집계로 useCount는 오를 수 있다) canFail(moduleId)가 false면 후보에서 제외해야
-    // 한다. 0%로 두고 정렬 최하위로 보내는 게 아니라 아예 배제되는지 검증.
-    it('canFail(moduleId)가 false인 도구(순수 프론트 계산 도구)는 useCount·failCount가 있어도 랭킹에서 제외한다', () => {
-        const stats: AdminStatItem[] = [
-            {moduleId: 'pdf-merge', useCount: 10, likeCount: 0, failCount: 1},        // failable, 10%
-            {moduleId: 'lotto-generator', useCount: 999, likeCount: 0, failCount: 999}, // 순수 프론트 — 이론상 100%지만 제외 대상
-        ]
-
-        const result = moduleFailRateRanking(stats, nameFor, canFor)
-
-        expect(result).toHaveLength(1)
-        expect(result[0].moduleId).toBe('pdf-merge')
-        expect(result.some(r => r.moduleId === 'lotto-generator')).toBe(false)
+    // failRate 정렬의 핵심 요구사항: 값이 없는 행(canFail=false 또는 사용 없음)은 정렬 방향과
+    // 무관하게 항상 맨 아래로 가야 한다 — desc로 정렬했다고 null이 위로 오면 안 된다.
+    it('failRate 내림차순 정렬 — null(해당 없음/사용 없음) 행은 맨 아래로 밀린다', () => {
+        const result = sortModuleStatsRows(rows, 'failRate', 'desc')
+        expect(result.map(r => r.moduleId)).toEqual(['a-tool', 'b-tool', 'c-tool', 'd-tool'])
     })
 
-    it('canFail(moduleId)가 true인 backend-wired 프론트 전용 도구는 isHeavy가 아니어도 랭킹에 포함된다', () => {
-        const stats: AdminStatItem[] = [
-            {moduleId: 'pdf-watermark', useCount: 5, likeCount: 0, failCount: 1},
-        ]
-
-        const result = moduleFailRateRanking(stats, nameFor, canFor)
-
-        expect(result).toHaveLength(1)
-        expect(result[0].moduleId).toBe('pdf-watermark')
+    it('failRate 오름차순으로 뒤집어도 null 행은 여전히 맨 아래다 — 방향과 무관하게 맨 아래 고정', () => {
+        const result = sortModuleStatsRows(rows, 'failRate', 'asc')
+        expect(result.map(r => r.moduleId)).toEqual(['b-tool', 'a-tool', 'c-tool', 'd-tool'])
+        // null 두 행(c-tool, d-tool)은 여전히 마지막 두 자리에 있다.
+        expect(result.slice(2).map(r => r.moduleId).sort()).toEqual(['c-tool', 'd-tool'])
     })
 })
 

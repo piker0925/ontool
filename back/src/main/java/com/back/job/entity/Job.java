@@ -112,4 +112,15 @@ public class Job {
                 .distinct()
                 .toList();
     }
+
+    /**
+     * 첫 번째 입력 파일의 원본 경로(파일명). 결과 다운로드명을 원본 파일명 기반으로 짓는 데 쓴다(112).
+     * 처리 완료 후 디스크의 임시 파일은 지워지지만({@link com.back.job.service.JobWorker#processJob}의
+     * deleteInputs) 이 필드는 DB에 남아있어 다운로드 시점에도 조회 가능하다. 입력이 없으면 빈 문자열.
+     */
+    public String firstInputPath() {
+        return Optional.ofNullable(inputPaths).orElse(List.of()).stream()
+                .findFirst()
+                .orElse("");
+    }
 }

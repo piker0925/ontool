@@ -1,6 +1,8 @@
 package com.back;
 
+import com.back.global.storage.FileStorage;
 import com.back.job.entity.Job;
+import com.back.job.entity.JobStatus;
 import com.back.job.repository.JobRepository;
 import com.back.tool.model.ToolInput;
 import com.back.tool.model.ToolModule;
@@ -26,6 +28,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.zip.ZipInputStream;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -49,6 +53,8 @@ class ToolAndJobApiTest extends AbstractMySQLIntegrationTest {
     WebApplicationContext wac;
     @Autowired
     JobRepository jobRepository;
+    @Autowired
+    FileStorage fileStorage;
 
     MockMvc mockMvc;
 
@@ -212,6 +218,37 @@ class ToolAndJobApiTest extends AbstractMySQLIntegrationTest {
     }
 
     @Test
+    void getBatchResult_zip파일명은_batch_UUID가_아니라_첫_원본명_기반이다() throws Exception {
+        MockMultipartFile f1 = new MockMultipartFile("files", "invoice.txt", "text/plain", "aaa".getBytes());
+        MockMultipartFile f2 = new MockMultipartFile("files", "receipt.txt", "text/plain", "bbb".getBytes());
+
+        String resp = mockMvc.perform(multipart("/api/v1/tools/file-heavy-echo/upload").file(f1).file(f2))
+                .andExpect(status().isAccepted())
+                .andReturn().getResponse().getContentAsString();
+        String batchId = JsonPath.read(resp, "$.batchId");
+
+        await().atMost(15, SECONDS).until(() -> {
+            String s = mockMvc.perform(get("/api/v1/batches/" + batchId))
+                    .andReturn().getResponse().getContentAsString();
+            int done = JsonPath.read(s, "$.doneCount");
+            int total = JsonPath.read(s, "$.totalCount");
+            return done == total && total == 2;
+        });
+
+        var asyncResult = mockMvc.perform(get("/api/v1/batches/" + batchId + "/result"))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        String contentDisposition = mockMvc.perform(asyncDispatch(asyncResult))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getHeader("Content-Disposition");
+
+        // 112: batch-{UUID}.zip 이 아니라 첫 원본 파일 베이스명 + 나머지 건수. UUID가 더 이상 안 남는다.
+        assertThat(contentDisposition).doesNotContain(batchId);
+        assertThat(decodeRfc5987Filename(contentDisposition)).isEqualTo("invoice-외1건.zip");
+    }
+
+    @Test
     void getBatchResult_같은_원본명이면_순번으로_구분해_덮어쓰지_않는다() throws Exception {
         MockMultipartFile f1 = new MockMultipartFile("files", "same.txt", "text/plain", "aaa".getBytes());
         MockMultipartFile f2 = new MockMultipartFile("files", "same.txt", "text/plain", "bbb".getBytes());
@@ -262,6 +299,90 @@ class ToolAndJobApiTest extends AbstractMySQLIntegrationTest {
     }
 
     @Test
+    void getFile_다운로드_파일명이_저장키가_아니라_원본파일명_기반이다() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("files", "invoice.pdf", "text/plain", "hello".getBytes());
+
+        String resp = mockMvc.perform(multipart("/api/v1/tools/file-heavy-echo/upload").file(file))
+                .andExpect(status().isAccepted())
+                .andReturn().getResponse().getContentAsString();
+        String jobId = JsonPath.read(resp, "$.jobId");
+
+        await().atMost(10, SECONDS).until(() -> {
+            String s = mockMvc.perform(get("/api/v1/jobs/" + jobId))
+                    .andReturn().getResponse().getContentAsString();
+            return "DONE".equals(JsonPath.read(s, "$.status"));
+        });
+
+        String resultResp = mockMvc.perform(get("/api/v1/jobs/" + jobId + "/result"))
+                .andReturn().getResponse().getContentAsString();
+        String url = JsonPath.read(resultResp, "$.url");
+        String filePath = url.substring(url.indexOf("/api/v1/files/"));
+
+        // 저장 키는 여전히 jobId/result.txt 이지만(URL에 노출), 다운로드 파일명은 원본 베이스명(invoice) +
+        // 결과 확장자(echo는 .txt)로 나와야 한다 — result.txt로 나오면 회귀(112).
+        assertThat(url).contains("/result.txt");
+        String contentDisposition = mockMvc.perform(get(filePath))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getHeader("Content-Disposition");
+        assertThat(contentDisposition).doesNotContain("result.txt");
+        assertThat(decodeRfc5987Filename(contentDisposition)).isEqualTo("invoice.txt");
+    }
+
+    @Test
+    void getFile_원본파일명이_비ASCII여도_Content_Disposition에_올바르게_인코딩된다() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("files", "계약서.pdf", "text/plain", "hello".getBytes());
+
+        String resp = mockMvc.perform(multipart("/api/v1/tools/file-heavy-echo/upload").file(file))
+                .andExpect(status().isAccepted())
+                .andReturn().getResponse().getContentAsString();
+        String jobId = JsonPath.read(resp, "$.jobId");
+
+        await().atMost(10, SECONDS).until(() -> {
+            String s = mockMvc.perform(get("/api/v1/jobs/" + jobId))
+                    .andReturn().getResponse().getContentAsString();
+            return "DONE".equals(JsonPath.read(s, "$.status"));
+        });
+
+        String resultResp = mockMvc.perform(get("/api/v1/jobs/" + jobId + "/result"))
+                .andReturn().getResponse().getContentAsString();
+        String url = JsonPath.read(resultResp, "$.url");
+        String filePath = url.substring(url.indexOf("/api/v1/files/"));
+
+        String contentDisposition = mockMvc.perform(get(filePath))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getHeader("Content-Disposition");
+        assertThat(decodeRfc5987Filename(contentDisposition)).isEqualTo("계약서.txt");
+    }
+
+    @Test
+    void getFile_원본입력경로가_안전하지_않으면_경로탈출문자_없이_안전한_이름으로_폴백한다() throws Exception {
+        // ToolController 업로드 경로는 이미 원본 파일명을 정화하지만(sanitizeFileName), 이 테스트는
+        // FileController가 038의 ZipEntryNamer 폴백까지 실제로 타는지 배관 자체를 확인한다 — Job을
+        // 직접 만들어(정화되지 않은 입력을 흉내) 방어선이 이중으로 걸려 있는지 본다.
+        Job job = new Job();
+        job.setModuleId("file-heavy-echo");
+        job.setStatus(JobStatus.DONE);
+        job.setInputPaths(List.of("/uploads/temp/x/.."));
+        job.setExpiresAt(LocalDateTime.now().plusHours(1));
+        job = jobRepository.save(job);
+
+        String key = job.getId() + "/result.txt";
+        Path tmp = Files.createTempFile("edge-", ".txt");
+        Files.writeString(tmp, "edge-content");
+        fileStorage.save(key, tmp);
+        job.setResultKey(key);
+        jobRepository.save(job);
+
+        String contentDisposition = mockMvc.perform(get("/api/v1/files/" + key))
+                .andExpect(status().isOk())
+                .andExpect(content().string("edge-content"))
+                .andReturn().getResponse().getHeader("Content-Disposition");
+
+        String decoded = decodeRfc5987Filename(contentDisposition);
+        assertThat(decoded).doesNotContain("..").doesNotContain("/").doesNotContain("\\");
+    }
+
+    @Test
     void getFile_found() throws Exception {
         MockMultipartFile file = new MockMultipartFile("files", "doc.txt", "text/plain", "hello".getBytes());
 
@@ -284,6 +405,23 @@ class ToolAndJobApiTest extends AbstractMySQLIntegrationTest {
         mockMvc.perform(get(filePath))
                 .andExpect(status().isOk())
                 .andExpect(content().string("file-content"));
+    }
+
+    /**
+     * RFC 6266/5987 {@code filename*=UTF-8''<percent-encoded>} 조각을 디코딩해 원본 문자열로 되돌린다.
+     * 비-ASCII 파일명(한글 등)이 Content-Disposition 헤더에 실제로 올바르게 인코딩됐는지
+     * (사람이 읽을 수 있는 형태로 되돌아오는지) 독립적으로 검증하기 위한 테스트 헬퍼.
+     */
+    private static String decodeRfc5987Filename(String contentDisposition) {
+        String marker = "filename*=UTF-8''";
+        int start = contentDisposition.indexOf(marker);
+        assertThat(start).as("filename*=UTF-8'' 조각이 헤더에 있어야 함: " + contentDisposition).isNotEqualTo(-1);
+        String encoded = contentDisposition.substring(start + marker.length());
+        int semicolon = encoded.indexOf(';');
+        if (semicolon >= 0) {
+            encoded = encoded.substring(0, semicolon);
+        }
+        return java.net.URLDecoder.decode(encoded, java.nio.charset.StandardCharsets.UTF_8);
     }
 
     @TestConfiguration

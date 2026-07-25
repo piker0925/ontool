@@ -17,6 +17,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -80,6 +81,14 @@ public class JobService {
                 .orElseThrow(() -> new AppException(ErrorCode.JOB_NOT_FOUND));
     }
 
+    /**
+     * {@link #get}과 달리 못 찾아도 예외를 던지지 않는다(112) — 다운로드 파일명처럼 job을 못 찾으면
+     * 그냥 폴백하면 되는, "있으면 쓰고 없으면 말고"인 호출부(FileController)를 위한 조회.
+     */
+    public Optional<Job> findOptional(String id) {
+        return jobRepository.findById(id);
+    }
+
     /** 같은 레인에서 이 작업 앞에 대기 중인 PENDING 수(대략치). RUNNING 이후면 0. */
     public int queuePosition(Job job) {
         if (job.getStatus() != JobStatus.PENDING) {
@@ -103,7 +112,7 @@ public class JobService {
     }
 
     public List<Job> getBatchJobs(String batchId) {
-        return jobRepository.findAllByBatchId(batchId);
+        return jobRepository.findAllByBatchIdOrderByCreatedAtAsc(batchId);
     }
 
     public BatchStats getBatchStats(String batchId) {

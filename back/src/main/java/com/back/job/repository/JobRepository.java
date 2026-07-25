@@ -50,7 +50,9 @@ public interface JobRepository extends JpaRepository<Job, String> {
     /** 디스크 조기청소(106/ADR-0033) — 완료된 작업을 오래된 순으로 배치 조회해 강제 만료 대상으로 삼는다. */
     List<Job> findByStatusInOrderByCreatedAtAsc(Collection<JobStatus> statuses, Pageable pageable);
 
-    List<Job> findAllByBatchId(String batchId);
+    // 생성순(업로드순) 고정 — id가 랜덤 UUID라 정렬 없이는 배치 zip 파일명(112, "첫 원본 파일")이
+    // 조회마다 달라질 수 있다.
+    List<Job> findAllByBatchIdOrderByCreatedAtAsc(String batchId);
 
     /** 관리자 큐 조회(060) — 상태별 현재 Job 목록. */
     List<Job> findAllByStatusIn(Collection<JobStatus> statuses);

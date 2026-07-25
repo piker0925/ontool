@@ -23,15 +23,16 @@
               {{ formatDate(job.createdAt) }} · ID: {{ job.id.split('-')[0] }}...
             </div>
           </div>
-          <div>
-            <div v-if="job.status === 'DONE'">
-              <Button v-if="!job.expired && job.downloadUrl" size="sm" variant="outline" as-child>
-                <a :href="job.downloadUrl" target="_blank" rel="noopener noreferrer">결과 다운로드</a>
-              </Button>
-              <span v-else-if="job.expired" class="text-xs text-muted-foreground italic">
-                결과 보관 기간 만료
-              </span>
-            </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <Button v-if="job.status === 'DONE' && !job.expired && job.downloadUrl" size="sm" variant="outline" as-child>
+              <a :href="job.downloadUrl" target="_blank" rel="noopener noreferrer" data-testid="job-history-download">결과 다운로드</a>
+            </Button>
+            <span v-if="job.status === 'DONE' && job.expired" class="text-xs text-muted-foreground italic">
+              결과 보관 기간 만료
+            </span>
+            <Button v-if="hasModule(job.moduleId)" size="sm" as-child>
+              <router-link :to="`/tools/${job.moduleId}`" data-testid="job-history-reopen">다시 열기</router-link>
+            </Button>
           </div>
         </div>
 
@@ -94,6 +95,10 @@ const modules = normalizeApiModules(MOCK_MODULES)
 
 function getModuleName(id: string) {
   return modules.find(m => m.id === id)?.name || id
+}
+
+function hasModule(id: string) {
+  return modules.some(m => m.id === id)
 }
 
 function getStatusVariant(status: string) {

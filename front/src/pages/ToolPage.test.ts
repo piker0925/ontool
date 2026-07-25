@@ -215,6 +215,79 @@ describe('ToolPage 파라미터 필드 (024)', () => {
     })
 })
 
+// 147: 시각적으로만 인접했던 <label>을 for/id로 프로그래매틱 연결. 위치 기반(parentElement
+// 탐색)이 아니라 실제 for 속성값으로 id가 매긴 대상을 찾아, 스크린리더가 label.htmlFor →
+// getElementById로 실제 인식하는 경로와 동일한 방식으로 검증한다.
+function controlForLabel(wrapper: ReturnType<typeof mount>, labelText: string) {
+    const label = wrapper.findAll('label').find(l => l.text() === labelText)
+    if (!label) return null
+    const forAttr = label.attributes('for')
+    if (!forAttr) return null
+    return wrapper.find(`#${forAttr}`)
+}
+
+describe('ToolPage Heavy 파라미터 label-input 연결 (147)', () => {
+    it('image-to-pdf: select 파라미터(용지 크기)의 label이 for/id로 select와 연결된다', async () => {
+        const wrapper = await mountAt('image-to-pdf', [
+            {id: 'image-to-pdf', name: '이미지→PDF', category: 'PDF', isHeavy: true, zones: ['files']},
+        ])
+
+        const control = controlForLabel(wrapper, '용지 크기')
+
+        expect(control?.exists()).toBe(true)
+        expect(control?.element.tagName).toBe('SELECT')
+    })
+
+    it('image-to-pdf: text 파라미터(여백)의 label이 for/id로 input과 연결된다', async () => {
+        const wrapper = await mountAt('image-to-pdf', [
+            {id: 'image-to-pdf', name: '이미지→PDF', category: 'PDF', isHeavy: true, zones: ['files']},
+        ])
+
+        const control = controlForLabel(wrapper, '여백 (mm)')
+
+        expect(control?.exists()).toBe(true)
+        expect(control?.element.tagName).toBe('INPUT')
+        expect((control?.element as HTMLInputElement).value).toBe('0')
+    })
+
+    it('pdf-split: 서로 다른 두 파라미터(페이지 범위/분할 방식)가 각자 다른 id로 연결되어 서로 뒤섞이지 않는다', async () => {
+        const wrapper = await mountAt('pdf-split', [
+            {id: 'pdf-split', name: 'PDF 분할', category: 'PDF', isHeavy: true, zones: ['files']},
+        ])
+
+        const pageRangeControl = controlForLabel(wrapper, '페이지 범위')
+        const groupModeControl = controlForLabel(wrapper, '분할 방식')
+
+        expect(pageRangeControl?.exists()).toBe(true)
+        expect(groupModeControl?.exists()).toBe(true)
+        expect(pageRangeControl?.attributes('id')).not.toBe(groupModeControl?.attributes('id'))
+        expect(pageRangeControl?.element.tagName).toBe('INPUT')
+        expect(groupModeControl?.element.tagName).toBe('SELECT')
+    })
+
+    it('video-trim-convert: text 파라미터(시작 시각)의 label이 for/id로 input과 연결된다', async () => {
+        const wrapper = await mountAt('video-trim-convert', [
+            {id: 'video-trim-convert', name: '동영상 자르기·변환', category: '동영상', isHeavy: true, zones: ['files']},
+        ])
+
+        const control = controlForLabel(wrapper, '시작 시각(초, 비우면 처음부터)')
+
+        expect(control?.exists()).toBe(true)
+        expect(control?.element.tagName).toBe('INPUT')
+    })
+
+    it('image-resize: "크기 단위" select도 label과 for/id로 연결된다', async () => {
+        const wrapper = await mountAt('image-resize', [
+            {id: 'image-resize', name: '이미지 리사이즈', category: '이미지', isHeavy: true, zones: ['files']},
+        ])
+
+        const control = controlForLabel(wrapper, '크기 단위')
+
+        expect(control?.exists()).toBe(true)
+        expect(control?.element.tagName).toBe('SELECT')
+    })
+})
+
 describe('ToolPage 이미지 리사이즈 크기 입력 UI', () => {
     const imageResize: Module = {id: 'image-resize', name: '이미지 리사이즈', category: '이미지', isHeavy: true, zones: ['files']}
 

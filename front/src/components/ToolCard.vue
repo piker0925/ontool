@@ -3,7 +3,7 @@
       :to="`/tools/${mod.id}`"
       :title="mod.description ?? mod.name"
       :class="[
-        'group relative flex cursor-pointer touch-manipulation items-center rounded-xl border border-border bg-card transition-[background-color,border-color,box-shadow] duration-200 hover:border-primary/30 hover:bg-accent/50 hover:shadow-[0_4px_20px_rgb(0,0,0,0.03)] dark:hover:shadow-none',
+        'group relative flex cursor-pointer touch-manipulation items-center rounded-xl border border-border bg-card transition-[background-color,border-color,box-shadow] duration-200 hover:border-zone-accent hover:shadow-[0_4px_20px_rgb(0,0,0,0.03)] dark:hover:shadow-none',
         mode === 'list' ? 'gap-3 px-3 py-2.5' : 'gap-3.5 px-4 py-4'
       ]"
   >

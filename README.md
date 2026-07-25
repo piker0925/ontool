@@ -45,7 +45,7 @@
 3. **공통 카탈로그로 백엔드 37개·프론트 94개, 131개 도구를 통합한 확장 구조** — 백엔드 도구는 `ToolModule`을 구현하는 `@Component` 클래스 하나만 추가하면 자동 등록되고, 순수 계산으로 끝나는 나머지 94개는 백엔드를 거치지 않고 프론트에서 바로 처리된다. 성격이 다른 파일 처리·즉석 계산·게임·문서 뷰어가 같은 카탈로그·검색·통계 위에 공존하되, 행위 공유는 일부러 하지 않아(과추상화 방지) 데이터 계층만 통합했다. ([설계 →](docs/adr/0026-page-module-generalization.md))
 4. **SSRF 방어 — DNS 리바인딩 TOCTOU까지 차단** — HTML 가져오기 도구는 호스트명을 문자열이 아니라 실제 DNS 해석 결과(IP)로 사설·루프백·CGNAT 대역 여부를 검사하고, JDK `InetAddressResolverProvider` SPI(JEP 418)로 검증에 쓴 주소를 스레드에 고정해 검증 직후 재조회 사이의 DNS 리바인딩 TOCTOU까지 막는다. (자세히 → 아래 [보안 · 프라이버시](#보안--프라이버시))
 
-> **테스트**: 백엔드 770+ (JUnit 5 · Testcontainers MySQL · Awaitility) · 프론트엔드 1,690+ (vitest). 주요 결정은 [ADR 34건](docs/adr/)으로 기록.
+> **테스트**: 백엔드 770+ (JUnit 5 · Testcontainers MySQL · Awaitility) · 프론트엔드 1,690+ (vitest). 주요 결정은 [ADR 34건](docs/adr/)으로 기록. DB 인덱스 감사(누락 인덱스를 실제 MySQL에서 `EXPLAIN`으로 검증)는 [별도 문서](docs/benchmarks/108-db-index-audit/README.md) 참고.
 
 ## 아키텍처
 

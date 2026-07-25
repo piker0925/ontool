@@ -17,7 +17,7 @@ const ONE_COMMENT = [
 
 async function mountAndOpenReport() {
     accessToken.value = 'token'
-    user.value = {id: 1, provider: 'GOOGLE', nickname: 'tester', email: null, createdAt: '2026-07-01T00:00:00'}
+    user.value = {id: 1, provider: 'GOOGLE', nickname: 'tester', email: null, createdAt: '2026-07-01T00:00:00', status: 'ACTIVE'}
     mockGet.mockResolvedValueOnce({data: ONE_COMMENT})
     const wrapper = mount(CommentSection, {props: {moduleId: 'sha256'}})
     await flushPromises()
@@ -51,7 +51,7 @@ describe('CommentSection 폼 접근성', () => {
             data: [{id: 1, content: '댓글 내용', createdAt: '2026-07-01T00:00:00', nickname: '작성자'}],
         })
         accessToken.value = 'token'
-        user.value = {id: 1, provider: 'GOOGLE', nickname: '나', email: null, createdAt: '2026-01-01T00:00:00'}
+        user.value = {id: 1, provider: 'GOOGLE', nickname: '나', email: null, createdAt: '2026-01-01T00:00:00', status: 'ACTIVE'}
 
         const wrapper = mount(CommentSection, {props: {moduleId: 'sha256'}})
         await flushPromises()
@@ -98,7 +98,7 @@ describe('CommentSection 인라인 알림 배너 — aria-live', () => {
 describe('CommentSection 댓글 등록 실패 — 056 정지 사유 표시', () => {
     async function mountAndTypeComment() {
         accessToken.value = 'token'
-        user.value = {id: 1, provider: 'GOOGLE', nickname: 'tester', email: null, createdAt: '2026-07-01T00:00:00'}
+        user.value = {id: 1, provider: 'GOOGLE', nickname: 'tester', email: null, createdAt: '2026-07-01T00:00:00', status: 'ACTIVE'}
         mockGet.mockResolvedValueOnce({data: []})
         const wrapper = mount(CommentSection, {props: {moduleId: 'sha256'}})
         await flushPromises()

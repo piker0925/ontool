@@ -11,7 +11,8 @@ const mockUser = {
   provider: 'GOOGLE' as const,
   nickname: '테스터',
   email: 'tester@example.com',
-  createdAt: '2026-01-01T00:00:00Z'
+  createdAt: '2026-01-01T00:00:00Z',
+  status: 'ACTIVE' as const
 }
 
 vi.mock('../api/client', () => ({

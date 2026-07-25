@@ -38,7 +38,7 @@ describe('ReactionTimeGame — 053 점수 제출', () => {
     beforeEach(() => {
         mockSubmitScore.mockClear()
         accessToken.value = 'token'
-        user.value = {id: 1, provider: 'GOOGLE', nickname: '테스터', email: null, createdAt: '2026-01-01T00:00:00'}
+        user.value = {id: 1, provider: 'GOOGLE', nickname: '테스터', email: null, createdAt: '2026-01-01T00:00:00', status: 'ACTIVE'}
     })
 
     it('결과가 나오면 측정된 ms를 점수로 제출한다', async () => {

@@ -39,7 +39,7 @@ describe('TicTacToeGame — 053 점수 제출', () => {
     beforeEach(() => {
         mockSubmitScore.mockClear()
         accessToken.value = 'token'
-        user.value = {id: 1, provider: 'GOOGLE', nickname: '테스터', email: null, createdAt: '2026-01-01T00:00:00'}
+        user.value = {id: 1, provider: 'GOOGLE', nickname: '테스터', email: null, createdAt: '2026-01-01T00:00:00', status: 'ACTIVE'}
     })
 
     it('사람이 승리하면(computerMove는 1수 앞만 보는 휴리스틱이라 포크로 이길 수 있음) 승리까지 둔 수를 점수로 제출하고 화면에도 보여준다', async () => {

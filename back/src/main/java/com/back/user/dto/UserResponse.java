@@ -2,6 +2,7 @@ package com.back.user.dto;
 
 import com.back.user.entity.AuthProvider;
 import com.back.user.entity.User;
+import com.back.user.entity.UserStatus;
 
 import java.time.LocalDateTime;
 
@@ -10,9 +11,10 @@ public record UserResponse(
         AuthProvider provider,
         String nickname,
         String email,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        UserStatus status
 ) {
     public static UserResponse from(User user) {
-        return new UserResponse(user.getId(), user.getProvider(), user.getNickname(), user.getEmail(), user.getCreatedAt());
+        return new UserResponse(user.getId(), user.getProvider(), user.getNickname(), user.getEmail(), user.getCreatedAt(), user.getStatus());
     }
 }

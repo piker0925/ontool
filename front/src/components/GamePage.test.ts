@@ -109,7 +109,7 @@ describe('GamePage', () => {
 
     it('로그인 상태에서 게임이 끝나면 발급받은 세션 토큰으로 점수를 제출한다', async () => {
         accessToken.value = 'a-token'
-        user.value = {id: 1, provider: 'GOOGLE', nickname: '테스터', email: null, createdAt: '2026-01-01T00:00:00'}
+        user.value = {id: 1, provider: 'GOOGLE', nickname: '테스터', email: null, createdAt: '2026-01-01T00:00:00', status: 'ACTIVE'}
         mockSubmitScore.mockResolvedValue({id: 1, gameId: 'game-2048', score: 42, durationMs: 1000, createdAt: ''})
 
         const wrapper = mount(GamePage, {

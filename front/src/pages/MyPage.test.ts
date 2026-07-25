@@ -21,6 +21,7 @@ const mockUser = {
     nickname: '테스터',
     email: 'tester@example.com',
     createdAt: '2026-01-01T00:00:00Z',
+    status: 'ACTIVE' as const,
 }
 
 function mountMyPage() {
@@ -36,6 +37,35 @@ beforeEach(() => {
     vi.clearAllMocks()
     accessToken.value = 'token'
     user.value = {...mockUser}
+})
+
+describe('MyPage 정지 상태 배너', () => {
+    it('status가 ACTIVE인 유저에게는 정지 배너가 보이지 않는다', () => {
+        user.value = {...mockUser, status: 'ACTIVE'}
+        const wrapper = mountMyPage()
+
+        expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+    })
+
+    it('status가 SUSPENDED인 유저에게는 정지 배너가 항상 보인다', () => {
+        user.value = {...mockUser, status: 'SUSPENDED'}
+        const wrapper = mountMyPage()
+
+        const banner = wrapper.find('[role="alert"]')
+        expect(banner.exists()).toBe(true)
+        expect(banner.text()).toContain('댓글')
+    })
+
+    it('정지 배너 문구는 댓글 작성만 제한됨을 명시하고 전체 계정이 막힌 것처럼 오해하게 하지 않는다', () => {
+        user.value = {...mockUser, status: 'SUSPENDED'}
+        const wrapper = mountMyPage()
+
+        const bannerText = wrapper.find('[role="alert"]').text()
+        expect(bannerText).toContain('댓글')
+        expect(bannerText).toContain('로그인')
+        expect(bannerText).not.toContain('계정이 정지')
+        expect(bannerText).not.toContain('이용할 수 없습니다')
+    })
 })
 
 describe('MyPage 닉네임 편집 아이콘 버튼 접근성', () => {

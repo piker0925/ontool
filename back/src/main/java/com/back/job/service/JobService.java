@@ -17,7 +17,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -82,11 +81,22 @@ public class JobService {
     }
 
     /**
-     * {@link #get}과 달리 못 찾아도 예외를 던지지 않는다(112) — 다운로드 파일명처럼 job을 못 찾으면
-     * 그냥 폴백하면 되는, "있으면 쓰고 없으면 말고"인 호출부(FileController)를 위한 조회.
+     * 저장 키(jobId/result.ext)로 다운로드 표시용 파일명을 만든다(112) — 원본 입력 파일명 기반,
+     * 038의 {@link ZipEntryNamer}(정화·Zip Slip 방지 포함)를 재사용한다. 키 형식이 아니거나, job을
+     * 못 찾거나, 원본 입력이 없으면(경로 정화 후 빈 이름 등) fallback을 그대로 돌려준다. 저장 키의
+     * jobId/원본 파일명 매핑은 이 서비스가 소유하는 지식이라 컨트롤러가 아니라 여기서 판단한다.
      */
-    public Optional<Job> findOptional(String id) {
-        return jobRepository.findById(id);
+    public String displayFilenameFor(String key, String fallback) {
+        int sep = key.indexOf('/');
+        if (sep < 0) {
+            return fallback;
+        }
+        String jobId = key.substring(0, sep);
+        return jobRepository.findById(jobId)
+                .map(Job::firstInputPath)
+                .filter(input -> !input.isEmpty())
+                .map(input -> new ZipEntryNamer().nameFor(input, key))
+                .orElse(fallback);
     }
 
     /** 같은 레인에서 이 작업 앞에 대기 중인 PENDING 수(대략치). RUNNING 이후면 0. */

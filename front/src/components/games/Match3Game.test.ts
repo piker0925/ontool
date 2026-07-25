@@ -26,4 +26,10 @@ describe('Match3Game', () => {
         expect(wrapper.find('[data-testid="tile-0-0"]').classes()).not.toContain('ring-2')
         expect(wrapper.find('[data-testid="tile-0-1"]').classes()).not.toContain('ring-2')
     })
+
+    it('121: 남은 이동 횟수를 초기값(20)으로 표시하고, 아직 게임 종료 오버레이는 없다', () => {
+        const wrapper = mount(Match3Game)
+        expect(wrapper.find('[data-testid="moves-left"]').text()).toBe('20')
+        expect(wrapper.find('[data-testid="game-over"]').exists()).toBe(false)
+    })
 })

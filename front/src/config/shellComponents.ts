@@ -17,7 +17,6 @@ export const FULL_SHELL_COMPONENTS: Record<string, () => Promise<Component>> = {
     'game-baseball': () => import('../components/games/NumberBaseballGame.vue').then(m => m.default),
     'game-tictactoe': () => import('../components/games/TicTacToeGame.vue').then(m => m.default),
     'game-sliding-puzzle': () => import('../components/games/SlidingPuzzleGame.vue').then(m => m.default),
-    'game-idle-clicker': () => import('../components/games/IdleClickerGame.vue').then(m => m.default),
     'game-whack-a-mole': () => import('../components/games/WhackAMoleGame.vue').then(m => m.default),
     'game-word-guess': () => import('../components/games/WordGuessGame.vue').then(m => m.default),
     'game-tower-stack': () => import('../components/games/TowerStackGame.vue').then(m => m.default),

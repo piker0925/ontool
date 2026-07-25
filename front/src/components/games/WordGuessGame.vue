@@ -1,5 +1,5 @@
 <template>
-  <GamePage description="정해진 글자 수의 한국어 단어를 몇 번의 시도 안에 맞혀보세요" title="단어 맞추기">
+  <GamePage description="정해진 글자 수의 한국어 단어를 몇 번의 시도 안에 맞혀보세요" game-id="game-word-guess" title="단어 맞추기">
     <template #default="{ submitScore }">
       <WordGuessBoard :submit-score="submitScore"/>
     </template>

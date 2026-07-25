@@ -1,5 +1,15 @@
 import {describe, expect, it} from 'vitest'
-import {clearAndRefill, findMatches, type Grid, isAdjacent, trySwap} from './match3'
+import {
+    clearAndRefill,
+    createMatch3State,
+    findMatches,
+    type Grid,
+    INITIAL_MOVES,
+    isAdjacent,
+    type Match3State,
+    swap,
+    trySwap,
+} from './match3'
 
 describe('findMatches', () => {
     it('가로로 3개 이상 이어지면 매치로 감지한다', () => {
@@ -100,5 +110,69 @@ describe('clearAndRefill', () => {
         expect(next[2][0]).toBe(4)
         // 매치에 포함되지 않은 다른 열들은 전혀 영향받지 않는다
         expect(next.map(row => row[1])).toEqual([9, 9, 9, 9])
+    })
+})
+
+describe('createMatch3State', () => {
+    it('기본 이동 횟수·점수 0·playing 상태로 시작한다', () => {
+        const state = createMatch3State(8, INITIAL_MOVES, () => 0.5)
+        expect(state.movesLeft).toBe(INITIAL_MOVES)
+        expect(state.score).toBe(0)
+        expect(state.status).toBe('playing')
+    })
+})
+
+describe('swap — 121 리더보드용 이동 제한 모드', () => {
+    function stateWith(overrides: Partial<Match3State>): Match3State {
+        return {grid: [], score: 0, movesLeft: INITIAL_MOVES, status: 'playing', ...overrides}
+    }
+
+    it('매치가 만들어지는 교환은 이동을 1 소모하고 점수가 오른다', () => {
+        const grid: Grid = [
+            [0, 0, 0, 1],
+            [2, 3, 4, 0],
+        ]
+        const state = stateWith({grid, movesLeft: 5})
+        const next = swap(state, [0, 3], [1, 3], () => 0.5)
+
+        expect(next.movesLeft).toBe(4)
+        expect(next.score).toBeGreaterThan(0)
+        expect(next.status).toBe('playing')
+    })
+
+    it('매치가 안 만들어지는 교환은 이동을 소모하지 않는다(같은 참조 반환)', () => {
+        const grid: Grid = [
+            [0, 1, 2],
+            [1, 2, 0],
+            [2, 0, 1],
+        ]
+        const state = stateWith({grid, movesLeft: 5})
+        const next = swap(state, [0, 0], [0, 1], () => 0.5)
+
+        expect(next).toBe(state)
+        expect(next.movesLeft).toBe(5)
+    })
+
+    it('마지막 이동에서 매치가 만들어지면 이동 소모 후 게임이 종료된다', () => {
+        const grid: Grid = [
+            [0, 0, 0, 1],
+            [2, 3, 4, 0],
+        ]
+        const state = stateWith({grid, movesLeft: 1})
+        const next = swap(state, [0, 3], [1, 3], () => 0.5)
+
+        expect(next.movesLeft).toBe(0)
+        expect(next.status).toBe('over')
+    })
+
+    it('게임이 끝난 뒤에는 매치가 되는 교환이라도 상태가 바뀌지 않는다', () => {
+        const grid: Grid = [
+            [0, 0, 0, 1],
+            [2, 3, 4, 0],
+        ]
+        const state = stateWith({grid, movesLeft: 0, status: 'over'})
+        const next = swap(state, [0, 3], [1, 3], () => 0.5)
+
+        expect(next).toBe(state)
     })
 })

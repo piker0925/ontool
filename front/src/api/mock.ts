@@ -568,15 +568,11 @@ export const MOCK_MODULES: Module[] = [
         description: '컴퓨터를 상대로 3x3 판에서 한 줄을 먼저 만드는 삼목 게임',
         kind: 'game', zones: ['fun'],
     },
-    // 121: 캐주얼 게임 10종 추가.
+    // 121: 캐주얼 게임 9종 추가. 전부 백엔드 GameCatalog에 등록돼 리더보드(053)에 연동됨
+    // (game-id를 GamePage에 넘김 — 각 Game.vue 참고).
     {
         id: 'game-sliding-puzzle', name: '슬라이딩 퍼즐', category: '게임', isHeavy: false, isFrontendOnly: true,
         description: '4x4 판에서 빈칸으로 타일을 밀어 1부터 15까지 순서대로 맞추는 퍼즐',
-        kind: 'game', zones: ['fun'],
-    },
-    {
-        id: 'game-idle-clicker', name: '방치형 클리커', category: '게임', isHeavy: false, isFrontendOnly: true,
-        description: '클릭으로 코인을 모으고 업그레이드로 자동 수익을 늘리는 방치형 게임',
         kind: 'game', zones: ['fun'],
     },
     {

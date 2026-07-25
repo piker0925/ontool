@@ -1,7 +1,7 @@
 <template>
-  <GamePage description="인접한 타일을 교환해 같은 종류 3개 이상을 맞춰보세요" title="매치3 퍼즐">
-    <template #default>
-      <Match3Board/>
+  <GamePage description="인접한 타일을 교환해 같은 종류 3개 이상을 맞춰보세요" game-id="game-match3" title="매치3 퍼즐">
+    <template #default="{ submitScore }">
+      <Match3Board :submit-score="submitScore"/>
     </template>
   </GamePage>
 </template>

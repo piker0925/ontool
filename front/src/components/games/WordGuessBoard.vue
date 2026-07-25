@@ -50,8 +50,9 @@ import {useGameSound} from '../../composables/useGameSound'
 import GameResultOverlay from '../GameResultOverlay.vue'
 import GameStat from '../GameStat.vue'
 
-// 이번 이슈는 "매번 랜덤" 방식(일일 고정 단어는 서버 관리가 필요해 범위 밖 — 이슈 본문 참고)을
-// 택했다. 2글자 고정 길이로 시작해 UI를 단순하게 유지한다.
+// createWordGuessState의 random 기본값(todaySeededRandom)이 오늘 날짜로 단어를 결정론적으로
+// 고정한다 — 서버에 "오늘의 단어"를 저장하지 않고도 전 세계 플레이어가 같은 날 같은 단어를
+// 받아, 시도 횟수 기반 리더보드(053)가 공정해진다. 2글자 고정 길이로 UI를 단순하게 유지한다.
 const WORD_LENGTH = 2
 const MAX_ATTEMPTS = 6
 

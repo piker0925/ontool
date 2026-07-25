@@ -103,3 +103,44 @@ export function clearAndRefill(grid: Grid, matches: Array<[number, number]>, ran
 
     return {grid: next, scoreGained: matches.length}
 }
+
+// 121 리더보드 연동: match3은 원래 끝이 없는 스코어 어택이었는데, 053의 onGameEnd(제출 1회)
+// 모델에 맞으려면 "게임 종료" 시점이 있어야 한다 — 캐주얼 매치3 장르의 흔한 형태인
+// "제한된 이동 횟수" 모드를 추가했다(이동 다 쓰면 종료, 점수는 높을수록 좋음).
+export interface Match3State {
+    grid: Grid
+    score: number
+    movesLeft: number
+    status: 'playing' | 'over'
+}
+
+export const INITIAL_MOVES = 20
+
+export function createMatch3State(size = 8, movesLeft = INITIAL_MOVES, random: () => number = Math.random): Match3State {
+    return {grid: createGrid(size, random), score: 0, movesLeft, status: 'playing'}
+}
+
+// 스왑 한 번을 통째로 처리한다: 매치 안 되면 이동 소모 없이 실패(같은 참조 반환) — 그래야
+// "잘못 눌러본" 시도가 제한된 이동 횟수를 갉아먹지 않는다. 매치되면 캐스케이드(클리어→낙하→
+// 보충)를 매치가 없어질 때까지 반복해 콤보 점수를 전부 반영한 뒤 이동을 1 소모한다.
+export function swap(state: Match3State, a: [number, number], b: [number, number], random: () => number = Math.random): Match3State {
+    if (state.status !== 'playing') return state
+
+    const result = trySwap(state.grid, a, b)
+    if (!result.matched) return state
+
+    let grid = result.grid
+    let matches = result.matches
+    let scoreGained = 0
+    while (matches.length > 0) {
+        const cleared = clearAndRefill(grid, matches, random)
+        scoreGained += cleared.scoreGained
+        grid = cleared.grid
+        matches = findMatches(grid)
+    }
+
+    const movesLeft = state.movesLeft - 1
+    const status: Match3State['status'] = movesLeft <= 0 ? 'over' : 'playing'
+
+    return {grid, score: state.score + scoreGained, movesLeft, status}
+}

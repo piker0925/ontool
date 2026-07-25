@@ -16,20 +16,39 @@ export interface WordGuessState {
     status: 'playing' | 'won' | 'lost'
 }
 
-// 길이별 고정 단어 목록 — 매판 injectable random으로 하나를 뽑는다(매일 고정 단어 서버 관리는
-// 이번 이슈 범위 밖, 이슈 본문 참고).
+// 길이별 고정 단어 목록 — 오늘 날짜로 결정론적으로 하나를 뽑는다(서버에 "오늘의 단어"를
+// 저장하지 않고도 전 세계 모든 플레이어가 같은 날 같은 단어를 받는다 — 리더보드(053)가
+// 시도 횟수로 순위를 매기므로, 플레이어마다 난이도가 다른 단어를 받으면 불공정해진다).
 export const WORDS_BY_LENGTH: Record<number, string[]> = {
     2: ['사과', '바다', '나무', '구름', '하늘', '거울', '지도', '연필', '우산', '자석'],
     3: ['고양이', '자전거', '무지개', '텔레비', '냉장고', '도서관', '축구공', '이불장', '손목시계', '컴퓨터'],
 }
 
-export function pickWord(wordLength: number, random: () => number = Math.random): string[] {
+// 날짜(로컬 타임존, YYYY-M-D)를 문자열 해시해 [0,1) 실수로 변환한다. Math.random과 같은
+// () => number 모양을 유지해 pickWord/createWordGuessState의 random 파라미터를 그대로 쓸 수
+// 있게 하면서도, 값 자체는 달력 날짜에만 의존해 매번 같은 날엔 항상 같은 값이 나온다.
+export function seedForDate(date: Date): number {
+    const dateString = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
+    let hash = 0
+    for (let i = 0; i < dateString.length; i++) {
+        hash = (hash * 31 + dateString.charCodeAt(i)) >>> 0
+    }
+    return (hash % 100000) / 100000
+}
+
+// 프로덕션 기본값 — "오늘"을 시드로 쓴다. 테스트는 이 기본값 대신 명시적인 random을
+// 주입해(예: `() => seedForDate(new Date(2026, 0, 15))`) 특정 날짜를 고정할 수 있다.
+export function todaySeededRandom(): number {
+    return seedForDate(new Date())
+}
+
+export function pickWord(wordLength: number, random: () => number = todaySeededRandom): string[] {
     const words = WORDS_BY_LENGTH[wordLength] ?? WORDS_BY_LENGTH[2]
     const word = words[Math.floor(random() * words.length)]
     return Array.from(word)
 }
 
-export function createWordGuessState(wordLength = 2, maxAttempts = 6, random: () => number = Math.random): WordGuessState {
+export function createWordGuessState(wordLength = 2, maxAttempts = 6, random: () => number = todaySeededRandom): WordGuessState {
     return {
         answer: pickWord(wordLength, random),
         wordLength,

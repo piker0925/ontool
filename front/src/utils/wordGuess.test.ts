@@ -1,10 +1,40 @@
 import {describe, expect, it} from 'vitest'
-import {createWordGuessState, isWin, judgeGuess, pickWord, submitGuess} from './wordGuess'
+import {createWordGuessState, isWin, judgeGuess, pickWord, seedForDate, submitGuess} from './wordGuess'
 
 describe('pickWord', () => {
     it('지정한 글자 수의 단어를 반환한다', () => {
         const word = pickWord(2, () => 0)
         expect(word.length).toBe(2)
+    })
+})
+
+describe('seedForDate — 오늘의 단어(일일 챌린지)', () => {
+    it('같은 달력 날짜는 항상 같은 시드값을 낸다(시·분·초가 달라도)', () => {
+        const morning = new Date(2026, 0, 15, 6, 0, 0)
+        const night = new Date(2026, 0, 15, 23, 59, 59)
+        expect(seedForDate(morning)).toBe(seedForDate(night))
+    })
+
+    it('날짜가 다르면 시드값도 달라진다(적어도 이 두 날짜는 다름을 직접 확인)', () => {
+        const day1 = new Date(2026, 0, 15)
+        const day2 = new Date(2026, 0, 16)
+        expect(seedForDate(day1)).not.toBe(seedForDate(day2))
+    })
+
+    it('특정 날짜는 항상 정확히 같은 단어를 낸다(구조가 아닌 실제 내용 검증) — 독립적으로 계산한 기댓값과 비교', () => {
+        // seedForDate(2026-1-15) = 0.88491(해시 계산으로 독립 검증됨) → floor(0.88491*10)=8번
+        // 인덱스 → WORDS_BY_LENGTH[2][8] = '우산'. Math.random 기반이었다면 절대 재현 불가능한
+        // 이 정확한 단어가 매번 똑같이 나와야 "오늘의 단어" 계약이 실제로 지켜지는 것이다.
+        const day = new Date(2026, 0, 15)
+        expect(pickWord(2, () => seedForDate(day))).toEqual(['우', '산'])
+        expect(pickWord(2, () => seedForDate(new Date(2026, 0, 15, 23, 59)))).toEqual(['우', '산'])
+    })
+
+    it('같은 날짜로 뽑은 단어는 매번 동일하다(공정한 리더보드의 전제)', () => {
+        const day1 = new Date(2026, 0, 15)
+        const wordDay1First = pickWord(2, () => seedForDate(day1))
+        const wordDay1Second = pickWord(2, () => seedForDate(day1))
+        expect(wordDay1First).toEqual(wordDay1Second)
     })
 })
 

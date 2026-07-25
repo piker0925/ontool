@@ -67,9 +67,9 @@ import {useAuth} from '../composables/useAuth'
 import {startGameSession, submitGameScore} from '../api/games'
 import GameLeaderboardPanel from './GameLeaderboardPanel.vue'
 
-// gameId는 GameCatalog(백엔드)에 등록된 8개 게임에서만 넘어온다 — 뽀모도로처럼 점수 개념이 없는
-// FULL_SHELL_COMPONENTS 입주 모듈은 gameId 없이 GamePage를 쓰고, 그 경우 순위표·제출 로직 전체가
-// 조용히 비활성화된다(053 스코프 밖).
+// gameId는 GameCatalog(백엔드)에 등록된 게임(053의 8개 + 121의 9개, 총 17개)에서만 넘어온다 —
+// 뽀모도로처럼 점수 개념이 없는 FULL_SHELL_COMPONENTS 입주 모듈은 gameId 없이 GamePage를 쓰고,
+// 그 경우 순위표·제출 로직 전체가 조용히 비활성화된다.
 const props = defineProps<{ title: string; description?: string; gameId?: string }>()
 
 const {muted, toggleMuted} = useGameSound()

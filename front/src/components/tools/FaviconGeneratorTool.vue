@@ -3,7 +3,7 @@
     <input ref="fileInput" accept="image/*" class="hidden" type="file" @change="onFileChange"/>
 
     <button v-if="!imageEl"
-            class="flex h-40 items-center justify-center rounded-xl border border-dashed border-border bg-card text-[13px] text-muted-foreground transition-colors hover:border-ring hover:text-foreground"
+            class="flex h-40 items-center justify-center rounded-xl border border-dashed border-border bg-card text-[13px] text-muted-foreground transition-colors hover:border-zone-accent-files/50 hover:text-zone-accent-files"
             @click="fileInput?.click()">이미지를 선택하세요
     </button>
 
@@ -12,7 +12,7 @@
         <img v-for="s in SIZES" :key="s" :height="Math.min(s, 48)" :src="imageEl?.src" :width="Math.min(s, 48)" alt="" class="rounded border border-border"/>
       </div>
 
-      <button :disabled="generating" class="rounded-xl bg-primary px-4 py-2.5 text-[13px] font-medium text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-50"
+      <button :disabled="generating" class="rounded-xl bg-zone-accent-files px-4 py-2.5 text-[13px] font-medium text-white transition-colors hover:opacity-90 disabled:opacity-50 dark:text-background"
               @click="generateAndDownload">{{ generating ? '생성 중…' : 'favicon.ico + ZIP 다운로드' }}
       </button>
     </template>

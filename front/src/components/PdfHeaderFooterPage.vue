@@ -12,21 +12,21 @@
         <label class="text-[11px] text-muted-foreground">헤더 텍스트</label>
         <input
             v-model="headerText"
-            class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-ring focus:ring-2 focus:ring-ring/20"
+            class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-zone-accent-files focus:ring-2 focus:ring-zone-accent-files/20"
             placeholder="예: 회사명"
             type="text"
         />
         <label class="mt-2 text-[11px] text-muted-foreground">푸터 텍스트</label>
         <input
             v-model="footerText"
-            class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-ring focus:ring-2 focus:ring-ring/20"
+            class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-zone-accent-files focus:ring-2 focus:ring-zone-accent-files/20"
             placeholder="예: 대외비"
             type="text"
         />
         <label class="mt-2 text-[11px] text-muted-foreground">페이지 번호 형식 ({page}, {total} 치환)</label>
         <input
             v-model="pageNumberFormat"
-            class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-ring focus:ring-2 focus:ring-ring/20"
+            class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-zone-accent-files focus:ring-2 focus:ring-zone-accent-files/20"
             placeholder="예: {page} / {total}"
             type="text"
         />

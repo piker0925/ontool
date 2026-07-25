@@ -3,7 +3,7 @@
     <input ref="fileInput" accept="image/*" class="hidden" type="file" @change="onFileChange"/>
 
     <button v-if="!imageEl"
-            class="flex h-40 items-center justify-center rounded-xl border border-dashed border-border bg-card text-[13px] text-muted-foreground transition-colors hover:border-ring hover:text-foreground"
+            class="flex h-40 items-center justify-center rounded-xl border border-dashed border-border bg-card text-[13px] text-muted-foreground transition-colors hover:border-zone-accent-files/50 hover:text-zone-accent-files"
             @click="fileInput?.click()">이미지를 선택하세요
     </button>
 
@@ -16,7 +16,7 @@
 
       <div class="flex gap-0.5 rounded-lg bg-muted p-0.5">
         <button v-for="preset in ASCII_CHARSET_PRESETS" :key="preset.id"
-                :class="selectedCharset.id === preset.id ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+                :class="selectedCharset.id === preset.id ? 'bg-zone-accent-files/10 text-zone-accent-files shadow-sm' : 'text-muted-foreground hover:text-foreground'"
                 class="flex-1 rounded-md px-3 py-1 text-[12px] font-medium transition-colors"
                 @click="selectedCharset = preset">{{ preset.label }}
         </button>
@@ -25,10 +25,10 @@
       <pre v-if="ascii" class="overflow-x-auto rounded-xl border border-border bg-card p-3 font-mono text-[6px] leading-[6px] text-foreground whitespace-pre">{{ ascii }}</pre>
 
       <div class="flex gap-2">
-        <button class="flex-1 rounded-xl border border-border bg-card px-4 py-2.5 text-[13px] text-foreground transition-colors hover:border-ring"
+        <button class="flex-1 rounded-xl border border-border bg-card px-4 py-2.5 text-[13px] text-foreground transition-colors hover:border-zone-accent-files/50"
                 @click="copyAscii">텍스트 복사
         </button>
-        <button class="rounded-xl border border-border bg-card px-4 py-2.5 text-[13px] text-foreground transition-colors hover:border-ring"
+        <button class="rounded-xl border border-border bg-card px-4 py-2.5 text-[13px] text-foreground transition-colors hover:border-zone-accent-files/50"
                 @click="fileInput?.click()">다른 이미지
         </button>
       </div>

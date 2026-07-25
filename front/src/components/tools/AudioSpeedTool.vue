@@ -17,7 +17,12 @@
         <input v-model="speedPreservePitch" data-testid="speed-preserve-pitch" type="checkbox"/>
         피치 유지 (끄면 배속에 비례해 피치도 함께 변함)
       </label>
-      <Button :disabled="processing" class="w-fit" data-testid="apply-speed" @click="applySpeed">
+      <Button
+          :disabled="processing"
+          class="w-fit bg-zone-accent-files text-white hover:bg-zone-accent-files/90 focus-visible:border-zone-accent-files focus-visible:ring-zone-accent-files/50 dark:text-background"
+          data-testid="apply-speed"
+          @click="applySpeed"
+      >
         {{ processing ? '처리 중…' : '적용' }}
       </Button>
     </div>

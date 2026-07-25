@@ -1,18 +1,18 @@
 <template>
   <div class="flex flex-col gap-3 max-w-lg mx-auto w-full">
     <div class="flex gap-2">
-      <button class="flex-1 rounded-xl border border-dashed border-border bg-card px-3 py-6 text-[12px] text-muted-foreground transition-colors hover:border-ring hover:text-foreground"
+      <button class="flex-1 rounded-xl border border-dashed border-border bg-card px-3 py-6 text-[12px] text-muted-foreground transition-colors hover:border-zone-accent-files/50 hover:text-zone-accent-files"
               @click="inputA?.click()">{{ fileNameA || '이미지 A 선택' }}
       </button>
-      <button class="flex-1 rounded-xl border border-dashed border-border bg-card px-3 py-6 text-[12px] text-muted-foreground transition-colors hover:border-ring hover:text-foreground"
+      <button class="flex-1 rounded-xl border border-dashed border-border bg-card px-3 py-6 text-[12px] text-muted-foreground transition-colors hover:border-zone-accent-files/50 hover:text-zone-accent-files"
               @click="inputB?.click()">{{ fileNameB || '이미지 B 선택' }}
       </button>
     </div>
     <input ref="inputA" accept="image/*" class="hidden" type="file" @change="onFileChangeA"/>
     <input ref="inputB" accept="image/*" class="hidden" type="file" @change="onFileChangeB"/>
 
-    <div v-show="diffRatio !== null" class="rounded-xl border border-border bg-card p-4">
-      <p class="text-[13px] text-foreground">차이 픽셀 비율: <span class="font-mono font-semibold">{{ ((diffRatio ?? 0) * 100).toFixed(2) }}%</span></p>
+    <div v-show="diffRatio !== null" class="rounded-xl border border-zone-accent-files/20 bg-zone-accent-files/10 p-4">
+      <p class="text-[13px] text-foreground">차이 픽셀 비율: <span class="font-mono font-semibold text-zone-accent-files">{{ ((diffRatio ?? 0) * 100).toFixed(2) }}%</span></p>
     </div>
 
     <div v-show="diffRatio !== null" class="overflow-hidden rounded-xl border border-border bg-card">

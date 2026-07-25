@@ -6,7 +6,12 @@
   >
     <div class="flex flex-col gap-3">
       <AudioTrimWaveform :pcm="original!" @change="onTrimSelectionChange"/>
-      <Button :disabled="processing" class="w-fit" data-testid="apply-trim" @click="applyTrim">
+      <Button
+          :disabled="processing"
+          class="w-fit bg-zone-accent-files text-white hover:bg-zone-accent-files/90 focus-visible:border-zone-accent-files focus-visible:ring-zone-accent-files/50 dark:text-background"
+          data-testid="apply-trim"
+          @click="applyTrim"
+      >
         {{ processing ? '처리 중…' : '적용' }}
       </Button>
     </div>

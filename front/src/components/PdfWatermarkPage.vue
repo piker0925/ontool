@@ -21,7 +21,7 @@
           <label class="mt-3 text-[11px] text-muted-foreground">투명도 (0~100)</label>
           <input
               v-model="watermarkOpacity"
-              class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+              class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-zone-accent-files focus:ring-2 focus:ring-zone-accent-files/20"
               placeholder="30"
               type="text"
           />

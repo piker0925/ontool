@@ -3,7 +3,7 @@
     <input ref="fileInput" accept="image/*" class="hidden" type="file" @change="onFileChange"/>
 
     <button v-if="!fileName"
-            class="flex h-40 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-card text-[13px] text-muted-foreground transition-colors hover:border-ring hover:text-foreground"
+            class="flex h-40 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-card text-[13px] text-muted-foreground transition-colors hover:border-zone-accent-files/50 hover:text-zone-accent-files"
             @click="fileInput?.click()">
       <ImageOff class="size-6 text-muted-foreground/60"/>
       이미지를 선택하세요
@@ -51,7 +51,7 @@
               <span v-for="f in display.sensitiveFields" :key="f.key"
                     class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">{{ f.label }}</span>
             </div>
-            <router-link class="flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+            <router-link class="flex items-center gap-1 text-[11px] font-medium text-zone-accent-files hover:underline"
                          to="/tools/exif-remove">
               제거하려면 EXIF 제거 도구로
               <ArrowRight class="size-3"/>

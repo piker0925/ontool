@@ -8,7 +8,12 @@
       <p class="text-[13px] text-muted-foreground">
         원본을 그대로 mp3/wav로 다시 인코딩합니다. 신호는 바뀌지 않고 포맷만 바뀝니다.
       </p>
-      <Button :disabled="processing" class="w-fit" data-testid="apply-convert" @click="applyConvert">
+      <Button
+          :disabled="processing"
+          class="w-fit bg-zone-accent-files text-white hover:bg-zone-accent-files/90 focus-visible:border-zone-accent-files focus-visible:ring-zone-accent-files/50 dark:text-background"
+          data-testid="apply-convert"
+          @click="applyConvert"
+      >
         {{ processing ? '처리 중…' : '적용' }}
       </Button>
     </div>

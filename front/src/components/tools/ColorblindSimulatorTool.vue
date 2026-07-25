@@ -3,13 +3,13 @@
     <input ref="fileInput" accept="image/*" class="hidden" type="file" @change="onFileChange"/>
 
     <button v-if="!imageEl"
-            class="flex h-40 items-center justify-center rounded-xl border border-dashed border-border bg-card text-[13px] text-muted-foreground transition-colors hover:border-ring hover:text-foreground"
+            class="flex h-40 items-center justify-center rounded-xl border border-dashed border-border bg-card text-[13px] text-muted-foreground transition-colors hover:border-zone-accent-files/50 hover:text-zone-accent-files"
             @click="fileInput?.click()">이미지를 선택하세요
     </button>
 
     <div v-show="!!imageEl" class="flex gap-0.5 rounded-lg bg-muted p-0.5">
       <button v-for="opt in TYPES" :key="opt.v"
-              :class="type === opt.v ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+              :class="type === opt.v ? 'bg-zone-accent-files/10 text-zone-accent-files shadow-sm' : 'text-muted-foreground hover:text-foreground'"
               class="flex-1 rounded-md px-3 py-1 text-[12px] font-medium transition-colors"
               @click="type = opt.v">{{ opt.l }}
       </button>

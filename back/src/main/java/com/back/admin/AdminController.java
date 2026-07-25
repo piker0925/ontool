@@ -95,6 +95,20 @@ public class AdminController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/users/{id}/suspend")
+    public ResponseEntity<Void> suspendUser(@PathVariable Long id) {
+        userService.suspend(id);
+        adminActionLogService.record(AdminActionType.MEMBER_SUSPEND, id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/users/{id}/unsuspend")
+    public ResponseEntity<Void> unsuspendUser(@PathVariable Long id) {
+        userService.unsuspend(id);
+        adminActionLogService.record(AdminActionType.MEMBER_UNSUSPEND, id);
+        return ResponseEntity.noContent().build();
+    }
+
     @DeleteMapping("/users/{id}")
     public ResponseEntity<Void> forceDeleteUser(@PathVariable Long id) {
         User user = userWithdrawalService.withdraw(id);

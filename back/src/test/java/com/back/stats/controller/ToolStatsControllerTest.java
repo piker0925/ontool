@@ -5,6 +5,7 @@ import com.back.global.security.jwt.JwtProvider;
 import com.back.stats.repository.ToolStatsRepository;
 import com.back.user.entity.AuthProvider;
 import com.back.user.entity.User;
+import com.back.user.entity.UserStatus;
 import com.back.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -93,6 +94,19 @@ class ToolStatsControllerTest extends AbstractMySQLIntegrationTest {
         mockMvc.perform(delete("/api/v1/tools/sha256/like").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.likeCount").value(0));
+    }
+
+    @Test
+    void 정지된_유저도_좋아요는_정상_동작한다() throws Exception {
+        // 056: 정지는 댓글 작성만 막고 좋아요 등 다른 행위는 대상 밖 — 범위가 좋아요까지 새지 않았는지 확인.
+        User user = userRepository.save(new User(AuthProvider.GOOGLE, "l5", null, "정지유저"));
+        user.setStatus(UserStatus.SUSPENDED);
+        userRepository.save(user);
+        String token = jwtProvider.issueAccessToken(user.getId());
+
+        mockMvc.perform(post("/api/v1/tools/sha256/like").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.likeCount").value(1));
     }
 
     @Test

@@ -4,6 +4,7 @@ import com.back.global.exception.AppException;
 import com.back.global.exception.ErrorCode;
 import com.back.user.entity.AuthProvider;
 import com.back.user.entity.User;
+import com.back.user.entity.UserStatus;
 import com.back.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -120,5 +121,46 @@ class UserServiceTest {
         User result = userService.upsertFromSocialLogin(AuthProvider.KAKAO, "k2", null, null);
 
         assertThat(result.getNickname()).isNotBlank();
+    }
+
+    @Test
+    void suspend_유저_상태를_SUSPENDED로_바꾼다() {
+        User user = new User(AuthProvider.GOOGLE, "g1", null, "정지대상");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        User result = userService.suspend(1L);
+
+        assertThat(result.getStatus()).isEqualTo(UserStatus.SUSPENDED);
+    }
+
+    @Test
+    void suspend_존재하지_않으면_USER_NOT_FOUND() {
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.suspend(1L))
+                .isInstanceOf(AppException.class)
+                .extracting(e -> ((AppException) e).getErrorCode())
+                .isEqualTo(ErrorCode.USER_NOT_FOUND);
+    }
+
+    @Test
+    void unsuspend_유저_상태를_ACTIVE로_되돌린다() {
+        User user = new User(AuthProvider.GOOGLE, "g1", null, "정지대상");
+        user.setStatus(UserStatus.SUSPENDED);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        User result = userService.unsuspend(1L);
+
+        assertThat(result.getStatus()).isEqualTo(UserStatus.ACTIVE);
+    }
+
+    @Test
+    void unsuspend_존재하지_않으면_USER_NOT_FOUND() {
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.unsuspend(1L))
+                .isInstanceOf(AppException.class)
+                .extracting(e -> ((AppException) e).getErrorCode())
+                .isEqualTo(ErrorCode.USER_NOT_FOUND);
     }
 }

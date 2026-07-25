@@ -5,12 +5,13 @@ import AdminPage from './AdminPage.vue'
 import {apiClient} from '../api/client'
 
 vi.mock('../api/client', () => ({
-    apiClient: {get: vi.fn(), delete: vi.fn(), patch: vi.fn()},
+    apiClient: {get: vi.fn(), delete: vi.fn(), patch: vi.fn(), post: vi.fn()},
 }))
 
 const mockGet = apiClient.get as ReturnType<typeof vi.fn>
 const mockDelete = apiClient.delete as ReturnType<typeof vi.fn>
 const mockPatch = apiClient.patch as ReturnType<typeof vi.fn>
+const mockPost = apiClient.post as ReturnType<typeof vi.fn>
 
 function mockAdminEndpoints() {
     mockGet.mockImplementation((url: string) => {
@@ -36,6 +37,25 @@ function mockAdminEndpoints() {
         if (url.startsWith('/admin/comment-reports/users')) return Promise.resolve({data: []})
         if (url.startsWith('/admin/comment-reports')) {
             return Promise.resolve({data: {content: [], totalElements: 0, totalPages: 0, page: 0}})
+        }
+        return Promise.reject(new Error('unexpected GET ' + url))
+    })
+}
+
+// 유저 관리 탭에 유저 1명(id: 42)이 있는 상태를 흉내낸다 — 계정 삭제·회원 정지 버튼 테스트 공용.
+function mockAdminEndpointsWithOneUser(status: 'ACTIVE' | 'SUSPENDED' = 'ACTIVE') {
+    mockGet.mockImplementation((url: string) => {
+        if (url === '/admin/stats') return Promise.resolve({data: []})
+        if (url.startsWith('/admin/users')) {
+            return Promise.resolve({
+                data: {
+                    content: [{
+                        id: 42, provider: 'GOOGLE', nickname: '삭제대상', email: 'del@test.com',
+                        createdAt: '2026-07-20T09:00:00', theftEventCount: 0, status,
+                    }],
+                    totalElements: 1, totalPages: 1, page: 0,
+                },
+            })
         }
         return Promise.reject(new Error('unexpected GET ' + url))
     })
@@ -146,24 +166,6 @@ describe('AdminPage 유저 검색 입력', () => {
 })
 
 describe('AdminPage 유저 관리 — 계정 삭제 모달', () => {
-    function mockAdminEndpointsWithOneUser() {
-        mockGet.mockImplementation((url: string) => {
-            if (url === '/admin/stats') return Promise.resolve({data: []})
-            if (url.startsWith('/admin/users')) {
-                return Promise.resolve({
-                    data: {
-                        content: [{
-                            id: 42, provider: 'GOOGLE', nickname: '삭제대상', email: 'del@test.com',
-                            createdAt: '2026-07-20T09:00:00', theftEventCount: 0,
-                        }],
-                        totalElements: 1, totalPages: 1, page: 0,
-                    },
-                })
-            }
-            return Promise.reject(new Error('unexpected GET ' + url))
-        })
-    }
-
     async function openUsersTabWithDeleteModal() {
         mockAdminEndpointsWithOneUser()
 
@@ -210,6 +212,64 @@ describe('AdminPage 유저 관리 — 계정 삭제 모달', () => {
         // 삭제 성공 후 목록을 다시 불러와야 한다(단순 splice가 아니라 totalElements 재조회) — 로그인 시 1회 + 삭제 후 1회.
         expect(mockGet.mock.calls.filter(c => (c[0] as string).startsWith('/admin/users')).length).toBeGreaterThanOrEqual(2)
         wrapper.unmount()
+    })
+})
+
+describe('AdminPage 유저 관리 — 회원 정지(056)', () => {
+    async function openUsersTab(status: 'ACTIVE' | 'SUSPENDED') {
+        mockAdminEndpointsWithOneUser(status)
+        vi.spyOn(window, 'confirm').mockReturnValue(true)
+
+        const wrapper = await mountAdminPage()
+        await loginAsAdmin(wrapper)
+        const usersTab = wrapper.findAll('button').find(b => b.text().includes('유저 관리'))
+        await usersTab?.trigger('click')
+        await flushPromises()
+
+        return wrapper
+    }
+
+    it('정지 안 된 유저는 "정지" 버튼이 보이고, 누르면 POST /admin/users/{id}/suspend를 호출하고 목록을 다시 불러온다', async () => {
+        mockPost.mockResolvedValueOnce({})
+        const wrapper = await openUsersTab('ACTIVE')
+
+        expect(wrapper.text()).not.toContain('정지됨')
+        const suspendBtn = wrapper.findAll('button').find(b => b.text() === '정지')
+        expect(suspendBtn).toBeTruthy()
+        expect(wrapper.findAll('button').find(b => b.text() === '정지 해제')).toBeFalsy()
+
+        await suspendBtn?.trigger('click')
+        await flushPromises()
+
+        expect(mockPost).toHaveBeenCalledWith('/admin/users/42/suspend', {}, expect.anything())
+        // 정지 후 배지가 반영되려면 목록을 다시 불러와야 한다 — 로그인 시 1회 + 정지 후 1회.
+        expect(mockGet.mock.calls.filter(c => (c[0] as string).startsWith('/admin/users')).length).toBeGreaterThanOrEqual(2)
+    })
+
+    it('정지된 유저는 닉네임 옆에 "정지됨" 배지가 보이고, "정지 해제" 버튼을 누르면 POST /admin/users/{id}/unsuspend를 호출한다', async () => {
+        mockPost.mockResolvedValueOnce({})
+        const wrapper = await openUsersTab('SUSPENDED')
+
+        expect(wrapper.text()).toContain('정지됨')
+        const unsuspendBtn = wrapper.findAll('button').find(b => b.text() === '정지 해제')
+        expect(unsuspendBtn).toBeTruthy()
+        expect(wrapper.findAll('button').find(b => b.text() === '정지')).toBeFalsy()
+
+        await unsuspendBtn?.trigger('click')
+        await flushPromises()
+
+        expect(mockPost).toHaveBeenCalledWith('/admin/users/42/unsuspend', {}, expect.anything())
+    })
+
+    it('취소하면 정지 요청을 보내지 않는다', async () => {
+        const wrapper = await openUsersTab('ACTIVE')
+        vi.spyOn(window, 'confirm').mockReturnValue(false)
+
+        const suspendBtn = wrapper.findAll('button').find(b => b.text() === '정지')
+        await suspendBtn?.trigger('click')
+        await flushPromises()
+
+        expect(mockPost).not.toHaveBeenCalled()
     })
 })
 

@@ -6,6 +6,7 @@ import com.back.comment.repository.CommentRepository;
 import com.back.global.security.jwt.JwtProvider;
 import com.back.user.entity.AuthProvider;
 import com.back.user.entity.User;
+import com.back.user.entity.UserStatus;
 import com.back.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -63,6 +64,60 @@ class CommentControllerTest extends AbstractMySQLIntegrationTest {
                         .content("{\"content\":\"좋아요\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.nickname").value("닉네임유저"));
+    }
+
+    @Test
+    void 정지된_유저는_댓글_작성이_거부된다() throws Exception {
+        User user = userRepository.save(new User(AuthProvider.GOOGLE, "h1s", null, "정지유저"));
+        user.setStatus(UserStatus.SUSPENDED);
+        userRepository.save(user);
+        String token = jwtProvider.issueAccessToken(user.getId());
+
+        mockMvc.perform(post("/api/v1/tools/sha256/comments")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType("application/json")
+                        .content("{\"content\":\"차단되어야 함\"}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("USER_SUSPENDED"));
+
+        mockMvc.perform(get("/api/v1/tools/sha256/comments"))
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void 정지_해제되면_같은_토큰으로도_즉시_댓글_작성이_가능하다() throws Exception {
+        // 056 AC3: JWT는 stateless라 재발급 없이도 반영돼야 한다 — 토큰을 한 번만 발급해 그대로 재사용한다.
+        User user = userRepository.save(new User(AuthProvider.GOOGLE, "h1u", null, "정지해제유저"));
+        user.setStatus(UserStatus.SUSPENDED);
+        userRepository.save(user);
+        String token = jwtProvider.issueAccessToken(user.getId());
+
+        mockMvc.perform(post("/api/v1/tools/sha256/comments")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType("application/json")
+                        .content("{\"content\":\"차단됨\"}"))
+                .andExpect(status().isForbidden());
+
+        user.setStatus(UserStatus.ACTIVE);
+        userRepository.save(user);
+
+        mockMvc.perform(post("/api/v1/tools/sha256/comments")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType("application/json")
+                        .content("{\"content\":\"해제 후 정상\"}"))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    void 정지_안된_유저는_댓글_작성이_정상_동작한다() throws Exception {
+        User user = userRepository.save(new User(AuthProvider.GOOGLE, "h1a", null, "정상유저"));
+        String token = jwtProvider.issueAccessToken(user.getId());
+
+        mockMvc.perform(post("/api/v1/tools/sha256/comments")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType("application/json")
+                        .content("{\"content\":\"정상 작성\"}"))
+                .andExpect(status().isCreated());
     }
 
     @Test

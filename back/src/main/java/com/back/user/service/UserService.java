@@ -4,6 +4,7 @@ import com.back.global.exception.AppException;
 import com.back.global.exception.ErrorCode;
 import com.back.user.entity.AuthProvider;
 import com.back.user.entity.User;
+import com.back.user.entity.UserStatus;
 import com.back.user.oauth2.OAuth2UserAttributes;
 import com.back.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +46,21 @@ public class UserService {
     public User updateNickname(Long userId, String nickname) {
         User user = getById(userId);
         user.setNickname(nickname);
+        return user;
+    }
+
+    /** 회원 정지(056) — 댓글 작성만 막는다, 로그인·좋아요는 그대로. */
+    @Transactional
+    public User suspend(Long userId) {
+        User user = getExistingById(userId);
+        user.setStatus(UserStatus.SUSPENDED);
+        return user;
+    }
+
+    @Transactional
+    public User unsuspend(Long userId) {
+        User user = getExistingById(userId);
+        user.setStatus(UserStatus.ACTIVE);
         return user;
     }
 

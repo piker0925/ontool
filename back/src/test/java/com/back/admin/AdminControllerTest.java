@@ -18,6 +18,7 @@ import com.back.user.dto.TokenPair;
 import com.back.user.entity.AuthProvider;
 import com.back.user.entity.RefreshTokenTheftEvent;
 import com.back.user.entity.User;
+import com.back.user.entity.UserStatus;
 import com.back.user.repository.RefreshTokenRepository;
 import com.back.user.repository.RefreshTokenTheftEventRepository;
 import com.back.user.repository.UserRepository;
@@ -338,6 +339,100 @@ class AdminControllerTest extends AbstractMySQLIntegrationTest {
             assertThat(log.getActionType()).isEqualTo(AdminActionType.COMMENT_DELETE);
             assertThat(log.getTargetId()).isEqualTo(savedComment.getId());
         });
+    }
+
+    @Test
+    void suspendUser_withoutAuth_returns401() throws Exception {
+        User target = userRepository.save(new User(AuthProvider.GOOGLE, "suspend-noauth", null, "정지대상"));
+
+        mockMvc.perform(post("/admin/users/" + target.getId() + "/suspend"))
+                .andExpect(status().isUnauthorized());
+
+        assertThat(userRepository.findById(target.getId()).orElseThrow().getStatus()).isEqualTo(UserStatus.ACTIVE);
+    }
+
+    @Test
+    void suspendUser_대상_유저_상태가_SUSPENDED로_바뀐다() throws Exception {
+        User target = userRepository.save(new User(AuthProvider.GOOGLE, "suspend-target", null, "정지대상"));
+
+        mockMvc.perform(post("/admin/users/" + target.getId() + "/suspend")
+                        .with(httpBasic("admin", "1234")))
+                .andExpect(status().isNoContent());
+
+        assertThat(userRepository.findById(target.getId()).orElseThrow().getStatus()).isEqualTo(UserStatus.SUSPENDED);
+    }
+
+    @Test
+    void suspendUser_다른_유저_상태에는_영향_없다() throws Exception {
+        User target = userRepository.save(new User(AuthProvider.GOOGLE, "suspend-target-2", null, "정지대상"));
+        User bystander = userRepository.save(new User(AuthProvider.KAKAO, "suspend-bystander", null, "무관한유저"));
+
+        mockMvc.perform(post("/admin/users/" + target.getId() + "/suspend")
+                        .with(httpBasic("admin", "1234")))
+                .andExpect(status().isNoContent());
+
+        assertThat(userRepository.findById(bystander.getId()).orElseThrow().getStatus()).isEqualTo(UserStatus.ACTIVE);
+    }
+
+    @Test
+    void suspendUser_존재하지_않는_유저면_404() throws Exception {
+        mockMvc.perform(post("/admin/users/999999/suspend")
+                        .with(httpBasic("admin", "1234")))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("USER_NOT_FOUND"));
+
+        assertThat(adminActionLogRepository.findAll()).isEmpty();
+    }
+
+    @Test
+    void suspendUser_관리자_액션_로그에_MEMBER_SUSPEND와_대상_유저_id로_기록된다() throws Exception {
+        User target = userRepository.save(new User(AuthProvider.GOOGLE, "suspend-log-target", null, "정지대상"));
+
+        mockMvc.perform(post("/admin/users/" + target.getId() + "/suspend")
+                        .with(httpBasic("admin", "1234")))
+                .andExpect(status().isNoContent());
+
+        List<AdminActionLog> logs = adminActionLogRepository.findAll();
+        assertThat(logs).hasSize(1);
+        assertThat(logs.get(0).getActionType()).isEqualTo(AdminActionType.MEMBER_SUSPEND);
+        assertThat(logs.get(0).getTargetId()).isEqualTo(target.getId());
+    }
+
+    @Test
+    void unsuspendUser_대상_유저_상태가_ACTIVE로_되돌아간다() throws Exception {
+        User target = userRepository.save(new User(AuthProvider.GOOGLE, "unsuspend-target", null, "정지해제대상"));
+        target.setStatus(UserStatus.SUSPENDED);
+        userRepository.save(target);
+
+        mockMvc.perform(post("/admin/users/" + target.getId() + "/unsuspend")
+                        .with(httpBasic("admin", "1234")))
+                .andExpect(status().isNoContent());
+
+        assertThat(userRepository.findById(target.getId()).orElseThrow().getStatus()).isEqualTo(UserStatus.ACTIVE);
+    }
+
+    @Test
+    void unsuspendUser_존재하지_않는_유저면_404() throws Exception {
+        mockMvc.perform(post("/admin/users/999999/unsuspend")
+                        .with(httpBasic("admin", "1234")))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("USER_NOT_FOUND"));
+    }
+
+    @Test
+    void unsuspendUser_관리자_액션_로그에_MEMBER_UNSUSPEND와_대상_유저_id로_기록된다() throws Exception {
+        User target = userRepository.save(new User(AuthProvider.GOOGLE, "unsuspend-log-target", null, "정지해제대상"));
+        target.setStatus(UserStatus.SUSPENDED);
+        userRepository.save(target);
+
+        mockMvc.perform(post("/admin/users/" + target.getId() + "/unsuspend")
+                        .with(httpBasic("admin", "1234")))
+                .andExpect(status().isNoContent());
+
+        List<AdminActionLog> logs = adminActionLogRepository.findAll();
+        assertThat(logs).hasSize(1);
+        assertThat(logs.get(0).getActionType()).isEqualTo(AdminActionType.MEMBER_UNSUSPEND);
+        assertThat(logs.get(0).getTargetId()).isEqualTo(target.getId());
     }
 
     @Test

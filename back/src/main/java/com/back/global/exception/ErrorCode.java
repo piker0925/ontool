@@ -26,7 +26,8 @@ public enum ErrorCode {
     COMMENT_REPORT_DUPLICATE(HttpStatus.CONFLICT, "이미 신고한 댓글입니다."),
     COMMENT_REPORT_DETAIL_REQUIRED(HttpStatus.BAD_REQUEST, "기타 사유는 상세 내용을 입력해야 합니다."),
     COMMENT_REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 신고입니다."),
-    ADMIN_LOGIN_LOCKED(HttpStatus.TOO_MANY_REQUESTS, "로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.");
+    ADMIN_LOGIN_LOCKED(HttpStatus.TOO_MANY_REQUESTS, "로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요."),
+    USER_SUSPENDED(HttpStatus.FORBIDDEN, "정지된 계정은 댓글을 작성할 수 없습니다.");
 
     private final HttpStatus status;
     private final String message;

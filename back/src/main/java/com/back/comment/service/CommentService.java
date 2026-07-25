@@ -6,6 +6,7 @@ import com.back.comment.repository.CommentRepository;
 import com.back.global.exception.AppException;
 import com.back.global.exception.ErrorCode;
 import com.back.user.entity.User;
+import com.back.user.entity.UserStatus;
 import com.back.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -44,6 +45,19 @@ public class CommentService {
 
     @Transactional
     public Comment addComment(String moduleId, String content, Long userId) {
+        requireActiveUser(userId);
+        return saveComment(moduleId, content, userId);
+    }
+
+    /** 닉네임까지 붙여서 응답하는 댓글 작성(051). */
+    @Transactional
+    public CommentResponse addCommentAndRespond(String moduleId, String content, Long userId) {
+        User user = requireActiveUser(userId);
+        Comment comment = saveComment(moduleId, content, userId);
+        return CommentResponse.from(comment, user == null ? null : user.getNickname());
+    }
+
+    private Comment saveComment(String moduleId, String content, Long userId) {
         Comment comment = new Comment();
         comment.setModuleId(moduleId);
         comment.setContent(content);
@@ -51,13 +65,17 @@ public class CommentService {
         return commentRepository.save(comment);
     }
 
-    /** 닉네임까지 붙여서 응답하는 댓글 작성(051). */
-    @Transactional
-    public CommentResponse addCommentAndRespond(String moduleId, String content, Long userId) {
-        Comment comment = addComment(moduleId, content, userId);
-        String nickname = userId == null ? null
-                : userRepository.findById(userId).map(User::getNickname).orElse(null);
-        return CommentResponse.from(comment, nickname);
+    /**
+     * 정지(056)된 회원은 댓글 작성만 막는다 — 익명(userId=null)은 대상 밖, 좋아요 등 다른 행위도 대상 밖.
+     * 조회한 User를 반환해 호출부(닉네임 등)가 재조회 없이 재사용할 수 있게 한다.
+     */
+    private User requireActiveUser(Long userId) {
+        if (userId == null) return null;
+        User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        if (user.getStatus() == UserStatus.SUSPENDED) {
+            throw new AppException(ErrorCode.USER_SUSPENDED);
+        }
+        return user;
     }
 
     private Map<Long, String> nicknamesOf(List<Comment> comments) {

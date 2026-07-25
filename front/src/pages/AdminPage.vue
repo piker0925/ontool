@@ -142,7 +142,15 @@
                   <td class="px-5 py-3">
                     <span class="rounded-md bg-secondary/50 px-2 py-1 text-xs font-medium text-secondary-foreground">{{ u.provider }}</span>
                   </td>
-                  <td class="px-5 py-3 text-foreground">{{ u.nickname }}</td>
+                  <td class="px-5 py-3 text-foreground">
+                    {{ u.nickname }}
+                    <span
+                      v-if="u.status === 'SUSPENDED'"
+                      class="ml-1.5 rounded-md bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive"
+                    >
+                      정지됨
+                    </span>
+                  </td>
                   <td class="px-5 py-3 text-muted-foreground">{{ u.email || '-' }}</td>
                   <td class="px-5 py-3 text-muted-foreground">{{ formatDate(u.createdAt) }}</td>
                   <td class="px-5 py-3 text-right">
@@ -161,6 +169,20 @@
                         class="rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-xs text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
                       >
                         강제 로그아웃
+                      </button>
+                      <button
+                        v-if="u.status === 'SUSPENDED'"
+                        @click="unsuspendUser(u.id, u.nickname)"
+                        class="rounded-md border border-border px-2 py-1 text-xs text-foreground hover:bg-muted transition-colors"
+                      >
+                        정지 해제
+                      </button>
+                      <button
+                        v-else
+                        @click="suspendUser(u.id, u.nickname)"
+                        class="rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-xs text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                      >
+                        정지
                       </button>
                       <button
                         @click="openDeleteUserModal(u.id, u.nickname)"
@@ -492,6 +514,7 @@ interface UserItem {
   email: string
   createdAt: string
   theftEventCount: number
+  status: 'ACTIVE' | 'SUSPENDED'
 }
 
 interface JobItem {
@@ -624,6 +647,32 @@ async function forceLogoutUser(id: number, nickname: string) {
     alert('성공적으로 강제 로그아웃 되었습니다.')
   } catch (e) {
     alert('로그아웃 처리에 실패했습니다.')
+    console.error(e)
+  }
+}
+
+// --- 회원 정지(056) — 댓글 작성만 막는다, 로그인·좋아요는 그대로. 되돌릴 수 있는 조치라 강제 로그아웃과
+// 같은 confirm() 수준으로 충분하고, 계정 삭제 같은 자체 모달까지는 필요 없다.
+async function suspendUser(id: number, nickname: string) {
+  if (!confirm(`'${nickname}'(ID:${id}) 유저를 정지하시겠습니까?\n정지되면 댓글 작성이 막힙니다(로그인·좋아요는 그대로 가능).`)) return
+
+  try {
+    await apiClient.post(`/admin/users/${id}/suspend`, {}, {headers: {Authorization: authHeader}})
+    await loadUsers()
+  } catch (e) {
+    alert('정지 처리에 실패했습니다.')
+    console.error(e)
+  }
+}
+
+async function unsuspendUser(id: number, nickname: string) {
+  if (!confirm(`'${nickname}'(ID:${id}) 유저의 정지를 해제하시겠습니까?`)) return
+
+  try {
+    await apiClient.post(`/admin/users/${id}/unsuspend`, {}, {headers: {Authorization: authHeader}})
+    await loadUsers()
+  } catch (e) {
+    alert('정지 해제에 실패했습니다.')
     console.error(e)
   }
 }

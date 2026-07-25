@@ -36,6 +36,11 @@ public class User {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Setter
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    private UserStatus status = UserStatus.ACTIVE;
+
     public User(AuthProvider provider, String providerId, String email, String nickname) {
         this.provider = provider;
         this.providerId = providerId;

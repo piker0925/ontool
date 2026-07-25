@@ -35,13 +35,14 @@
 import {onUnmounted, ref} from 'vue'
 import {createSimonGame, press, type SimonState} from '../../utils/simon'
 
-// 900번대(매우 어두운 톤)는 다크 테마 배경(oklch 0.12)과 명도 차이가 거의 없어 잘 안 보였다
-// — 평상시에도 색이 뚜렷이 구분되는 700번대로, 눌렸을 때는 400번대로 확실히 밝아지게 한다.
+// Tailwind 기본 팔레트(red-700 등) 원색 대신 style.css에 조색된 --simon-* 토큰을 사용한다
+// (DESIGN.md 6 "촌스러운 원색 사용 금지"). 평상시에도 색이 뚜렷이 구분되도록 어두운 톤으로,
+// 눌렸을 때는 밝은 톤으로 확실히 밝아지게 한다.
 const COLORS = [
-  {base: 'bg-red-700', active: 'bg-red-400'},
-  {base: 'bg-blue-700', active: 'bg-blue-400'},
-  {base: 'bg-yellow-600', active: 'bg-yellow-300'},
-  {base: 'bg-emerald-700', active: 'bg-emerald-400'},
+  {base: 'bg-simon-red', active: 'bg-simon-red-active'},
+  {base: 'bg-simon-blue', active: 'bg-simon-blue-active'},
+  {base: 'bg-simon-yellow', active: 'bg-simon-yellow-active'},
+  {base: 'bg-simon-green', active: 'bg-simon-green-active'},
 ]
 
 const SHOW_MS = 500

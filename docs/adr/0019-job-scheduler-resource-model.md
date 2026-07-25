@@ -177,15 +177,30 @@ permit은 **poll 스레드에서 `tryAcquire`**, **워커 스레드의 `processJ
 ### 공정성 보장의 경계
 `selectFair`는 라운드로빈으로 소유자 독점을 막지만, 그 보장은 **100건 후보 창** 안에서다(`LIMIT 100`). 한 소유자가 한 레인에 100건 이상을 몰면, 그 백로그가 100 밑으로 빠질 때까지 더 늦게 온 다른 소유자는 대기할 수 있다. (LIMIT을 상수 100으로 둔 이유: 네이티브 쿼리를 파싱하는 JSqlParser가 `LIMIT :param` 바인드를 거부함.)
 
-**추가 경계 (2026-07-24, 이슈 103 로컬 벤치마크로 실측 발견)**: 위 100건 창과 별개로, `selectFair`는
-owner를 순회하다 `chosen.size() >= limit`이 되는 즉시 그 라운드를 이탈한다(JobWorker.java). 이 때문에
-**permit 수(=limit) < 그 틱에 후보가 있는 owner 수**이면, 매 틱 맵에 먼저 등록된 owner들만 골라지고
-뒤쪽 owner는 앞선 owner들의 백로그가 완전히 빌 때까지 단 한 틱도 선택되지 못한다 — "라운드로빈이니
-굶지 않는다"는 위 설명은 **owner 수 ≤ permit 수**일 때만 성립한다. HEAVY 레인(permit=2)은 실사용
-동시 접속자 3명 이상에서 이 경계에 걸릴 수 있다. 실측 재현(소유자 3명, permit=2 시나리오)과 원본 데이터는
-[`docs/benchmarks/103-heavy-queue-bench/`](../benchmarks/103-heavy-queue-bench/README.md) 참고.
-수정은 이슈 127(라운드로빈 소유자 확장)로 분리했다 — 이 절은 127 완료 후에도 "이런 경계가 있었다"는
-기록으로 남기고, 수정 내용 자체는 127의 커밋/ADR 후속 갱신에서 다룬다.
+**추가 경계 (2026-07-24, 이슈 103 로컬 벤치마크로 실측 발견 → 127에서 수정, 2026-07-25)**: 위 100건
+창과 별개로, `selectFair`는 owner를 순회하다 `chosen.size() >= limit`이 되는 즉시 그 라운드를
+이탈했다(JobWorker.java, 127 이전). 이 때문에 **permit 수(=limit) < 그 틱에 후보가 있는 owner 수**이면,
+매 틱 맵에 먼저 등록된 owner들만 골라지고 뒤쪽 owner는 앞선 owner들의 백로그가 완전히 빌 때까지 단
+한 틱도 선택되지 못했다 — "라운드로빈이니 굶지 않는다"는 위 설명은 **owner 수 ≤ permit 수**일 때만
+성립하는 별도의 미문서화 경계였다. HEAVY 레인(permit=2)은 실사용 동시 접속자 3명 이상에서 이 경계에
+걸릴 수 있었다.
+
+**수정(127)**: `JobWorker`에 레인별 `lastServedOwner`(마지막으로 서비스한 소유자, `Map<Lane, String>`)
+인메모리 상태를 추가했다. `selectFair(candidates, limit, startAfterOwner)`가 owner 순회를 항상 맵
+등록 순(=created_at 최오래 owner 우선)으로 시작하는 대신, `startAfterOwner`(직전 틱에서 마지막으로
+고른 owner)의 **다음** owner부터 시작하도록 회전한다. `dispatchLane`은 매 틱 `chosen`의 마지막 owner로
+`lastServedOwner`를 갱신해 다음 틱에 넘긴다. `lastServedOwner`가 null이거나(첫 틱) 이번 후보에 없는
+owner면(직전 owner의 백로그가 이미 다 빠짐) 맨 앞부터 시작 — 이 경우는 이전과 동일 동작이라 회귀
+없음. `poll()`이 `@Scheduled(fixedDelay)`로 직렬 실행되고(직전 실행 종료 후에야 다음 실행) 워커
+스레드는 이 필드를 건드리지 않으므로, 위 "단일 워커 인스턴스라 in-memory 선택으로 충분" 전제를 그대로
+따라 plain `EnumMap`을 쓴다(동시성 보호 장치 불필요).
+
+이 회전은 owner 수가 permit 수를 넘는 상황에서도 **여러 틱에 걸쳐** 모든 owner가 서비스되게 보장한다
+(단일 틱 안에서 즉시 서비스를 보장하지는 않는다 — 그건 여전히 permit 수·틱 주기가 결정한다). 실측
+재현(소유자 3명, permit=2 시나리오, before/after)과 원본 데이터는
+[`docs/benchmarks/103-heavy-queue-bench/`](../benchmarks/103-heavy-queue-bench/README.md#2-후속-heavy-레인permit2-소유자-3명--127-수정-후-재측정-beforeafter)
+참고 — C의 첫 서비스 시각이 56.6초→4.0초로, A·B가 여전히 두터운 백로그(40건 중 34건 이상)를 가진
+상태에서도 서비스됨을 확인했다.
 
 ---
 

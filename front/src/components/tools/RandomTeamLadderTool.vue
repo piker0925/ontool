@@ -14,14 +14,14 @@
     <!-- 모드 전환 -->
     <div class="grid grid-cols-2 gap-1 rounded-xl border border-border bg-card p-1">
       <button
-          :class="mode === 'team' ? 'bg-zone-accent-fun text-white shadow-sm' : 'text-muted-foreground hover:bg-accent hover:text-foreground'"
+          :class="mode === 'team' ? 'bg-zone-accent-fun text-white shadow-sm dark:text-background' : 'text-muted-foreground hover:bg-accent hover:text-foreground'"
           class="flex items-center justify-center gap-1.5 rounded-lg py-2 text-[13px] font-medium transition-[background-color,color,box-shadow]"
           @click="mode = 'team'">
         <Users class="size-3.5"/>
         팀 나누기
       </button>
       <button
-          :class="mode === 'ladder' ? 'bg-zone-accent-fun text-white shadow-sm' : 'text-muted-foreground hover:bg-accent hover:text-foreground'"
+          :class="mode === 'ladder' ? 'bg-zone-accent-fun text-white shadow-sm dark:text-background' : 'text-muted-foreground hover:bg-accent hover:text-foreground'"
           class="flex items-center justify-center gap-1.5 rounded-lg py-2 text-[13px] font-medium transition-[background-color,color,box-shadow]"
           @click="mode = 'ladder'">
         <Rows3 class="size-3.5"/>
@@ -60,7 +60,7 @@
                @keydown="onPendingKeydown"
                @paste="onPendingPaste"/>
         <button
-            class="flex items-center justify-center gap-1 rounded-lg bg-zone-accent-fun px-3 py-2 text-[12px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+            class="flex items-center justify-center gap-1 rounded-lg bg-zone-accent-fun px-3 py-2 text-[12px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40 dark:text-background"
             :disabled="!pendingInput.trim()"
             @click="commitPending">
           <Plus class="size-3.5"/>
@@ -81,7 +81,7 @@
         <label class="text-[11px] font-medium text-muted-foreground">팀 수</label>
         <div class="flex flex-wrap items-center gap-1.5">
           <button v-for="n in [2, 3, 4, 5, 6]" :key="n"
-                  :class="teamCount === n ? 'bg-zone-accent-fun text-white' : 'bg-muted text-muted-foreground hover:text-foreground'"
+                  :class="teamCount === n ? 'bg-zone-accent-fun text-white dark:text-background' : 'bg-muted text-muted-foreground hover:text-foreground'"
                   class="size-7 rounded-full text-[12px] font-medium transition-colors"
                   @click="teamCount = n">{{ n }}
           </button>
@@ -93,7 +93,7 @@
 
       <button
           :disabled="participants.length === 0 || teamCount < 1"
-          class="flex items-center justify-center gap-1.5 rounded-xl bg-zone-accent-fun py-2.5 text-[14px] font-semibold text-white transition-[opacity,scale] hover:opacity-90 active:scale-[0.99] disabled:opacity-40"
+          class="flex items-center justify-center gap-1.5 rounded-xl bg-zone-accent-fun py-2.5 text-[14px] font-semibold text-white transition-[opacity,scale] hover:opacity-90 active:scale-[0.99] disabled:opacity-40 dark:text-background"
           @click="doSplit">
         <Shuffle class="size-4"/>
         팀 나누기
@@ -138,7 +138,7 @@
         <div v-if="outcomeMode === 'ox'" class="flex flex-wrap items-center gap-1.5">
           <span class="mr-1 text-[11px] font-medium text-muted-foreground">당첨 인원 수</span>
           <button v-for="n in winnerCountOptions" :key="n"
-                  :class="winnerCount === n ? 'bg-zone-accent-fun text-white' : 'bg-muted text-muted-foreground hover:text-foreground'"
+                  :class="winnerCount === n ? 'bg-zone-accent-fun text-white dark:text-background' : 'bg-muted text-muted-foreground hover:text-foreground'"
                   class="size-7 rounded-full text-[12px] font-medium transition-colors"
                   @click="winnerCount = n">{{ n }}
           </button>
@@ -161,7 +161,7 @@
       <div class="flex gap-2">
         <button
             :disabled="participants.length < 2"
-            class="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-zone-accent-fun py-2.5 text-[14px] font-semibold text-white transition-[opacity,scale] hover:opacity-90 active:scale-[0.99] disabled:opacity-40"
+            class="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-zone-accent-fun py-2.5 text-[14px] font-semibold text-white transition-[opacity,scale] hover:opacity-90 active:scale-[0.99] disabled:opacity-40 dark:text-background"
             @click="doLadder">
           <Rows3 class="size-4"/>
           사다리 타기
@@ -187,7 +187,7 @@
           <div :style="{ width: `${svgWidth}px` }" class="flex">
             <button v-for="(name, i) in participants" :key="i"
                     :style="{ width: `${colGap}px` }"
-                    :class="selectedStart === i ? 'bg-zone-accent-fun text-white shadow-sm' : 'bg-accent text-foreground/80 hover:opacity-80'"
+                    :class="selectedStart === i ? 'bg-zone-accent-fun text-white shadow-sm dark:text-background' : 'bg-accent text-foreground/80 hover:opacity-80'"
                     class="shrink-0 truncate rounded-full px-1 py-1 text-[11px] font-medium transition-[background-color,color,box-shadow,opacity,translate] hover:-translate-y-0.5"
                     @click="selectPath(i)">
               {{ name }}

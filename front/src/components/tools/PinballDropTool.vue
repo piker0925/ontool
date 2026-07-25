@@ -41,7 +41,7 @@
                @keydown="onPendingKeydown"
                @paste="onPendingPaste"/>
         <button
-            class="flex items-center justify-center gap-1 rounded-lg bg-zone-accent-fun px-3 py-2 text-[12px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+            class="flex items-center justify-center gap-1 rounded-lg bg-zone-accent-fun px-3 py-2 text-[12px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40 dark:text-background"
             :disabled="!pendingInput.trim()"
             @click="commitPending">
           <Plus class="size-3.5"/>
@@ -82,7 +82,7 @@
 
       <button
           :disabled="dropping"
-          class="flex items-center justify-center gap-1.5 rounded-xl bg-zone-accent-fun py-2.5 text-[14px] font-semibold text-white transition-[opacity,scale] hover:opacity-90 active:scale-[0.99] disabled:opacity-40"
+          class="flex items-center justify-center gap-1.5 rounded-xl bg-zone-accent-fun py-2.5 text-[14px] font-semibold text-white transition-[opacity,scale] hover:opacity-90 active:scale-[0.99] disabled:opacity-40 dark:text-background"
           @click="drop">
         <CircleDot class="size-4" :class="{ 'animate-bounce': dropping }"/>
         {{ dropping ? '떨어지는 중…' : '구슬 낙하 시작' }}

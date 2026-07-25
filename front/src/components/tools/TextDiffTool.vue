@@ -88,7 +88,7 @@
           <!-- 모드 토글 -->
           <div class="flex overflow-hidden rounded-lg border border-border">
             <button
-                :class="mode === 'side' ? 'bg-zone-accent-life text-white' : 'text-muted-foreground hover:bg-muted hover:text-foreground'"
+                :class="mode === 'side' ? 'bg-zone-accent-life text-white dark:text-background' : 'text-muted-foreground hover:bg-muted hover:text-foreground'"
                 class="px-2.5 py-1 text-[11px] font-medium transition-colors"
                 type="button"
                 @click="mode = 'side'"
@@ -96,7 +96,7 @@
               나란히
             </button>
             <button
-                :class="mode === 'inline' ? 'bg-zone-accent-life text-white' : 'text-muted-foreground hover:bg-muted hover:text-foreground'"
+                :class="mode === 'inline' ? 'bg-zone-accent-life text-white dark:text-background' : 'text-muted-foreground hover:bg-muted hover:text-foreground'"
                 class="px-2.5 py-1 text-[11px] font-medium transition-colors"
                 type="button"
                 @click="mode = 'inline'"

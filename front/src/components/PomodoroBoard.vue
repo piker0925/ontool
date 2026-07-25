@@ -7,7 +7,7 @@
     <p class="font-mono text-5xl font-bold text-foreground" data-testid="time">{{ formattedTime }}</p>
 
     <button
-        class="rounded-md bg-zone-accent px-6 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
+        class="rounded-md bg-zone-accent px-6 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 dark:text-background"
         data-testid="toggle-running"
         type="button"
         @click="toggleRunning"

@@ -33,7 +33,7 @@
       <label class="text-[11px] font-medium text-muted-foreground">배속</label>
       <div class="flex flex-wrap rounded-lg border border-border overflow-hidden">
         <button v-for="s in SPEEDS" :key="s"
-                :class="speed === s ? 'bg-zone-accent-fun text-white' : 'bg-card text-muted-foreground hover:text-foreground'"
+                :class="speed === s ? 'bg-zone-accent-fun text-white dark:text-background' : 'bg-card text-muted-foreground hover:text-foreground'"
                 class="px-2.5 py-1 text-[12px] font-medium transition-colors"
                 @click="speed = s">{{ s.toLocaleString() }}배
         </button>
@@ -60,7 +60,7 @@
     <!-- 컨트롤 -->
     <div class="flex gap-2">
       <button v-if="!running"
-              class="flex-1 rounded-xl bg-zone-accent-fun py-2.5 text-[14px] font-semibold text-white transition-colors hover:opacity-90"
+              class="flex-1 rounded-xl bg-zone-accent-fun py-2.5 text-[14px] font-semibold text-white transition-colors hover:opacity-90 dark:text-background"
               @click="start">시작
       </button>
       <button v-else

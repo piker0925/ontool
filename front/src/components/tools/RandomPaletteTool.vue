@@ -4,7 +4,7 @@
       <label class="text-[11px] font-medium text-muted-foreground">규칙</label>
       <div class="flex rounded-lg border border-border overflow-hidden">
         <button v-for="r in ruleOptions" :key="r.value"
-                :class="rule === r.value ? 'bg-zone-accent-fun text-white' : 'bg-card text-muted-foreground hover:text-foreground'"
+                :class="rule === r.value ? 'bg-zone-accent-fun text-white dark:text-background' : 'bg-card text-muted-foreground hover:text-foreground'"
                 class="px-3 py-1 text-[12px] font-medium transition-colors"
                 @click="rule = r.value; generate()">{{ r.label }}
         </button>
@@ -37,7 +37,7 @@
       <p v-if="palette.length === 0" class="text-[12px] text-muted-foreground py-2">생성 버튼을 클릭하세요</p>
     </div>
     <button
-        class="rounded-xl bg-zone-accent-fun py-2.5 text-[14px] font-semibold text-white transition-colors hover:opacity-90"
+        class="rounded-xl bg-zone-accent-fun py-2.5 text-[14px] font-semibold text-white transition-colors hover:opacity-90 dark:text-background"
         @click="generate">
       팔레트 생성
     </button>

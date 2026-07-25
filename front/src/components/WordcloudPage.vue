@@ -6,7 +6,7 @@
           v-for="t in TABS"
           :key="t.id"
           :class="tab === t.id
-          ? 'bg-zone-accent-fun text-white'
+          ? 'bg-zone-accent-fun text-white dark:text-background'
           : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'"
           class="shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors sm:flex-1"
           @click="tab = t.id"

@@ -67,7 +67,7 @@ function onClick() {
   if (state.value.phase === 'result' || state.value.phase === 'false-start') clearTimer()
 }
 
-const areaClass = computed(() => state.value.phase === 'ready' ? 'bg-zone-accent text-white scale-[1.02]' : 'bg-muted text-muted-foreground')
+const areaClass = computed(() => state.value.phase === 'ready' ? 'bg-zone-accent text-white dark:text-background scale-[1.02]' : 'bg-muted text-muted-foreground')
 const areaText = computed(() => state.value.phase === 'ready' ? '지금 클릭!' : '기다리세요…')
 
 watch(() => state.value.phase, phase => {

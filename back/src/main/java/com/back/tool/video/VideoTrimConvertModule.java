@@ -94,6 +94,22 @@ public class VideoTrimConvertModule implements ToolModule {
             if (bitrateKbps != null) {
                 args.add("-b:v");
                 args.add(bitrateKbps + "k");
+            } else if (!webm) {
+                // CRF23은 libx264가 -crf/-b:v를 둘 다 생략했을 때 실제로 쓰는 기본값과 같다(이슈 110
+                // 실측: docs/benchmarks/110-media-quality-audit). 그동안 인자를 생략해 "라이브러리
+                // 기본값에 우연히 의존"하던 것을 명시값으로 고정한다 — ffmpeg/x264가 향후 기본값을
+                // 바꿔도 이 모듈의 화질이 조용히 바뀌지 않게 하기 위함이다(화질 개선이 아니라 견고성).
+                args.add("-crf");
+                args.add("23");
+            }
+            if (!webm) {
+                // preset: 2 OCPU 오라클 프리티어 배포 목표(VIDEO 레인 permit=1이라 인코딩 시간이
+                // 곧 다음 대기 작업의 지연). veryfast는 실측(이슈 110)에서 medium 대비 인코딩
+                // 시간을 약 2.5~3.8배 줄이면서 SSIM은 0.9921→0.9902(육안 구분 불가 수준)만
+                // 낮아졌고 비트레이트도 오히려 더 작았다 — 이 자원 제약 환경에서는 화질보다
+                // 처리량을 우선한다.
+                args.add("-preset");
+                args.add("veryfast");
             }
             args.add("-c:a");
             args.add(webm ? "libopus" : "aac");

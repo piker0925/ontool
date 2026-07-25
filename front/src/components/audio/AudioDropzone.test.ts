@@ -1,6 +1,7 @@
 import {describe, expect, it, beforeEach, afterEach} from 'vitest'
 import {flushPromises, mount} from '@vue/test-utils'
 import AudioDropzone from './AudioDropzone.vue'
+import {encodeWav} from '../../utils/audioEncode'
 
 // jsdom에는 AudioContext가 없으므로, decodeAudioData가 반환하는 AudioBuffer를 흉내낸
 // 가짜 AudioContext를 전역에 심어 컴포넌트의 디코드 파이프라인(File → PcmAudio)만 검증한다.
@@ -96,5 +97,61 @@ describe('AudioDropzone', () => {
         resolveDecode({numberOfChannels: 1, sampleRate: 8000, length: 1, getChannelData: () => new Float32Array([0])})
         await flushPromises()
         expect(wrapper.text()).not.toContain('디코딩 중')
+    })
+
+    // 이슈 110: decodeAudioData가 AudioContext의 샘플레이트로 강제 리샘플링하므로, 진짜 WAV
+    // 업로드라면 헤더의 원본 샘플레이트로 컨텍스트를 만들어 불필요한 리샘플링을 피해야 한다.
+    it('진짜 WAV 업로드면 헤더의 샘플레이트로 AudioContext를 생성한다(불필요한 리샘플링 회피)', async () => {
+        let capturedOptions: {sampleRate?: number} | undefined
+        class RecordingAudioContext {
+            constructor(options?: {sampleRate?: number}) {
+                capturedOptions = options
+            }
+            decodeAudioData(_buf: ArrayBuffer) {
+                return Promise.resolve({
+                    numberOfChannels: 1, sampleRate: 48000, length: 1, getChannelData: () => new Float32Array([0]),
+                })
+            }
+            close() {
+                return Promise.resolve()
+            }
+        }
+        // @ts-expect-error 테스트 환경 전역 스텁 교체
+        window.AudioContext = RecordingAudioContext
+
+        // encodeWav로 실제 RIFF/WAVE 헤더를 가진 바이트를 만든다 — 컴포넌트가 진짜 WAV
+        // 헤더를 파싱하는지 보려는 것이지 encodeWav 자체를 테스트하는 게 아니다.
+        const wavBytes = encodeWav({interleaved: new Float32Array([0, 0]), sampleRate: 48000, channels: 1})
+        // encodeWav는 항상 오프셋 0의 전용 ArrayBuffer를 새로 반환한다(AudioDownloadButtons.vue와 동일 근거).
+        const wavFile = new File([wavBytes.buffer as ArrayBuffer], 'real.wav', {type: 'audio/wav'})
+
+        const wrapper = mount(AudioDropzone)
+        await selectFile(wrapper, wavFile)
+
+        expect(capturedOptions?.sampleRate).toBe(48000)
+    })
+
+    it('WAV가 아닌 파일(mp3 등)이면 옵션 없이 기본 AudioContext를 생성한다', async () => {
+        let capturedOptions: {sampleRate?: number} | undefined | 'sentinel-not-called' = 'sentinel-not-called'
+        class RecordingAudioContext {
+            constructor(options?: {sampleRate?: number}) {
+                capturedOptions = options
+            }
+            decodeAudioData(_buf: ArrayBuffer) {
+                return Promise.resolve({
+                    numberOfChannels: 1, sampleRate: 44100, length: 1, getChannelData: () => new Float32Array([0]),
+                })
+            }
+            close() {
+                return Promise.resolve()
+            }
+        }
+        // @ts-expect-error 테스트 환경 전역 스텁 교체
+        window.AudioContext = RecordingAudioContext
+
+        const wrapper = mount(AudioDropzone)
+        await selectFile(wrapper, new File(['ID3 not a real wav header'], 'x.mp3', {type: 'audio/mp3'}))
+
+        expect(capturedOptions).toBeUndefined() // 기본 생성자 — 인자 없이 호출됨
     })
 })

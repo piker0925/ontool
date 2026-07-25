@@ -58,8 +58,14 @@ function writeString(view: DataView, offset: number, str: string) {
     }
 }
 
-/** 16비트 PCM 기준 mp3(128kbps)로 인코딩한다. */
-export function encodeMp3(audio: PcmAudio, kbps = 128): Uint8Array {
+/**
+ * 16비트 PCM 기준 mp3(기본 192kbps)로 인코딩한다.
+ * 128kbps였던 이전 기본값은 이슈 110 실측(docs/benchmarks/110-media-quality-audit)에서
+ * 실제 음악 샘플 기준 원음 대비 SNR 14.36dB로 나왔고, 192kbps는 26.58dB(+12dB)로 뚜렷이
+ * 개선되면서도 파일 크기는 약 1.5배, 인코딩 시간은 (모두 10초 트랙 기준 약 400~500ms로)
+ * 사실상 차이가 없었다 — 브라우저 로컬 처리라 서버 자원과는 무관하다.
+ */
+export function encodeMp3(audio: PcmAudio, kbps = 192): Uint8Array {
     const {interleaved, sampleRate, channels} = audio
     const encoder = new Mp3Encoder(channels, sampleRate, kbps)
     const blockSize = 1152

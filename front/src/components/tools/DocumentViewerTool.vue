@@ -3,14 +3,14 @@
     <input ref="fileInput" accept=".docx,.xlsx" class="hidden" type="file" @change="onFileChange"/>
 
     <button v-if="!docType"
-            class="flex h-40 items-center justify-center rounded-xl border border-dashed border-border bg-card text-[13px] text-muted-foreground transition-colors hover:border-ring hover:text-foreground"
+            class="flex h-40 items-center justify-center rounded-xl border border-dashed border-border bg-card text-[13px] text-muted-foreground transition-colors hover:border-zone-accent-files/50 hover:text-zone-accent-files"
             @click="fileInput?.click()">DOCX 또는 XLSX 파일을 선택하세요
     </button>
 
     <div v-show="!!docType" class="flex flex-col gap-3">
       <div class="flex items-center justify-between">
         <span class="truncate text-[12px] text-muted-foreground">{{ fileName }}</span>
-        <button class="shrink-0 rounded-lg border border-border bg-card px-3 py-1.5 text-[12px] text-foreground transition-colors hover:border-ring"
+        <button class="shrink-0 rounded-lg border border-border bg-card px-3 py-1.5 text-[12px] text-foreground transition-colors hover:border-zone-accent-files/50"
                 @click="fileInput?.click()">다른 파일
         </button>
       </div>
@@ -24,7 +24,7 @@
       <div v-show="docType === 'xlsx'" class="flex flex-col gap-2">
         <div class="flex flex-wrap gap-1.5">
           <button v-for="sheet in sheetNames" :key="sheet"
-                  :class="activeSheet === sheet ? 'bg-card text-foreground shadow-sm border-ring' : 'text-muted-foreground hover:text-foreground border-border'"
+                  :class="activeSheet === sheet ? 'bg-zone-accent-files/10 text-zone-accent-files shadow-sm border-zone-accent-files/40' : 'text-muted-foreground hover:text-foreground border-border'"
                   class="rounded-lg border px-2.5 py-1 text-[11px] font-medium transition-colors"
                   @click="activeSheet = sheet">{{ sheet }}
           </button>

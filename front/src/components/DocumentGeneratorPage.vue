@@ -12,41 +12,41 @@
         <div class="grid grid-cols-2 gap-3">
           <div class="flex flex-col gap-1.5">
             <label class="text-[11px] text-muted-foreground">발행자 *</label>
-            <input v-model="issuer" class="rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20" placeholder="발행자명" type="text"/>
+            <input v-model="issuer" class="rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-zone-accent-files focus:ring-2 focus:ring-zone-accent-files/20" placeholder="발행자명" type="text"/>
           </div>
           <div class="flex flex-col gap-1.5">
             <label class="text-[11px] text-muted-foreground">발행자 주소</label>
-            <input v-model="issuerAddress" class="rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20" type="text"/>
+            <input v-model="issuerAddress" class="rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-zone-accent-files focus:ring-2 focus:ring-zone-accent-files/20" type="text"/>
           </div>
           <div class="flex flex-col gap-1.5">
             <label class="text-[11px] text-muted-foreground">수신자 *</label>
-            <input v-model="recipient" class="rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20" placeholder="수신자명" type="text"/>
+            <input v-model="recipient" class="rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-zone-accent-files focus:ring-2 focus:ring-zone-accent-files/20" placeholder="수신자명" type="text"/>
           </div>
           <div class="flex flex-col gap-1.5">
             <label class="text-[11px] text-muted-foreground">수신자 주소</label>
-            <input v-model="recipientAddress" class="rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20" type="text"/>
+            <input v-model="recipientAddress" class="rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-zone-accent-files focus:ring-2 focus:ring-zone-accent-files/20" type="text"/>
           </div>
           <div class="flex flex-col gap-1.5">
             <label class="text-[11px] text-muted-foreground">청구서 번호</label>
-            <input v-model="invoiceNumber" class="rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20" type="text"/>
+            <input v-model="invoiceNumber" class="rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-zone-accent-files focus:ring-2 focus:ring-zone-accent-files/20" type="text"/>
           </div>
           <div class="flex flex-col gap-1.5">
             <label class="text-[11px] text-muted-foreground">발행일</label>
-            <input v-model="issueDate" class="rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20" placeholder="2026-07-18" type="text"/>
+            <input v-model="issueDate" class="rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-zone-accent-files focus:ring-2 focus:ring-zone-accent-files/20" placeholder="2026-07-18" type="text"/>
           </div>
         </div>
 
         <div class="flex flex-col gap-2">
           <div class="flex items-center justify-between">
             <label class="text-[11px] font-medium text-muted-foreground">품목 *</label>
-            <button class="text-[11px] text-primary hover:underline" type="button" @click="addItem">
+            <button class="text-[11px] text-zone-accent-files hover:underline" type="button" @click="addItem">
               + 품목 추가
             </button>
           </div>
           <div v-for="(item, i) in items" :key="i" class="flex items-center gap-1.5">
-            <input v-model="item.description" class="flex-[2] rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20" placeholder="품목명" type="text"/>
-            <input v-model="item.quantity" class="w-16 rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20" placeholder="수량" type="text"/>
-            <input v-model="item.unitPrice" class="w-20 rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20" placeholder="단가" type="text"/>
+            <input v-model="item.description" class="flex-[2] rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-zone-accent-files focus:ring-2 focus:ring-zone-accent-files/20" placeholder="품목명" type="text"/>
+            <input v-model="item.quantity" class="w-16 rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-zone-accent-files focus:ring-2 focus:ring-zone-accent-files/20" placeholder="수량" type="text"/>
+            <input v-model="item.unitPrice" class="w-20 rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-zone-accent-files focus:ring-2 focus:ring-zone-accent-files/20" placeholder="단가" type="text"/>
             <button
                 :aria-label="item.description ? `${item.description} 삭제` : `품목 ${i + 1} 삭제`"
                 :disabled="items.length <= 1"
@@ -65,17 +65,22 @@
         <div class="grid grid-cols-2 gap-3">
           <div class="flex flex-col gap-1.5">
             <label class="text-[11px] text-muted-foreground">용지 크기</label>
-            <select v-model="paperSize" class="rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20">
+            <select v-model="paperSize" class="rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-zone-accent-files focus:ring-2 focus:ring-zone-accent-files/20">
               <option v-for="s in PAPER_SIZES" :key="s" :value="s">{{ s }}</option>
             </select>
           </div>
           <div class="flex flex-col gap-1.5">
             <label class="text-[11px] text-muted-foreground">여백 (mm)</label>
-            <input v-model="margin" class="rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20" placeholder="20" type="text"/>
+            <input v-model="margin" class="rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-zone-accent-files focus:ring-2 focus:ring-zone-accent-files/20" placeholder="20" type="text"/>
           </div>
         </div>
 
-        <Button :disabled="!invoiceValid" class="h-8 text-[12px]" @click="generateInvoice">청구서 PDF 생성</Button>
+        <Button
+            :disabled="!invoiceValid"
+            class="h-8 bg-zone-accent-files text-[12px] text-white hover:bg-zone-accent-files/90 focus-visible:border-zone-accent-files focus-visible:ring-zone-accent-files/50 dark:text-background"
+            @click="generateInvoice"
+        >청구서 PDF 생성
+        </Button>
       </div>
     </div>
 

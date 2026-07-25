@@ -12,7 +12,7 @@
         <label class="text-[11px] text-muted-foreground">동작</label>
         <select
             v-model="passwordMode"
-            class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+            class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-zone-accent-files focus:ring-2 focus:ring-zone-accent-files/20"
         >
           <option value="SET">비밀번호 설정</option>
           <option value="REMOVE">비밀번호 제거</option>
@@ -22,7 +22,7 @@
           <input
               v-model="password"
               :type="showPassword ? 'text' : 'password'"
-              class="w-full rounded-md border border-input bg-background px-3 py-1.5 pr-9 text-[13px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-ring focus:ring-2 focus:ring-ring/20"
+              class="w-full rounded-md border border-input bg-background px-3 py-1.5 pr-9 text-[13px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-zone-accent-files focus:ring-2 focus:ring-zone-accent-files/20"
               placeholder="비밀번호 입력"
           />
           <button

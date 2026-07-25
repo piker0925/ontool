@@ -16,7 +16,12 @@
       <p v-if="largeShiftWarning" class="text-[12px] text-amber-600 dark:text-amber-400">
         {{ largeShiftWarning }}
       </p>
-      <Button :disabled="processing" class="w-fit" data-testid="apply-pitch" @click="applyPitch">
+      <Button
+          :disabled="processing"
+          class="w-fit bg-zone-accent-files text-white hover:bg-zone-accent-files/90 focus-visible:border-zone-accent-files focus-visible:ring-zone-accent-files/50 dark:text-background"
+          data-testid="apply-pitch"
+          @click="applyPitch"
+      >
         {{ processing ? '처리 중…' : '적용' }}
       </Button>
     </div>

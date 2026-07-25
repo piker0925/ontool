@@ -16,7 +16,12 @@
               max="0" min="-24" step="0.5" type="number"
           />
         </label>
-        <Button :disabled="processing" class="w-fit" data-testid="apply-normalize" @click="applyNormalize">
+        <Button
+            :disabled="processing"
+            class="w-fit bg-zone-accent-files text-white hover:bg-zone-accent-files/90 focus-visible:border-zone-accent-files focus-visible:ring-zone-accent-files/50 dark:text-background"
+            data-testid="apply-normalize"
+            @click="applyNormalize"
+        >
           {{ processing ? '처리 중…' : '원클릭 정규화' }}
         </Button>
       </div>
@@ -32,7 +37,12 @@
               max="40" min="-40" step="1" type="number"
           />
         </label>
-        <Button :disabled="processing" class="w-fit" data-testid="apply-gain" @click="applyGain">
+        <Button
+            :disabled="processing"
+            class="w-fit bg-zone-accent-files text-white hover:bg-zone-accent-files/90 focus-visible:border-zone-accent-files focus-visible:ring-zone-accent-files/50 dark:text-background"
+            data-testid="apply-gain"
+            @click="applyGain"
+        >
           {{ processing ? '처리 중…' : '적용' }}
         </Button>
       </div>

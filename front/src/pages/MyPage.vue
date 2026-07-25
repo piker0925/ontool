@@ -5,6 +5,17 @@
       <p class="mt-2 text-muted-foreground">내 계정 정보와 활동 내역을 관리합니다.</p>
     </div>
 
+    <div v-if="user?.status === 'SUSPENDED'" role="alert"
+         class="mb-6 flex flex-col gap-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
+      <div class="flex items-center gap-2">
+        <ShieldAlert class="size-4 shrink-0 text-amber-600 dark:text-amber-400"/>
+        <span class="text-sm font-semibold text-amber-700 dark:text-amber-300">댓글 작성이 제한된 계정입니다</span>
+      </div>
+      <p class="text-[13px] leading-relaxed text-amber-700/90 dark:text-amber-300/90">
+        운영정책 위반으로 댓글 작성 기능이 제한되었습니다. 로그인, 좋아요 등 다른 기능은 그대로 이용하실 수 있습니다.
+      </p>
+    </div>
+
     <Card v-if="user" class="border shadow-sm">
       <CardHeader>
         <CardTitle class="text-xl">프로필</CardTitle>
@@ -106,7 +117,7 @@ import { Badge } from '../components/ui/badge'
 import { Input } from '../components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../components/ui/dialog'
 import JobHistorySection from '../components/JobHistorySection.vue'
-import { Edit2, Check, X, LogOut, Trash2 } from 'lucide-vue-next'
+import { Edit2, Check, X, LogOut, Trash2, ShieldAlert } from 'lucide-vue-next'
 import { apiClient } from '../api/client'
 
 const router = useRouter()

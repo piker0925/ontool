@@ -14,6 +14,7 @@ interface User {
   nickname: string
   email: string | null
   createdAt: string
+  status: 'ACTIVE' | 'SUSPENDED'
 }
 
 export const user = ref<User | null>(null)

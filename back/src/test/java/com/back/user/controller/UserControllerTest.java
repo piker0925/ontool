@@ -5,6 +5,7 @@ import com.back.global.security.jwt.JwtProvider;
 import com.back.user.dto.TokenPair;
 import com.back.user.entity.AuthProvider;
 import com.back.user.entity.User;
+import com.back.user.entity.UserStatus;
 import com.back.user.repository.RefreshTokenRepository;
 import com.back.user.repository.UserRepository;
 import com.back.user.service.RefreshTokenService;
@@ -66,7 +67,20 @@ class UserControllerTest extends AbstractMySQLIntegrationTest {
                 .andExpect(jsonPath("$.id").value(user.getId()))
                 .andExpect(jsonPath("$.nickname").value("닉네임A"))
                 .andExpect(jsonPath("$.email").value("a@test.com"))
-                .andExpect(jsonPath("$.provider").value("GOOGLE"));
+                .andExpect(jsonPath("$.provider").value("GOOGLE"))
+                .andExpect(jsonPath("$.status").value("ACTIVE"));
+    }
+
+    @Test
+    void me_정지된_유저는_status가_SUSPENDED로_내려온다() throws Exception {
+        User user = userRepository.save(new User(AuthProvider.GOOGLE, "g5", "suspended@test.com", "정지유저"));
+        user.setStatus(UserStatus.SUSPENDED);
+        userRepository.save(user);
+        String token = jwtProvider.issueAccessToken(user.getId());
+
+        mockMvc.perform(get("/api/v1/users/me").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUSPENDED"));
     }
 
     @Test

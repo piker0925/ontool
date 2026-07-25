@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest'
-import {convertKeyboard, countChars, normalizeWhitespace} from './textUtils'
+import {convertKeyboard, countChars, countCharsDetailed, detectKeyboardDirection, normalizeWhitespace} from './textUtils'
 
 describe('countChars', () => {
     it('문자 수, 단어 수, 바이트 수 반환', () => {
@@ -63,6 +63,56 @@ describe('convertKeyboard', () => {
         // ekfrn = ㄷ+ㅏ+ㄹ+ㄱ+ㅜ → ㄹ+ㄱ이 결합받침 ㄺ으로 임시 확정되지만,
         // 모음 ㅜ가 오면 ㄺ의 마지막 자모(ㄱ)만 다음 음절 초성으로 이동하고 ㄹ은 받침으로 남아 "달구"
         expect(convertKeyboard('ekfrn', 'en-ko')).toBe('달구')
+    })
+})
+
+describe('countCharsDetailed', () => {
+    it('공백 포함/제외 글자 수, 단어 수 — 알기 쉬운 ASCII 케이스로 검증', () => {
+        // "a b c" → 공백 포함 5자(a, ,b, ,c), 스페이스 2개 제외하면 3자, 단어 3개
+        const result = countCharsDetailed('a b c')
+        expect(result.charsWithSpace).toBe(5)
+        expect(result.charsWithoutSpace).toBe(3)
+        expect(result.words).toBe(3)
+        expect(result.lines).toBe(1)
+    })
+
+    it('한글 텍스트에서 공백 제외 글자 수를 정확히 센다', () => {
+        // "안녕 하세요" → 공백 포함 6자, 공백 1개 제외하면 5자
+        const result = countCharsDetailed('안녕 하세요')
+        expect(result.charsWithSpace).toBe(6)
+        expect(result.charsWithoutSpace).toBe(5)
+        expect(result.words).toBe(2)
+    })
+
+    it('바이트 수는 UTF-8 인코딩 기준 (한글 3바이트, ASCII 1바이트)', () => {
+        const result = countCharsDetailed('안a')
+        expect(result.bytes).toBe(4) // 안(3) + a(1)
+    })
+
+    it('빈 문자열은 모든 값이 0 (줄 수도 0)', () => {
+        const result = countCharsDetailed('')
+        expect(result.charsWithSpace).toBe(0)
+        expect(result.charsWithoutSpace).toBe(0)
+        expect(result.bytes).toBe(0)
+        expect(result.words).toBe(0)
+        expect(result.lines).toBe(0)
+    })
+
+    it('줄 수는 줄바꿈 개수 + 1', () => {
+        expect(countCharsDetailed('a\nb\nc').lines).toBe(3)
+        expect(countCharsDetailed('한 줄').lines).toBe(1)
+    })
+})
+
+describe('detectKeyboardDirection', () => {
+    it('라틴 문자가 다수면 en-ko(오타를 한글로 되돌림)로 판단', () => {
+        expect(detectKeyboardDirection('dkssud')).toBe('en-ko')
+    })
+    it('한글이 다수면 ko-en(오타를 영문으로 되돌림)로 판단', () => {
+        expect(detectKeyboardDirection('안녕')).toBe('ko-en')
+    })
+    it('신호가 없으면(빈 문자열) 기본값 en-ko', () => {
+        expect(detectKeyboardDirection('')).toBe('en-ko')
     })
 })
 

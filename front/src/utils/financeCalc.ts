@@ -105,3 +105,37 @@ export function supplyToVat(supplyAmount: number): number {
 export function totalToSupply(totalWithVat: number): number {
     return Math.round(totalWithVat / (1 + VAT_RATE))
 }
+
+/** 복리 계산: A = P × (1 + r/n)^(n×t). n=연 복리 횟수(기본 12=월복리), t=개월수/12. */
+export function compoundInterest(principal: number, annualRatePercent: number, months: number, compoundsPerYear: number = 12): MaturityResult {
+    const r = annualRatePercent / 100
+    const t = months / 12
+    const maturityAmount = principal * (1 + r / compoundsPerYear) ** (compoundsPerYear * t)
+    return {
+        principalTotal: principal,
+        interest: Math.round(maturityAmount - principal),
+        maturityAmount: Math.round(maturityAmount),
+    }
+}
+
+export interface InstallmentResult {
+    monthlyPayment: number
+    totalFee: number
+    totalPayment: number
+}
+
+/** 할부 계산 — 카드 할부수수료는 통상 원리금균등상환 방식과 동일 구조라 기존 대출 상환표 계산을 그대로 재사용한다. */
+export function calcInstallment(principal: number, annualFeeRatePercent: number, months: number): InstallmentResult {
+    const rows = equalPaymentSchedule(principal, annualFeeRatePercent, months)
+    return {
+        monthlyPayment: rows[0]?.payment ?? 0,
+        totalFee: rows.reduce((sum, row) => sum + row.interestPortion, 0),
+        totalPayment: rows.reduce((sum, row) => sum + row.payment, 0),
+    }
+}
+
+/** 목표 저축액 역산 — savingsMaturity(적금 단리) 공식을 목표금액 기준으로 뒤집어 필요한 월 저축액을 구한다. */
+export function calcRequiredMonthlySavings(targetAmount: number, annualRatePercent: number, months: number): number {
+    const factor = months + (months * (months + 1)) / 2 * (annualRatePercent / 100 / 12)
+    return Math.round(targetAmount / factor)
+}

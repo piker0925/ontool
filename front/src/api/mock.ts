@@ -343,6 +343,78 @@ export const MOCK_MODULES: Module[] = [
         keywords: ['출산예정일', '임신 주수', '임신 계산기'],
         zones: ['life'],
     },
+    {
+        id: 'annual-leave-calculator', name: '연차 계산기', category: '급여·근로', isHeavy: false, isFrontendOnly: true,
+        description: '근로기준법 §60 기준 연차유급휴가 발생 일수 계산',
+        keywords: ['연차', '연차 계산기', '유급휴가'],
+        zones: ['life'],
+    },
+    {
+        id: 'weekly-holiday-pay-calculator', name: '주휴수당 계산기', category: '급여·근로', isHeavy: false, isFrontendOnly: true,
+        description: '소정근로시간·시급 기준 주휴수당 계산',
+        keywords: ['주휴수당', '주휴수당 계산기'],
+        zones: ['life'],
+    },
+    {
+        id: 'unemployment-benefit-calculator', name: '실업급여 계산기', category: '급여·근로', isHeavy: false, isFrontendOnly: true,
+        description: '평균임금·연령·가입기간 기준 구직급여 예상액 계산',
+        keywords: ['실업급여', '구직급여', '실업급여 계산기'],
+        zones: ['life'],
+    },
+    {
+        id: 'compound-interest-calculator', name: '복리 계산기', category: '금융', isHeavy: false, isFrontendOnly: true,
+        description: '원금·이율·기간 기준 복리 만기수령액 계산',
+        keywords: ['복리', '복리 계산기', '복리이자'],
+        zones: ['life'],
+    },
+    {
+        id: 'installment-calculator', name: '할부 계산기', category: '금융', isHeavy: false, isFrontendOnly: true,
+        description: '카드 할부 수수료·월 할부금 계산',
+        keywords: ['할부', '할부 계산기', '할부수수료'],
+        zones: ['life'],
+    },
+    {
+        id: 'savings-goal-calculator', name: '목표 저축액 역산 계산기', category: '금융', isHeavy: false, isFrontendOnly: true,
+        description: '목표 금액 달성을 위해 필요한 월 저축액 역산',
+        keywords: ['목표 저축액', '저축 계산기', '적금 목표'],
+        zones: ['life'],
+    },
+    {
+        id: 'subscription-score-calculator', name: '청약 가점 계산기', category: '금융', isHeavy: false, isFrontendOnly: true,
+        description: '무주택기간·부양가족수·청약통장 가입기간 기준 청약 가점(만점 84점) 계산',
+        keywords: ['청약 가점', '청약통장', '청약 가점제'],
+        zones: ['life'],
+    },
+    {
+        id: 'ltv-dti-dsr-calculator', name: 'LTV·DTI·DSR 계산기', category: '금융', isHeavy: false, isFrontendOnly: true,
+        description: '담보인정비율(LTV)·총부채상환비율(DTI)·총부채원리금상환비율(DSR) 간단 추정',
+        keywords: ['ltv', 'dti', 'dsr', '주택담보대출', '대출한도'],
+        zones: ['life'],
+    },
+    {
+        id: 'bac-calculator', name: '음주측정기(BAC 계산기)', category: '건강', isHeavy: false, isFrontendOnly: true,
+        description: '위드마크 공식 기준 혈중알코올농도(BAC) 추정',
+        keywords: ['음주측정', 'bac', '혈중알코올농도', '위드마크'],
+        zones: ['life'],
+    },
+    {
+        id: 'discharge-date-calculator', name: '전역일 계산기', category: '날짜·나이', isHeavy: false, isFrontendOnly: true,
+        description: '입대일·복무기간 기준 전역일 계산',
+        keywords: ['전역일', '전역일 계산기', '군대 전역'],
+        zones: ['life'],
+    },
+    {
+        id: 'fuel-cost-calculator', name: '유류비 계산기', category: '단위·변환', isHeavy: false, isFrontendOnly: true,
+        description: '거리·연비·유가 기준 예상 유류비 계산',
+        keywords: ['유류비', '유류비 계산기', '기름값'],
+        zones: ['life'],
+    },
+    {
+        id: 'income-tax-calculator', name: '종합소득세 계산기', category: '금융', isHeavy: false, isFrontendOnly: true,
+        description: '과세표준 기준 종합소득세 누진세율 산출세액 계산',
+        keywords: ['종합소득세', '종합소득세 계산기', '소득세율'],
+        zones: ['life'],
+    },
 
     // 재미
     {
@@ -385,6 +457,18 @@ export const MOCK_MODULES: Module[] = [
             {keyword: '단어 빈도', query: 'tab=table'},
             {keyword: '빈도 분석', query: 'tab=table'},
         ],
+        zones: ['fun'],
+    },
+    {
+        id: 'biorhythm-calculator', name: '바이오리듬', category: '재미', isHeavy: false, isFrontendOnly: true,
+        description: '생일 기준 신체·감성·지성 사인파 바이오리듬 계산',
+        keywords: ['바이오리듬', 'biorhythm'],
+        zones: ['fun'],
+    },
+    {
+        id: 'blood-type-name-compatibility', name: '혈액형·이름 궁합', category: '재미', isHeavy: false, isFrontendOnly: true,
+        description: '혈액형 궁합 속설표 + 이름 기반 궁합 점수 재미로 보기',
+        keywords: ['혈액형 궁합', '이름 궁합', '궁합'],
         zones: ['fun'],
     },
 

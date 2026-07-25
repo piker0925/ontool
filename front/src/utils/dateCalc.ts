@@ -71,3 +71,10 @@ export function calcGestationalWeeks(lastMenstrualPeriodStr: string, baseDateStr
     const elapsedDays = daysBetween(lastMenstrualPeriodStr, baseDateStr)
     return {weeks: Math.floor(elapsedDays / 7), days: elapsedDays % 7}
 }
+
+/** 입대일 기준 전역일 — 입대일을 복무 1일차로 포함하므로 입대일 + 복무개월수의 하루 전날이 전역일이다. */
+export function calcDischargeDate(enlistmentDateStr: string, serviceMonths: number): string {
+    const [year, month, day] = enlistmentDateStr.split('-').map(Number)
+    const anchor = addMonthsClamped(year, month, day, serviceMonths)
+    return addDays(anchor, -1)
+}

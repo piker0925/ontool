@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest'
-import {calcBabyAge, calcDueDate, calcGestationalWeeks, calcInternationalAge, daysBetween, formatDday} from './dateCalc'
+import {calcBabyAge, calcDischargeDate, calcDueDate, calcGestationalWeeks, calcInternationalAge, daysBetween, formatDday} from './dateCalc'
 
 describe('daysBetween', () => {
     it('윤년(2024) 2월을 포함하는 구간은 29일(2월 29일 포함)', () => {
@@ -59,5 +59,15 @@ describe('calcDueDate (출산예정일, 네겔레 법칙)', () => {
 describe('calcGestationalWeeks (임신 주수)', () => {
     it('최종 월경일부터 기준일까지 경과 주수와 남은 일수', () => {
         expect(calcGestationalWeeks('2026-01-01', '2026-07-20')).toEqual({weeks: 28, days: 4})
+    })
+})
+
+describe('calcDischargeDate (전역일)', () => {
+    it('입대일 2024-01-01, 복무기간 18개월 → 전역일 2025-06-30(입대일을 복무 1일차로 포함)', () => {
+        expect(calcDischargeDate('2024-01-01', 18)).toBe('2025-06-30')
+    })
+    it('입대일이 월말(1/31)이라 개월 수를 더할 때 짧은 달을 거쳐도 안전하게 clamp됨', () => {
+        // 2024-01-31 + 1개월 = 2024-02-29(윤년, clamp) -> -1일 = 2024-02-28
+        expect(calcDischargeDate('2024-01-31', 1)).toBe('2024-02-28')
     })
 })

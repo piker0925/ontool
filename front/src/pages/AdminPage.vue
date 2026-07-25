@@ -149,12 +149,20 @@
                     </span>
                   </td>
                   <td class="px-5 py-3 text-right">
-                    <button
-                      @click="forceLogoutUser(u.id, u.nickname)"
-                      class="rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-xs text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
-                    >
-                      강제 로그아웃
-                    </button>
+                    <div class="flex justify-end gap-1.5">
+                      <button
+                        @click="forceLogoutUser(u.id, u.nickname)"
+                        class="rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-xs text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                      >
+                        강제 로그아웃
+                      </button>
+                      <button
+                        @click="openDeleteUserModal(u.id, u.nickname)"
+                        class="rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-xs text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                      >
+                        계정 삭제
+                      </button>
+                    </div>
                   </td>
                 </tr>
                 </tbody>
@@ -387,6 +395,35 @@
         </div>
       </div>
     </div>
+
+    <!-- 계정 강제 삭제 확인 모달 (100) — 비가역 조작이라 브라우저 confirm 대신 자체 모달을 쓴다 -->
+    <Dialog v-model:open="showDeleteUserModal">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>'{{ deleteUserTarget?.nickname }}' 계정을 정말 삭제하시겠습니까?</DialogTitle>
+          <DialogDescription class="pt-4 space-y-2">
+            <p>계정 정보 및 즐겨찾기, 좋아요 등 <strong>모든 개인 데이터가 즉시 삭제되며 절대 복구할 수 없습니다.</strong></p>
+            <p>작성한 댓글과 작업 이력은 삭제되지 않지만 익명으로 전환됩니다.</p>
+            <p class="text-destructive font-semibold mt-2">※ 이 작업은 되돌릴 수 없습니다.</p>
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter class="mt-4 sm:justify-end gap-2 sm:gap-0">
+          <button
+            class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
+            @click="showDeleteUserModal = false"
+          >
+            취소
+          </button>
+          <button
+            class="rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:opacity-90 disabled:opacity-50"
+            :disabled="isDeletingUser"
+            @click="confirmDeleteUser"
+          >
+            {{ isDeletingUser ? '처리 중…' : '영구 삭제' }}
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
@@ -395,6 +432,7 @@ import {ref, watch} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {apiClient} from '../api/client'
 import {COMMENT_REPORT_REASONS} from '../constants/commentReportReasons'
+import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter} from '../components/ui/dialog'
 
 const username = ref('')
 const password = ref('')
@@ -570,13 +608,39 @@ function changePage(newPage: number) {
 
 async function forceLogoutUser(id: number, nickname: string) {
   if (!confirm(`'${nickname}'(ID:${id}) 유저를 정말 강제 로그아웃 하시겠습니까?\n이 작업은 즉시 모든 기기에서 토큰을 만료시킵니다.`)) return
-  
+
   try {
     await apiClient.post(`/admin/users/${id}/force-logout`, {}, {headers: {Authorization: authHeader}})
     alert('성공적으로 강제 로그아웃 되었습니다.')
   } catch (e) {
     alert('로그아웃 처리에 실패했습니다.')
     console.error(e)
+  }
+}
+
+// --- 계정 강제 삭제(100) ---
+// 되돌릴 수 없는 가장 파괴적인 관리자 액션이라 브라우저 confirm() 대신 자체 모달로 오조작을 막는다.
+const showDeleteUserModal = ref(false)
+const isDeletingUser = ref(false)
+const deleteUserTarget = ref<{id: number; nickname: string} | null>(null)
+
+function openDeleteUserModal(id: number, nickname: string) {
+  deleteUserTarget.value = {id, nickname}
+  showDeleteUserModal.value = true
+}
+
+async function confirmDeleteUser() {
+  if (!deleteUserTarget.value) return
+  isDeletingUser.value = true
+  try {
+    await apiClient.delete(`/admin/users/${deleteUserTarget.value.id}`, {headers: {Authorization: authHeader}})
+    showDeleteUserModal.value = false
+    await loadUsers()
+  } catch (e) {
+    alert('계정 삭제에 실패했습니다.')
+    console.error(e)
+  } finally {
+    isDeletingUser.value = false
   }
 }
 

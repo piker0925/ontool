@@ -145,6 +145,74 @@ describe('AdminPage 유저 검색 입력', () => {
     })
 })
 
+describe('AdminPage 유저 관리 — 계정 삭제 모달', () => {
+    function mockAdminEndpointsWithOneUser() {
+        mockGet.mockImplementation((url: string) => {
+            if (url === '/admin/stats') return Promise.resolve({data: []})
+            if (url.startsWith('/admin/users')) {
+                return Promise.resolve({
+                    data: {
+                        content: [{
+                            id: 42, provider: 'GOOGLE', nickname: '삭제대상', email: 'del@test.com',
+                            createdAt: '2026-07-20T09:00:00', theftEventCount: 0,
+                        }],
+                        totalElements: 1, totalPages: 1, page: 0,
+                    },
+                })
+            }
+            return Promise.reject(new Error('unexpected GET ' + url))
+        })
+    }
+
+    async function openUsersTabWithDeleteModal() {
+        mockAdminEndpointsWithOneUser()
+
+        const router = newRouter()
+        await router.push('/admin')
+        const wrapper = mount(AdminPage, {attachTo: document.body, global: {plugins: [router]}})
+        await flushPromises()
+        await loginAsAdmin(wrapper)
+        const usersTab = wrapper.findAll('button').find(b => b.text().includes('유저 관리'))
+        await usersTab?.trigger('click')
+        await flushPromises()
+
+        const deleteBtn = wrapper.findAll('button').find(b => b.text() === '계정 삭제')
+        await deleteBtn?.trigger('click')
+        await flushPromises()
+
+        return wrapper
+    }
+
+    it('계정 삭제를 누르면 비가역 경고 문구가 담긴 모달이 뜨고, 취소를 누르면 DELETE 요청을 보내지 않는다', async () => {
+        const wrapper = await openUsersTabWithDeleteModal()
+
+        const dialogContent = document.body.querySelector('[data-slot="dialog-content"]')
+        expect(dialogContent).not.toBeNull()
+        expect(dialogContent!.textContent).toContain('복구')
+
+        const cancelBtn = Array.from(document.body.querySelectorAll('button')).find(b => b.textContent === '취소')
+        cancelBtn?.dispatchEvent(new MouseEvent('click', {bubbles: true}))
+        await flushPromises()
+
+        expect(mockDelete).not.toHaveBeenCalled()
+        wrapper.unmount()
+    })
+
+    it('모달에서 확인을 누르면 DELETE /admin/users/{id}를 호출하고 목록을 다시 불러온다', async () => {
+        mockDelete.mockResolvedValueOnce({})
+        const wrapper = await openUsersTabWithDeleteModal()
+
+        const confirmBtn = Array.from(document.body.querySelectorAll('button')).find(b => b.textContent === '영구 삭제')
+        confirmBtn?.dispatchEvent(new MouseEvent('click', {bubbles: true}))
+        await flushPromises()
+
+        expect(mockDelete).toHaveBeenCalledWith('/admin/users/42', expect.anything())
+        // 삭제 성공 후 목록을 다시 불러와야 한다(단순 splice가 아니라 totalElements 재조회) — 로그인 시 1회 + 삭제 후 1회.
+        expect(mockGet.mock.calls.filter(c => (c[0] as string).startsWith('/admin/users')).length).toBeGreaterThanOrEqual(2)
+        wrapper.unmount()
+    })
+})
+
 describe('AdminPage 댓글 관리', () => {
     it('운영 탭으로 전환하면 전체 댓글 목록을 불러와 모듈 id와 함께 렌더링한다', async () => {
         mockAdminEndpoints()

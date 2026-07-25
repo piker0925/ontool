@@ -11,7 +11,9 @@ import com.back.suggestion.entity.Suggestion;
 import com.back.suggestion.service.SuggestionService;
 import com.back.user.entity.User;
 import com.back.user.service.RefreshTokenService;
+import com.back.user.service.SocialUnlinkService;
 import com.back.user.service.UserService;
+import com.back.user.service.UserWithdrawalService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +37,8 @@ public class AdminController {
     private final RefreshTokenService refreshTokenService;
     private final JobService jobService;
     private final AdminActionLogService adminActionLogService;
+    private final UserWithdrawalService userWithdrawalService;
+    private final SocialUnlinkService socialUnlinkService;
 
     @GetMapping("/stats")
     public ResponseEntity<List<AdminToolStatsResponse>> getStats() {
@@ -83,6 +87,14 @@ public class AdminController {
         userService.getExistingById(id);
         refreshTokenService.forceLogout(id);
         adminActionLogService.record(AdminActionType.FORCE_LOGOUT, id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<Void> forceDeleteUser(@PathVariable Long id) {
+        User user = userWithdrawalService.withdraw(id);
+        socialUnlinkService.bestEffortUnlink(user);
+        adminActionLogService.record(AdminActionType.ACCOUNT_FORCE_DELETE, id);
         return ResponseEntity.noContent().build();
     }
 

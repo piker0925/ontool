@@ -34,4 +34,28 @@ describe('GamePage', () => {
 
         expect(wrapper.find('[data-testid="bump"]').text()).toBe('0')
     })
+
+    it('음소거 토글을 누르면 상태가 뒤집히고 localStorage에 저장되어 새 마운트에도 유지된다', async () => {
+        localStorage.removeItem('devtoolbox-game-sound-muted')
+        const wrapper = mount(GamePage, {props: {title: '테스트 게임'}})
+        const toggle = wrapper.find('[data-testid="game-mute-toggle"]')
+        const initialPressed = toggle.attributes('aria-pressed')
+
+        await toggle.trigger('click')
+
+        expect(toggle.attributes('aria-pressed')).not.toBe(initialPressed)
+        expect(localStorage.getItem('devtoolbox-game-sound-muted')).toBe(
+            toggle.attributes('aria-pressed') === 'true' ? '1' : '0',
+        )
+
+        // 새로 마운트해도(다른 게임 페이지로 이동한 상황을 흉내) 같은 음소거 상태가 유지된다 —
+        // useGameSound가 useTheme.ts와 같은 모듈 스코프 싱글턴이기 때문.
+        const secondWrapper = mount(GamePage, {props: {title: '다른 게임'}})
+        expect(secondWrapper.find('[data-testid="game-mute-toggle"]').attributes('aria-pressed'))
+            .toBe(toggle.attributes('aria-pressed'))
+
+        // 원래 상태로 복구해 다른 테스트 파일에 영향을 주지 않는다.
+        await toggle.trigger('click')
+        localStorage.removeItem('devtoolbox-game-sound-muted')
+    })
 })

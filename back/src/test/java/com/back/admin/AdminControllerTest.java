@@ -346,6 +346,8 @@ class AdminControllerTest extends AbstractMySQLIntegrationTest {
 
         mockMvc.perform(delete("/admin/users/" + target.getId()))
                 .andExpect(status().isUnauthorized());
+
+        assertThat(userRepository.findById(target.getId())).isPresent();
     }
 
     @Test

@@ -656,3 +656,130 @@ describe('FileUploader 두 번째 업로드 슬롯 (113 확장 — 이미지 워
         expect(wrapper.findAll('input[type="file"]')).toHaveLength(1)
     })
 })
+
+// 114: 결과를 본 뒤 옵션만 바꿔서 재업로드 없이 다시 실행할 수 있어야 한다 — 업로드 성공 후에도
+// staged를 비우지 않고 유지해, 같은 File 객체로 다시 POST할 수 있게 한다.
+describe('FileUploader 재업로드 없는 재실행 (114)', () => {
+    it('업로드에 성공해도 스테이징된 파일은 비워지지 않는다', async () => {
+        mockPost.mockResolvedValueOnce({data: {jobId: 'job-1'}})
+        const wrapper = mount(FileUploader, {props: {moduleId: 'image-to-pdf'}})
+
+        await selectFiles(wrapper, [new File(['a'], 'a.jpg', {type: 'image/jpeg'})])
+        await clickRun(wrapper)
+
+        expect(wrapper.text()).toContain('a.jpg')
+        expect(wrapper.find('[data-testid="confirm-upload"]').exists()).toBe(true)
+    })
+
+    it('파라미터를 바꾼 뒤 다시 실행하면 재업로드 없이 같은 파일로 새 요청을 보내고, 바뀐 파라미터가 실제로 전송된다', async () => {
+        mockPost.mockResolvedValueOnce({data: {jobId: 'job-1'}})
+        const wrapper = mount(FileUploader, {
+            props: {moduleId: 'image-resize', params: {width: '100'}},
+        })
+        const originalFile = new File(['a'], 'photo.jpg', {type: 'image/jpeg'})
+        await selectFiles(wrapper, [originalFile])
+        await clickRun(wrapper)
+
+        mockPost.mockResolvedValueOnce({data: {jobId: 'job-2'}})
+        await wrapper.setProps({params: {width: '200'}})
+        await clickRun(wrapper)
+
+        expect(mockPost).toHaveBeenCalledTimes(2)
+        const firstForm = mockPost.mock.calls[0][1] as FormData
+        const secondForm = mockPost.mock.calls[1][1] as FormData
+        expect(firstForm.get('width')).toBe('100')
+        expect(secondForm.get('width')).toBe('200')
+        // 같은 파일이 재전송됐는지(재업로드 UI 없이) — 이름만이 아니라 원본 File 객체와의 참조
+        // 동일성까지 확인한다. 이름만 같은 "새로 만들어진" File을 보내는 회귀는 이름 비교만으론
+        // 잡히지 않는다.
+        expect(firstForm.getAll('files')[0]).toBe(originalFile)
+        expect(secondForm.getAll('files')[0]).toBe(originalFile)
+        expect(wrapper.emitted('uploaded')![0]).toEqual([{jobId: 'job-1'}])
+        expect(wrapper.emitted('uploaded')![1]).toEqual([{jobId: 'job-2'}])
+    })
+
+    it('연속으로 3번 이상 재실행해도 매번 새 Job이 생성된다', async () => {
+        const wrapper = mount(FileUploader, {props: {moduleId: 'image-to-pdf'}})
+        await selectFiles(wrapper, [new File(['a'], 'a.jpg', {type: 'image/jpeg'})])
+
+        for (const jobId of ['job-1', 'job-2', 'job-3', 'job-4']) {
+            mockPost.mockResolvedValueOnce({data: {jobId}})
+            await clickRun(wrapper)
+        }
+
+        expect(mockPost).toHaveBeenCalledTimes(4)
+        expect(wrapper.emitted('uploaded')!.map(e => e[0])).toEqual([
+            {jobId: 'job-1'}, {jobId: 'job-2'}, {jobId: 'job-3'}, {jobId: 'job-4'},
+        ])
+        // 4번 모두 같은(재선택하지 않은) 파일이 전송됐다.
+        for (const call of mockPost.mock.calls) {
+            const form = call[1] as FormData
+            expect((form.getAll('files')[0] as File).name).toBe('a.jpg')
+        }
+    })
+
+    it('워터마크처럼 대상+두번째 슬롯 파일이 있는 경우도 업로드 성공 후 두 파일 모두 스테이징이 유지되어 재실행된다', async () => {
+        mockPost.mockResolvedValueOnce({data: {jobId: 'job-wm-1'}})
+        const wrapper = mount(FileUploader, {
+            props: {
+                moduleId: 'pdf-watermark', accept: '.pdf,.jpg,.jpeg,.png', multiple: false, maxFiles: 2,
+                secondSlotLabel: '+ 이미지 워터마크 추가', secondSlotAccept: '.jpg,.jpeg,.png',
+                secondSlotItemLabel: '워터마크 이미지',
+            },
+        })
+        await selectFiles(wrapper, [new File(['a'], 'target.pdf')])
+        const secondInput = wrapper.find('[data-testid="second-slot-file-input"]').element as HTMLInputElement
+        Object.defineProperty(secondInput, 'files', {value: [new File(['b'], 'logo.png', {type: 'image/png'})], configurable: true})
+        await wrapper.find('[data-testid="second-slot-file-input"]').trigger('change')
+        await flushPromises()
+
+        await clickRun(wrapper)
+
+        expect(wrapper.text()).toContain('target.pdf')
+        expect(wrapper.text()).toContain('logo.png')
+
+        mockPost.mockResolvedValueOnce({data: {jobId: 'job-wm-2'}})
+        await clickRun(wrapper)
+
+        expect(mockPost).toHaveBeenCalledTimes(2)
+        const secondForm = mockPost.mock.calls[1][1] as FormData
+        expect((secondForm.getAll('files') as File[]).map(f => f.name)).toEqual(['target.pdf', 'logo.png'])
+    })
+
+    it('업로드 성공 직후에는 실행 버튼 문구가 "다시 실행"으로 바뀐다', async () => {
+        mockPost.mockResolvedValueOnce({data: {jobId: 'job-1'}})
+        const wrapper = mount(FileUploader, {props: {moduleId: 'image-to-pdf'}})
+        await selectFiles(wrapper, [new File(['a'], 'a.jpg', {type: 'image/jpeg'})])
+        expect(wrapper.find('[data-testid="confirm-upload"]').text()).toBe('실행')
+
+        await clickRun(wrapper)
+
+        expect(wrapper.find('[data-testid="confirm-upload"]').text()).toBe('다시 실행')
+    })
+
+    it('성공 후 새 파일을 추가로 선택하면(다른 스테이징 세트) 버튼 문구가 다시 "실행"으로 돌아온다', async () => {
+        mockPost.mockResolvedValueOnce({data: {jobId: 'job-1'}})
+        const wrapper = mount(FileUploader, {props: {moduleId: 'pdf-merge'}})
+        await selectFiles(wrapper, [new File(['a'], 'a.pdf')])
+        await clickRun(wrapper)
+        expect(wrapper.find('[data-testid="confirm-upload"]').text()).toContain('다시 실행')
+
+        await selectFiles(wrapper, [new File(['b'], 'b.pdf')])
+
+        expect(wrapper.find('[data-testid="confirm-upload"]').text()).not.toContain('다시 실행')
+    })
+
+    it('부모가 노출된 clear()를 호출하면 스테이징된 파일이 모두 비워진다(예: ToolPage 초기화 버튼)', async () => {
+        mockPost.mockResolvedValueOnce({data: {jobId: 'job-1'}})
+        const wrapper = mount(FileUploader, {props: {moduleId: 'image-to-pdf'}})
+        await selectFiles(wrapper, [new File(['a'], 'a.jpg', {type: 'image/jpeg'})])
+        await clickRun(wrapper)
+        expect(wrapper.text()).toContain('a.jpg')
+
+        wrapper.vm.clear()
+        await flushPromises()
+
+        expect(wrapper.text()).not.toContain('a.jpg')
+        expect(wrapper.text()).toContain('파일을 드래그하거나 클릭하여 선택하세요')
+    })
+})

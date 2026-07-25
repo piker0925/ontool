@@ -55,10 +55,15 @@ const heavyJob = useHeavyJob()
 const uploadError = ref<string | null>(null)
 const detectedFormat = ref<OfficeDocumentFormat | null>(null)
 
-// FileUploader는 업로드 성공 직후 staged를 []로 비우며 다시 emit한다 — 그 순간에 배지가
-// 꺼지지 않도록 빈 배열 emission은 무시하고, 실제로 파일이 선택됐을 때만 갱신한다.
+// 114: FileUploader는 업로드 성공 후에도 staged를 유지한다(재업로드 없는 재실행) — 이 emission은
+// 스테이징이 실제로 비워졌을 때(사용자가 파일을 제거하거나 부모가 clear()를 호출했을 때)만 빈
+// 배열로 온다. 그 경우까지 배지를 꺼서 "선택된 파일 없음" 상태를 정확히 반영한다. 파일이 있을
+// 때만 형식을 갱신한다.
 function onStaged(files: File[]) {
-  if (files.length === 0) return
+  if (files.length === 0) {
+    detectedFormat.value = null
+    return
+  }
   detectedFormat.value = detectOfficeFormat(files[0].name)
 }
 

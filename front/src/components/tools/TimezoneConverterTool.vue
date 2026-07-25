@@ -17,9 +17,9 @@
       </select>
     </label>
 
-    <div class="rounded-lg border border-zone-accent-dev/20 bg-zone-accent-dev/10 px-4 py-4 text-center">
+    <div class="rounded-lg border border-zone-accent-life/20 bg-zone-accent-life/10 px-4 py-4 text-center">
       <div class="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">변환 결과</div>
-      <div class="mt-1 font-mono text-xl font-semibold text-zone-accent-dev">{{ converted }}</div>
+      <div class="mt-1 font-mono text-xl font-semibold text-zone-accent-life">{{ converted }}</div>
     </div>
 
     <p class="text-[11px] text-muted-foreground">서머타임(DST)이 있는 지역은 시기에 따라 시차가 달라질 수 있습니다</p>

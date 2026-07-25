@@ -2,7 +2,7 @@
   <div class="flex flex-col gap-5 max-w-2xl mx-auto w-full">
     <!-- 헤더 -->
     <div class="flex items-start gap-3">
-      <div class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-500">
+      <div class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-zone-accent-fun/10 text-zone-accent-fun">
         <Dices class="size-4.5"/>
       </div>
       <div class="flex flex-col gap-0.5">
@@ -14,14 +14,14 @@
     <!-- 모드 전환 -->
     <div class="grid grid-cols-2 gap-1 rounded-xl border border-border bg-card p-1">
       <button
-          :class="mode === 'team' ? 'bg-violet-500 text-white shadow-sm' : 'text-muted-foreground hover:bg-accent hover:text-foreground'"
+          :class="mode === 'team' ? 'bg-zone-accent-fun text-white shadow-sm' : 'text-muted-foreground hover:bg-accent hover:text-foreground'"
           class="flex items-center justify-center gap-1.5 rounded-lg py-2 text-[13px] font-medium transition-[background-color,color,box-shadow]"
           @click="mode = 'team'">
         <Users class="size-3.5"/>
         팀 나누기
       </button>
       <button
-          :class="mode === 'ladder' ? 'bg-violet-500 text-white shadow-sm' : 'text-muted-foreground hover:bg-accent hover:text-foreground'"
+          :class="mode === 'ladder' ? 'bg-zone-accent-fun text-white shadow-sm' : 'text-muted-foreground hover:bg-accent hover:text-foreground'"
           class="flex items-center justify-center gap-1.5 rounded-lg py-2 text-[13px] font-medium transition-[background-color,color,box-shadow]"
           @click="mode = 'ladder'">
         <Rows3 class="size-3.5"/>
@@ -55,12 +55,12 @@
 
       <div class="flex items-center gap-2">
         <input v-model="pendingInput"
-               class="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-[13px] text-foreground outline-none transition-colors focus:border-violet-400 focus:ring-2 focus:ring-violet-400/20"
+               class="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-[13px] text-foreground outline-none transition-colors focus:border-zone-accent-fun focus:ring-2 focus:ring-zone-accent-fun/20"
                placeholder="이름 입력 후 Enter (쉼표로 여러 명 붙여넣기 가능)"
                @keydown="onPendingKeydown"
                @paste="onPendingPaste"/>
         <button
-            class="flex items-center justify-center gap-1 rounded-lg bg-violet-500 px-3 py-2 text-[12px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+            class="flex items-center justify-center gap-1 rounded-lg bg-zone-accent-fun px-3 py-2 text-[12px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
             :disabled="!pendingInput.trim()"
             @click="commitPending">
           <Plus class="size-3.5"/>
@@ -68,7 +68,7 @@
         </button>
       </div>
       <button v-if="participants.length === 0"
-              class="flex w-fit items-center gap-1 text-[11px] text-violet-500 transition-colors hover:text-violet-600"
+              class="flex w-fit items-center gap-1 text-[11px] text-zone-accent-fun transition-colors hover:opacity-80"
               @click="fillSample">
         <Wand2 class="size-3"/>
         예시로 채워보기
@@ -81,19 +81,19 @@
         <label class="text-[11px] font-medium text-muted-foreground">팀 수</label>
         <div class="flex flex-wrap items-center gap-1.5">
           <button v-for="n in [2, 3, 4, 5, 6]" :key="n"
-                  :class="teamCount === n ? 'bg-violet-500 text-white' : 'bg-muted text-muted-foreground hover:text-foreground'"
+                  :class="teamCount === n ? 'bg-zone-accent-fun text-white' : 'bg-muted text-muted-foreground hover:text-foreground'"
                   class="size-7 rounded-full text-[12px] font-medium transition-colors"
                   @click="teamCount = n">{{ n }}
           </button>
           <input v-model.number="teamCount"
-                 class="w-16 rounded-lg border border-border bg-background px-2 py-1 text-[12px] text-foreground outline-none focus:border-violet-400"
+                 class="w-16 rounded-lg border border-border bg-background px-2 py-1 text-[12px] text-foreground outline-none focus:border-zone-accent-fun"
                  min="1" type="number"/>
         </div>
       </div>
 
       <button
           :disabled="participants.length === 0 || teamCount < 1"
-          class="flex items-center justify-center gap-1.5 rounded-xl bg-violet-500 py-2.5 text-[14px] font-semibold text-white transition-[opacity,scale] hover:opacity-90 active:scale-[0.99] disabled:opacity-40"
+          class="flex items-center justify-center gap-1.5 rounded-xl bg-zone-accent-fun py-2.5 text-[14px] font-semibold text-white transition-[opacity,scale] hover:opacity-90 active:scale-[0.99] disabled:opacity-40"
           @click="doSplit">
         <Shuffle class="size-4"/>
         팀 나누기
@@ -138,19 +138,19 @@
         <div v-if="outcomeMode === 'ox'" class="flex flex-wrap items-center gap-1.5">
           <span class="mr-1 text-[11px] font-medium text-muted-foreground">당첨 인원 수</span>
           <button v-for="n in winnerCountOptions" :key="n"
-                  :class="winnerCount === n ? 'bg-violet-500 text-white' : 'bg-muted text-muted-foreground hover:text-foreground'"
+                  :class="winnerCount === n ? 'bg-zone-accent-fun text-white' : 'bg-muted text-muted-foreground hover:text-foreground'"
                   class="size-7 rounded-full text-[12px] font-medium transition-colors"
                   @click="winnerCount = n">{{ n }}
           </button>
           <input v-model.number="winnerCount"
-                 class="w-16 rounded-lg border border-border bg-background px-2 py-1 text-[12px] text-foreground outline-none focus:border-violet-400"
+                 class="w-16 rounded-lg border border-border bg-background px-2 py-1 text-[12px] text-foreground outline-none focus:border-zone-accent-fun"
                  min="1" type="number"/>
         </div>
 
         <div v-else class="flex flex-col gap-1.5">
           <label class="text-[11px] font-medium text-muted-foreground">당첨 항목 (참가자 수만큼 입력해야 항목명이 그대로 표시됩니다)</label>
           <textarea v-model="outcomesInput"
-                    class="min-h-16 resize-y rounded-lg border border-border bg-background p-3 text-[13px] text-foreground outline-none transition-colors focus:border-violet-400 focus:ring-2 focus:ring-violet-400/20"
+                    class="min-h-16 resize-y rounded-lg border border-border bg-background p-3 text-[13px] text-foreground outline-none transition-colors focus:border-zone-accent-fun focus:ring-2 focus:ring-zone-accent-fun/20"
                     placeholder="커피 쏘기, 청소당번, 지각비 면제..."/>
           <p v-if="outcomesMismatch" class="text-[11px] text-amber-500">
             입력한 항목 수({{ outcomesCount }}개)가 참가자 수({{ participants.length }}명)와 달라 O/X로 표시됩니다.
@@ -161,7 +161,7 @@
       <div class="flex gap-2">
         <button
             :disabled="participants.length < 2"
-            class="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-violet-500 py-2.5 text-[14px] font-semibold text-white transition-[opacity,scale] hover:opacity-90 active:scale-[0.99] disabled:opacity-40"
+            class="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-zone-accent-fun py-2.5 text-[14px] font-semibold text-white transition-[opacity,scale] hover:opacity-90 active:scale-[0.99] disabled:opacity-40"
             @click="doLadder">
           <Rows3 class="size-4"/>
           사다리 타기
@@ -187,14 +187,14 @@
           <div :style="{ width: `${svgWidth}px` }" class="flex">
             <button v-for="(name, i) in participants" :key="i"
                     :style="{ width: `${colGap}px` }"
-                    :class="selectedStart === i ? 'bg-violet-500 text-white shadow-sm' : 'bg-accent text-foreground/80 hover:opacity-80'"
+                    :class="selectedStart === i ? 'bg-zone-accent-fun text-white shadow-sm' : 'bg-accent text-foreground/80 hover:opacity-80'"
                     class="shrink-0 truncate rounded-full px-1 py-1 text-[11px] font-medium transition-[background-color,color,box-shadow,opacity,translate] hover:-translate-y-0.5"
                     @click="selectPath(i)">
               {{ name }}
             </button>
           </div>
 
-          <svg :height="svgHeight" :viewBox="`0 0 ${svgWidth} ${svgHeight}`" :width="svgWidth" class="text-violet-500">
+          <svg :height="svgHeight" :viewBox="`0 0 ${svgWidth} ${svgHeight}`" :width="svgWidth" class="text-zone-accent-fun">
             <line v-for="(_, col) in participants" :key="`v-${col}`"
                   :x1="colX(col)" :x2="colX(col)" :y1="svgPad" :y2="rows * rowHeight + svgPad"
                   class="stroke-border" stroke-linecap="round" stroke-width="2"/>
@@ -211,7 +211,7 @@
             <span v-for="(label, i) in outcomeLabels" :key="i"
                   :style="{ width: `${colGap}px` }"
                   :class="selectedEnd === i
-                      ? 'bg-violet-500/15 text-violet-600 font-bold'
+                      ? 'bg-zone-accent-fun/15 text-zone-accent-fun font-bold'
                       : (outcomeMode === 'ox' ? (label === 'O' ? 'text-emerald-500 font-semibold' : 'text-muted-foreground') : 'text-muted-foreground')"
                   class="shrink-0 truncate rounded-full px-1 py-1 text-center text-[12px] transition-colors">
               {{ label }}
@@ -221,7 +221,7 @@
 
         <div class="flex flex-col gap-1.5">
           <div v-for="(end, start) in ladderResult" :key="start"
-               :class="selectedStart === start ? 'bg-violet-500/10' : ''"
+               :class="selectedStart === start ? 'bg-zone-accent-fun/10' : ''"
                class="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] transition-colors">
             <span class="font-medium text-foreground">{{ participants[start] }}</span>
             <ArrowRight class="size-3 shrink-0 text-muted-foreground/50"/>

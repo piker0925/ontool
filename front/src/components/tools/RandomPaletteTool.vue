@@ -4,7 +4,7 @@
       <label class="text-[11px] font-medium text-muted-foreground">규칙</label>
       <div class="flex rounded-lg border border-border overflow-hidden">
         <button v-for="r in ruleOptions" :key="r.value"
-                :class="rule === r.value ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:text-foreground'"
+                :class="rule === r.value ? 'bg-zone-accent-fun text-white' : 'bg-card text-muted-foreground hover:text-foreground'"
                 class="px-3 py-1 text-[12px] font-medium transition-colors"
                 @click="rule = r.value; generate()">{{ r.label }}
         </button>
@@ -12,7 +12,7 @@
     </div>
     <div class="flex items-center gap-2 flex-wrap">
       <label class="flex items-center gap-1.5 cursor-pointer">
-        <input v-model="useBaseColor" class="rounded accent-primary" type="checkbox" @change="generate"/>
+        <input v-model="useBaseColor" class="rounded accent-zone-accent-fun" type="checkbox" @change="generate"/>
         <span class="text-[12px] text-foreground">기준 색 지정</span>
       </label>
       <div v-if="useBaseColor" class="relative size-7 shrink-0 overflow-hidden rounded-lg border border-border">
@@ -32,12 +32,12 @@
           <Copy class="size-3.5"/>
         </button>
         <span v-if="copiedIndex === i"
-              class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">복사됨</span>
+              class="rounded-full bg-zone-accent-fun/10 px-2 py-0.5 text-[10px] font-semibold text-zone-accent-fun">복사됨</span>
       </div>
       <p v-if="palette.length === 0" class="text-[12px] text-muted-foreground py-2">생성 버튼을 클릭하세요</p>
     </div>
     <button
-        class="rounded-xl bg-primary py-2.5 text-[14px] font-semibold text-primary-foreground transition-colors hover:opacity-90"
+        class="rounded-xl bg-zone-accent-fun py-2.5 text-[14px] font-semibold text-white transition-colors hover:opacity-90"
         @click="generate">
       팔레트 생성
     </button>

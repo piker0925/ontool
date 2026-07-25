@@ -6,7 +6,7 @@
     </div>
     <div class="flex gap-2 items-center">
       <button
-          class="flex-1 rounded-xl bg-primary py-2.5 text-[14px] font-semibold text-primary-foreground transition-colors hover:opacity-90"
+          class="flex-1 rounded-xl bg-zone-accent-fun py-2.5 text-[14px] font-semibold text-white transition-colors hover:opacity-90"
           @click="generate">
         닉네임 생성
       </button>

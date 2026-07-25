@@ -9,13 +9,13 @@
       <label class="text-[11px] font-medium text-muted-foreground">목표 번호 (슬롯별로 직접 지정하거나 랜덤으로 둘 수 있습니다)</label>
       <div class="flex flex-wrap items-center gap-2">
         <select v-for="(_, i) in slots" :key="i" v-model.number="slots[i]" :disabled="running"
-                class="rounded-lg border border-border bg-background px-2 py-1.5 text-[12px] text-foreground outline-none focus:border-ring">
+                class="rounded-lg border border-border bg-background px-2 py-1.5 text-[12px] text-foreground outline-none focus:border-zone-accent-fun">
           <option :value="null">랜덤</option>
           <option v-for="n in 45" :key="n" :value="n">{{ n }}</option>
         </select>
         <span class="text-[12px] text-muted-foreground">보너스</span>
         <select v-model.number="bonusSlot" :disabled="running"
-                class="rounded-lg border border-border bg-background px-2 py-1.5 text-[12px] text-foreground outline-none focus:border-ring">
+                class="rounded-lg border border-border bg-background px-2 py-1.5 text-[12px] text-foreground outline-none focus:border-zone-accent-fun">
           <option :value="null">랜덤</option>
           <option v-for="n in 45" :key="n" :value="n">{{ n }}</option>
         </select>
@@ -33,7 +33,7 @@
       <label class="text-[11px] font-medium text-muted-foreground">배속</label>
       <div class="flex flex-wrap rounded-lg border border-border overflow-hidden">
         <button v-for="s in SPEEDS" :key="s"
-                :class="speed === s ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:text-foreground'"
+                :class="speed === s ? 'bg-zone-accent-fun text-white' : 'bg-card text-muted-foreground hover:text-foreground'"
                 class="px-2.5 py-1 text-[12px] font-medium transition-colors"
                 @click="speed = s">{{ s.toLocaleString() }}배
         </button>
@@ -43,16 +43,16 @@
     <!-- 자동 정지 -->
     <div class="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card p-4">
       <label class="flex items-center gap-1.5 cursor-pointer">
-        <input v-model="autoStopEnabled" :disabled="running" class="rounded accent-primary" type="checkbox"/>
+        <input v-model="autoStopEnabled" :disabled="running" class="rounded accent-zone-accent-fun" type="checkbox"/>
         <span class="text-[12px] text-foreground">자동 정지:</span>
       </label>
       <select v-model.number="autoStopRank" :disabled="!autoStopEnabled || running"
-              class="rounded-lg border border-border bg-background px-2 py-1.5 text-[12px] text-foreground outline-none focus:border-ring">
+              class="rounded-lg border border-border bg-background px-2 py-1.5 text-[12px] text-foreground outline-none focus:border-zone-accent-fun">
         <option v-for="r in [1, 2, 3, 4, 5]" :key="r" :value="r">{{ r }}등</option>
       </select>
       <span class="text-[12px] text-muted-foreground">이</span>
       <input v-model.number="autoStopCount" :disabled="!autoStopEnabled || running"
-             class="w-20 rounded-lg border border-border bg-background px-2 py-1.5 text-[12px] text-foreground outline-none focus:border-ring"
+             class="w-20 rounded-lg border border-border bg-background px-2 py-1.5 text-[12px] text-foreground outline-none focus:border-zone-accent-fun"
              min="1" type="number"/>
       <span class="text-[12px] text-muted-foreground">번 나오면 정지</span>
     </div>
@@ -60,7 +60,7 @@
     <!-- 컨트롤 -->
     <div class="flex gap-2">
       <button v-if="!running"
-              class="flex-1 rounded-xl bg-primary py-2.5 text-[14px] font-semibold text-primary-foreground transition-colors hover:opacity-90"
+              class="flex-1 rounded-xl bg-zone-accent-fun py-2.5 text-[14px] font-semibold text-white transition-colors hover:opacity-90"
               @click="start">시작
       </button>
       <button v-else

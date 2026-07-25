@@ -94,7 +94,8 @@
               <select
                   id="resize-unit"
                   v-model="heavyFormValues.unit"
-                  class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+                  class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:ring-2"
+                  :class="zoneFocusClass"
                   data-testid="resize-unit"
               >
                 <option value="px">px</option>
@@ -105,7 +106,8 @@
                 <input
                     v-if="heavyFormValues.keepAspectRatio === 'true'"
                     v-model="heavyFormValues.width"
-                    class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+                    class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:ring-2"
+                    :class="zoneFocusClass"
                     data-testid="resize-percent-linked"
                     placeholder="100"
                     type="number"
@@ -114,7 +116,8 @@
                 <template v-else>
                   <input
                       v-model="heavyFormValues.width"
-                      class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+                      class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:ring-2"
+                      :class="zoneFocusClass"
                       data-testid="resize-width-percent"
                       placeholder="100"
                       type="number"
@@ -123,7 +126,8 @@
                   <span class="shrink-0 font-mono text-[11px] text-muted-foreground">%</span>
                   <input
                       v-model="heavyFormValues.height"
-                      class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+                      class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:ring-2"
+                      :class="zoneFocusClass"
                       data-testid="resize-height-percent"
                       placeholder="100"
                       type="number"
@@ -146,7 +150,8 @@
               <template v-else>
                 <select
                     v-model="selectedResizePreset"
-                    class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+                    class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:ring-2"
+                    :class="zoneFocusClass"
                     data-testid="resize-preset"
                     @change="applyResizePreset"
                 >
@@ -158,7 +163,8 @@
                 <div class="flex items-center gap-2">
                   <input
                       v-model="heavyFormValues.width"
-                      class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+                      class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:ring-2"
+                      :class="zoneFocusClass"
                       data-testid="resize-width-px"
                       placeholder="800"
                       type="number"
@@ -167,7 +173,8 @@
                   <span class="shrink-0 font-mono text-[11px] text-muted-foreground">x</span>
                   <input
                       v-model="heavyFormValues.height"
-                      class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+                      class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:ring-2"
+                      :class="zoneFocusClass"
                       data-testid="resize-height-px"
                       placeholder="600"
                       type="number"
@@ -201,7 +208,8 @@
                   :id="heavyParamId(p.key)"
                   v-model="heavyFormValues[p.key]"
                   :placeholder="p.placeholder ?? ''"
-                  class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-ring focus:ring-2 focus:ring-ring/20"
+                  class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:ring-2"
+                  :class="zoneFocusClass"
                   type="text"
               />
               <div v-else-if="p.type === 'number'" class="flex items-center gap-2">
@@ -209,7 +217,8 @@
                     :id="heavyParamId(p.key)"
                     v-model="heavyFormValues[p.key]"
                     :placeholder="p.placeholder ?? ''"
-                    class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-ring focus:ring-2 focus:ring-ring/20"
+                    class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:ring-2"
+                    :class="zoneFocusClass"
                     type="number"
                 />
                 <span v-if="p.unit" class="shrink-0 font-mono text-[11px] text-muted-foreground">{{ p.unit }}</span>
@@ -217,7 +226,7 @@
               <label v-else-if="p.type === 'checkbox'" class="flex cursor-pointer items-center gap-2 text-[13px] text-foreground">
                 <input
                     :checked="heavyFormValues[p.key] === 'true'"
-                    class="accent-primary"
+                    :class="zoneAccentClass"
                     type="checkbox"
                     @change="heavyFormValues[p.key] = ($event.target as HTMLInputElement).checked ? 'true' : 'false'"
                 />
@@ -228,7 +237,8 @@
                   v-else-if="p.type === 'select'"
                   :id="heavyParamId(p.key)"
                   v-model="heavyFormValues[p.key]"
-                  class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+                  class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:ring-2"
+                  :class="zoneFocusClass"
               >
                 <option v-for="opt in p.options" :key="opt" :value="opt">{{ opt }}</option>
               </select>
@@ -315,7 +325,7 @@
                 <p class="max-w-xs text-[13px] font-medium text-destructive">상태를 확인할 수 없습니다 — 새로고침해 주세요</p>
               </template>
               <template v-else-if="!batchComplete">
-                <Loader2 class="size-8 animate-spin text-primary/60"/>
+                <Loader2 class="size-8 animate-spin" :class="zoneSpinnerClass"/>
                 <!-- 폴링 재시도 중 (042): 진행률이 멈춘 채 방치되지 않도록 명시적으로 알림 -->
                 <p v-if="batchReconnecting" class="text-[12px] text-amber-600">연결이 끊겼습니다 · 재연결 중…</p>
                 <p class="text-[13px] text-muted-foreground">
@@ -334,7 +344,8 @@
                 </p>
                 <a
                     :href="batchResultUrl"
-                    class="inline-flex h-9 items-center rounded-md bg-primary px-4 text-[13px] font-medium text-primary-foreground transition-opacity hover:opacity-90"
+                    :class="zoneAccentSolidClass"
+                    class="inline-flex h-9 items-center rounded-md px-4 text-[13px] font-medium transition-opacity hover:opacity-90"
                     data-testid="batch-download"
                     download
                 >ZIP 다운로드</a>
@@ -361,7 +372,7 @@
               <p class="max-w-xs text-[13px] font-medium text-destructive">상태를 확인할 수 없습니다 — 새로고침해 주세요</p>
             </div>
             <div v-else-if="!result" class="flex w-full max-w-sm flex-col items-center gap-4">
-              <Loader2 class="size-8 animate-spin text-primary/60"/>
+              <Loader2 class="size-8 animate-spin" :class="zoneSpinnerClass"/>
               <!-- 연결 끊김 상태 (042): 진행률이 멈춘 채 방치되지 않도록 명시적으로 알림 -->
               <p v-if="sseReconnecting" class="text-[12px] text-amber-600">연결이 끊겼습니다 · 재연결 중…</p>
               <!-- 대기 중: 큐 순번 안내 (ADR-0019 진행 가시화) -->
@@ -373,7 +384,8 @@
                 <div class="h-1.5 w-full overflow-hidden rounded-full bg-muted">
                   <div
                       :style="{width: jobProgress.progress + '%'}"
-                      class="h-full rounded-full bg-primary transition-[width]"
+                      :class="zoneAccentBgClass"
+                      class="h-full rounded-full transition-[width]"
                   ></div>
                 </div>
                 <p class="text-[13px] text-muted-foreground">
@@ -620,6 +632,7 @@ import {uploadErrorMessage} from '../utils/uploadError'
 import {clearPreviousRun, type RunResult} from '../utils/runState'
 import {predictResizeOutput} from '../utils/imageResizePreview'
 import type {PixelSize} from '../utils/imageDimensions'
+import type {ZoneId} from '../config/zones'
 import type {BatchProgress, Module, UploadResult} from '../types'
 import {isBatchResult} from '../types'
 import {Button} from '@/components/ui/button'
@@ -681,6 +694,56 @@ function toggleFav() {
 const moduleConfig = computed(() => mod.value ? MODULE_CONFIGS[mod.value.id] ?? null : null)
 const heavyConfig = computed(() => mod.value ? HEAVY_CONFIGS[mod.value.id] ?? null : null)
 const frontendToolEntry = computed(() => mod.value ? FRONTEND_TOOL_COMPONENTS[mod.value.id] ?? null : null)
+
+// 165: Heavy 공용 렌더링 브랜치(전용 컴포넌트가 없는 도구 — image-to-pdf, pdf-merge 등)는 dev/files/life/fun
+// 어느 구역의 도구든 그려낼 수 있는 단 하나의 공유 템플릿이라, 전용 컴포넌트처럼 구역색을 하드코딩할 수 없다.
+// ADR-0030(도구당 구역 1개)에 따라 모듈의 zones[0]을 현재 구역으로 보고, 그에 맞는 zone-accent-* 토큰을
+// 런타임에 골라 쓴다. Tailwind Oxide는 소스에 리터럴로 등장하는 클래스만 스캔하므로(동적 문자열 조합 금지 —
+// DefaultLayout.vue의 ZONE_BG_CLASS와 동일한 이유) 조합마다 완성된 문자열을 Record로 미리 나열해둔다.
+const ZONE_FOCUS_CLASS: Record<ZoneId, string> = {
+  dev: 'focus:border-zone-accent-dev focus:ring-zone-accent-dev/20',
+  files: 'focus:border-zone-accent-files focus:ring-zone-accent-files/20',
+  life: 'focus:border-zone-accent-life focus:ring-zone-accent-life/20',
+  fun: 'focus:border-zone-accent-fun focus:ring-zone-accent-fun/20',
+}
+const ZONE_ACCENT_CLASS: Record<ZoneId, string> = {
+  dev: 'accent-zone-accent-dev',
+  files: 'accent-zone-accent-files',
+  life: 'accent-zone-accent-life',
+  fun: 'accent-zone-accent-fun',
+}
+const ZONE_ACCENT_BG_CLASS: Record<ZoneId, string> = {
+  dev: 'bg-zone-accent-dev',
+  files: 'bg-zone-accent-files',
+  life: 'bg-zone-accent-life',
+  fun: 'bg-zone-accent-fun',
+}
+// bg-zone-accent-*는 밝은 단색이라 다크모드에서 text-white는 대비 미달(DESIGN.md 2절) — 텍스트를 얹는
+// 버튼류(ZIP 다운로드 등)는 dark:text-background를 항상 함께 쓴다. 진행률 바처럼 텍스트가 없는 요소는
+// ZONE_ACCENT_BG_CLASS만 쓰면 된다.
+const ZONE_ACCENT_SOLID_CLASS: Record<ZoneId, string> = {
+  dev: 'bg-zone-accent-dev text-white dark:text-background',
+  files: 'bg-zone-accent-files text-white dark:text-background',
+  life: 'bg-zone-accent-life text-white dark:text-background',
+  fun: 'bg-zone-accent-fun text-white dark:text-background',
+}
+const ZONE_SPINNER_CLASS: Record<ZoneId, string> = {
+  dev: 'text-zone-accent-dev/60',
+  files: 'text-zone-accent-files/60',
+  life: 'text-zone-accent-life/60',
+  fun: 'text-zone-accent-fun/60',
+}
+const currentZone = computed<ZoneId | null>(() => mod.value?.zones[0] ?? null)
+
+// zone이 없으면(로딩 중 등) 165 이전의 전역 기본 톤으로 그대로 폴백한다.
+function zoneClass(map: Record<ZoneId, string>, fallback: string) {
+  return computed(() => currentZone.value ? map[currentZone.value] : fallback)
+}
+const zoneFocusClass = zoneClass(ZONE_FOCUS_CLASS, 'focus:border-ring focus:ring-ring/20')
+const zoneAccentClass = zoneClass(ZONE_ACCENT_CLASS, 'accent-primary')
+const zoneAccentBgClass = zoneClass(ZONE_ACCENT_BG_CLASS, 'bg-primary')
+const zoneAccentSolidClass = zoneClass(ZONE_ACCENT_SOLID_CLASS, 'bg-primary text-primary-foreground')
+const zoneSpinnerClass = zoneClass(ZONE_SPINNER_CLASS, 'text-primary/60')
 
 // ── image-resize 전용: 크기 입력 UI (락 아이콘 + 프리셋 + 실시간 미리보기) ──────
 // 이 4개 키는 파라미터 폼에 자동 렌더링하지 않고 아래 전용 블록이 직접 그린다

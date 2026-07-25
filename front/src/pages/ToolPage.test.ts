@@ -651,3 +651,58 @@ describe('ToolPage 다중 파일 모듈 안내 문구 (113)', () => {
         expect(wrapper.text()).toContain('여러 파일 동시 업로드 가능')
     })
 })
+
+// 140: commentsSectionClass가 mod.isFrontendOnly 단일 분기만 보면 실제로 풀폭·좌측 정렬인
+// 도구(wide 레이아웃, 오디오 셸)까지 좁고 가운데 정렬로 잘못 취급한다 — layout/도구 id를
+// 반영해 도구 본문과 댓글 섹션의 정렬축이 실제로 일치하는지 확인한다.
+describe('ToolPage 댓글 섹션 폭 (140)', () => {
+    function commentsSectionClasses(wrapper: ReturnType<typeof mount>) {
+        const el = wrapper.find('.mt-8.border-t.border-border.pt-4')
+        expect(el.exists()).toBe(true)
+        return el.classes()
+    }
+
+    it('layout: wide 프론트 전용 도구(json-formatter)는 Heavy와 동일하게 좌측 정렬(max-w-4xl)한다', async () => {
+        const wrapper = await mountAt('json-formatter', [])
+
+        const classes = commentsSectionClasses(wrapper)
+        expect(classes).toContain('max-w-4xl')
+        expect(classes).not.toContain('max-w-2xl')
+        expect(classes).not.toContain('mx-auto')
+    })
+
+    it.each(['audio-trim', 'audio-speed', 'audio-pitch', 'audio-convert', 'audio-volume'])(
+        '오디오 셸 도구(%s)는 registry layout이 narrow여도 좌측 정렬(max-w-4xl)한다',
+        async moduleId => {
+            const wrapper = await mountAt(moduleId, [])
+
+            const classes = commentsSectionClasses(wrapper)
+            expect(classes).toContain('max-w-4xl')
+            expect(classes).not.toContain('max-w-2xl')
+            expect(classes).not.toContain('mx-auto')
+        },
+    )
+
+    it.each(['regex-tester', 'uuid'])(
+        '진짜 narrow 프론트 전용 도구(%s)는 기존대로 가운데 정렬(max-w-2xl mx-auto)한다',
+        async moduleId => {
+            const wrapper = await mountAt(moduleId, [])
+
+            const classes = commentsSectionClasses(wrapper)
+            expect(classes).toContain('max-w-2xl')
+            expect(classes).toContain('mx-auto')
+            expect(classes).not.toContain('max-w-4xl')
+        },
+    )
+
+    it('Heavy 도구(image-to-pdf)는 회귀 없이 좌측 정렬(max-w-4xl)을 유지한다', async () => {
+        const wrapper = await mountAt('image-to-pdf', [
+            {id: 'image-to-pdf', name: '이미지→PDF', category: 'PDF', isHeavy: true, zones: ['files']},
+        ])
+
+        const classes = commentsSectionClasses(wrapper)
+        expect(classes).toContain('max-w-4xl')
+        expect(classes).not.toContain('max-w-2xl')
+        expect(classes).not.toContain('mx-auto')
+    })
+})

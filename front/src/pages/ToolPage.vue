@@ -863,12 +863,24 @@ const frontendToolCardClass = computed(() =>
         : '',
 )
 
+// 140: 프론트 전용 도구 중에서도 실제로는 좁고 가운데 정렬된 컴포넌트가 아닌 것들이 있다 —
+// registry의 layout: 'wide'(json-formatter 등 Unified*Page)는 부모 max-w-[1440px]를 그대로
+// 쓰는 풀폭 좌측 정렬 레이아웃이고, 오디오 5종은 registry상 layout: 'narrow'라고 적혀 있지만
+// 실제로는 공유 셸(AudioToolShell.vue)이 폭 제한 없이 렌더링된다. 이 둘은 isFrontendOnly만
+// 보고 가운데 정렬로 좁혀버리면 도구 본문(풀폭)과 댓글(좁고 가운데)의 정렬축이 어긋난다.
+const AUDIO_SHELL_TOOL_IDS = new Set([
+    'audio-trim', 'audio-speed', 'audio-pitch', 'audio-convert', 'audio-volume',
+])
+
 // Heavy 도구는 워크벤치(거의 풀 폭)가 좌측 정렬이라 댓글도 좌측 정렬 + 워크벤치 컬럼 폭(4xl)로 맞춘다.
-// 프론트 전용 도구는 도구 본문이 mx-auto로 가운데 정렬되므로(각 컴포넌트 내부 max-w-lg~5xl 다양),
-// 댓글이 좌측에 고정되면 가운데의 좁은 도구 본문과 정렬축이 어긋나 어색해진다 — 댓글도 가운데 정렬한다.
-const commentsSectionClass = computed(() =>
-    mod.value?.isFrontendOnly ? 'max-w-2xl mx-auto' : 'max-w-4xl',
-)
+// 프론트 전용 도구 중 진짜 narrow(각 컴포넌트 내부 max-w-lg~5xl로 가운데 정렬)인 것만
+// 댓글도 같은 정렬축(가운데)으로 맞춘다. wide 레이아웃·오디오 셸은 Heavy와 동일하게 좌측 정렬한다.
+const commentsSectionClass = computed(() => {
+  if (!mod.value?.isFrontendOnly) return 'max-w-4xl'
+  if (frontendToolEntry.value?.layout === 'wide') return 'max-w-4xl'
+  if (AUDIO_SHELL_TOOL_IDS.has(mod.value.id)) return 'max-w-4xl'
+  return 'max-w-2xl mx-auto'
+})
 const batchResultUrl = computed(() => batchId.value ? `${API_BASE}/api/v1/batches/${batchId.value}/result` : '')
 
 const structuredResult = computed(() => parseStructuredResult(result.value?.text))

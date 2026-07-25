@@ -1,5 +1,6 @@
 package com.back.tool.image;
 
+import com.back.global.util.ExifOrientationSupport;
 import com.back.tool.model.ToolProcessingException;
 import net.coobird.thumbnailator.Thumbnails;
 
@@ -22,7 +23,12 @@ final class ImageCanvasUtil {
     private ImageCanvasUtil() {
     }
 
-    /** 전체 이미지 중 가로·세로 각각의 최댓값을 헤더만 읽어 파악한다 (풀 디코딩 없이 크기 결정). */
+    /**
+     * 전체 이미지 중 가로·세로 각각의 최댓값을 헤더만 읽어 파악한다 (풀 디코딩 없이 크기 결정).
+     * 헤더 자체는 EXIF Orientation 보정 전 raw 픽셀 크기이므로, 90도 계열 회전이 필요한 파일은
+     * {@link ExifOrientationSupport#swapsDimensions}로 가로/세로를 미리 뒤집어 계산해야 한다 —
+     * 안 그러면 실제로 그려질 때(보정 후) 프레임과 캔버스 크기가 어긋나 불필요한 레터박스가 생긴다.
+     */
     static int[] detectMaxDimensions(List<Path> files) throws IOException {
         int maxWidth = 0;
         int maxHeight = 0;
@@ -36,13 +42,22 @@ final class ImageCanvasUtil {
                     throw new ToolProcessingException("이미지 파일을 읽을 수 없습니다: " + path.getFileName());
                 }
                 ImageReader reader = readers.next();
+                int width;
+                int height;
                 try {
                     reader.setInput(iis);
-                    maxWidth = Math.max(maxWidth, reader.getWidth(0));
-                    maxHeight = Math.max(maxHeight, reader.getHeight(0));
+                    width = reader.getWidth(0);
+                    height = reader.getHeight(0);
                 } finally {
                     reader.dispose();
                 }
+                if (ExifOrientationSupport.swapsDimensions(ExifOrientationSupport.readOrientation(path))) {
+                    int swap = width;
+                    width = height;
+                    height = swap;
+                }
+                maxWidth = Math.max(maxWidth, width);
+                maxHeight = Math.max(maxHeight, height);
             }
         }
         return new int[]{maxWidth, maxHeight};

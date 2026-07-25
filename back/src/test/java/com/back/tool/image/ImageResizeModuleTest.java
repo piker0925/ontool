@@ -1,5 +1,6 @@
 package com.back.tool.image;
 
+import com.back.support.ExifJpegFixtures;
 import com.back.tool.model.ToolInput;
 import com.back.tool.model.ToolProcessingException;
 import com.back.tool.model.ToolResult;
@@ -178,6 +179,35 @@ class ImageResizeModuleTest {
         assertThat(highImg.getWidth()).isEqualTo(300);
         assertThat(low.outputFile().toFile().length())
                 .isLessThan(high.outputFile().toFile().length());
+    }
+
+    @Test
+    void exif_Orientation_태그가_있으면_리사이즈_전에_방향을_보정한다() throws Exception {
+        // 116 재현: 폰으로 세로로 찍은 사진(픽셀은 가로로 저장, EXIF에 90도 회전 태그)을 리사이즈하면
+        // 예전엔 태그를 무시하고 그대로 옆으로 누운 채 나왔다. keepAspectRatio=false로 정확히
+        // 보정 후 크기(20x40)를 요청해 스케일링 없이 방향만 검증한다.
+        Path src = ExifJpegFixtures.createJpegWithOrientation(
+                tempDir, "rotated.jpg", ExifJpegFixtures.asymmetricImage(40, 20), 6);
+
+        BufferedImage out = run(src, Map.of("width", "20", "height", "40", "keepAspectRatio", "false"));
+
+        assertThat(out.getWidth()).isEqualTo(20);
+        assertThat(out.getHeight()).isEqualTo(40);
+        // 90도 회전 후 빨강 사분면은 우상단으로 이동해야 한다 (ExifOrientationSupportTest와 동일 기준)
+        assertThat(ExifJpegFixtures.isRed(out.getRGB(out.getWidth() - 2, 2))).isTrue();
+        assertThat(ExifJpegFixtures.isRed(out.getRGB(2, 2))).isFalse();
+    }
+
+    @Test
+    void exif_Orientation_태그가_없으면_방향_변화_없이_기존과_동일하게_동작한다() throws Exception {
+        Path src = tempDir.resolve("normal.jpg");
+        ImageIO.write(ExifJpegFixtures.asymmetricImage(40, 20), "jpg", src.toFile());
+
+        BufferedImage out = run(src, Map.of("width", "40", "height", "20", "keepAspectRatio", "false"));
+
+        assertThat(out.getWidth()).isEqualTo(40);
+        assertThat(out.getHeight()).isEqualTo(20);
+        assertThat(ExifJpegFixtures.isRed(out.getRGB(2, 2))).isTrue(); // 좌상단 그대로
     }
 
     @Test

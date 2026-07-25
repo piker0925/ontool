@@ -1,5 +1,6 @@
 package com.back.tool.image;
 
+import com.back.global.util.ExifOrientationSupport;
 import com.back.tool.model.ToolInput;
 import com.back.tool.model.ToolModule;
 import com.back.tool.model.ToolParams;
@@ -70,6 +71,11 @@ public class ImageCollageModule implements ToolModule {
                 if (source == null) {
                     throw new ToolProcessingException("이미지 파일을 읽을 수 없습니다: " + files.get(i).getFileName());
                 }
+                // 폰카메라 등은 픽셀은 그대로 두고 EXIF Orientation 태그로만 회전 방향을 표시하는데,
+                // ImageIO 리더는 이 태그를 무시하므로 직접 보정하지 않으면 결과물이 옆으로 눕거나 뒤집힌다.
+                // 프레임마다 방향이 제각각일 수 있으므로 각 프레임 독립적으로 보정한다.
+                int orientation = ExifOrientationSupport.readOrientation(files.get(i));
+                source = ExifOrientationSupport.applyOrientation(source, orientation);
                 BufferedImage cell = ImageCanvasUtil.containPad(source, cellWidth, cellHeight, backgroundColor);
 
                 int x = spacing + col * (cellWidth + spacing);

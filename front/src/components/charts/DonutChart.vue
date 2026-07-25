@@ -4,9 +4,14 @@
   고정 순서로 data를 구성해야 이 보장이 성립한다(레인은 항상 [HEAVY, VIDEO] 순서 등).
   ≥2 계열은 항상 범례를 동반한다(dataviz 접근성 규칙) — 범례 없이는 절대 쓰지 않는다.
   arcWidth=0을 주면 파이(홀 없음), 기본값은 도넛(홀 있음). 재사용을 위해 AdminPage에 종속되지 않는다(118).
+
+  차트↔범례 간격: sm 이상에서 justify-center를 쓰면 (차트+범례) 묶음을 넓은 그리드 칸 안에서
+  가운데로 밀어주긴 하지만, 칸이 묶음 자체보다 훨씬 넓을 때 둘 사이 간격이 실제보다 훨씬 벌어져
+  보인다(둘 다 가운데로 몰리면서 시각적으로는 그대로인데 상대적 여백만 커 보임). justify-start로
+  묶음을 항상 왼쪽에 붙여 간격을 gap-2로 고정하고, 칸이 넓어도 간격이 늘어나지 않게 한다.
 -->
 <template>
-  <div class="flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:justify-center">
+  <div class="flex flex-col items-center gap-2 sm:flex-row sm:items-center sm:justify-start">
     <VisSingleContainer :data="data" :height="height" :width="height">
       <VisDonut :value="value" :color="color" :arc-width="donut ? 24 : 0" :pad-angle="donut ? 0.02 : 0.01"
                 :corner-radius="2"/>

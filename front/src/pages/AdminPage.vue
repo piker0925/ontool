@@ -61,54 +61,72 @@
         <!-- 1. 통계 탭 -->
         <div v-if="currentTab === 'stats'" class="flex flex-col gap-6">
 
-          <!-- 시각화 요약(118) — 아래 표들을 한눈에 보기 위한 요약. 표는 정밀한 값 확인용으로 그대로 둔다. -->
+          <!-- 시각화 요약(118) — 아래 표들을 한눈에 보기 위한 요약. 표는 정밀한 값 확인용으로 그대로 둔다.
+               레이아웃(161 3라운드): 큐 적체는 관리자가 가장 먼저 확인할 시간민감 신호라 모듈별
+               사용량과 나란히 맨 위로 올렸다. 일별 Job 처리/일별 신규 가입자는 자연스러운 grid-flow
+               순서에 맡기지 않고 전용 서브 그리드로 묶어, 위쪽 카드 개수가 나중에 바뀌어도(레인별
+               처리 분포 도넛을 뺐을 때 6→5개로 바뀌며 짝이 깨졌던 전례가 있다) 항상 나란히 붙는다. -->
           <section class="rounded-xl border border-border bg-card shadow-sm">
             <div class="flex items-center justify-between border-b border-border px-5 py-3">
               <h2 class="text-sm font-medium text-foreground">대시보드 요약</h2>
-              <button class="text-xs text-muted-foreground hover:text-foreground" @click="refreshStatsTab">새로고침</button>
+              <button
+                  class="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-60"
+                  :disabled="dashboardSummaryLoading" @click="onRefreshDashboardSummary"
+              >
+                <Loader2 v-if="dashboardSummaryLoading" class="size-3 animate-spin"/>
+                새로고침
+              </button>
             </div>
-            <div class="grid grid-cols-1 gap-x-8 gap-y-6 p-5 lg:grid-cols-2">
-              <div>
-                <h3 class="mb-3 text-xs font-medium text-muted-foreground">모듈별 사용량 (상위 10)</h3>
-                <BarChart :data="moduleUsageChartData" :value-formatter="v => v.toLocaleString()"/>
+            <div class="flex flex-col gap-6 p-5">
+              <!-- 1행: 모듈별 사용량 + 큐 적체 (시간민감 신호를 맨 위, 나란히) -->
+              <div class="grid grid-cols-1 gap-x-8 gap-y-6 lg:grid-cols-2">
+                <div>
+                  <h3 class="mb-3 text-xs font-medium text-muted-foreground">모듈별 사용량 (상위 10)</h3>
+                  <BarChart :data="moduleUsageChartData" :value-formatter="v => v.toLocaleString()"/>
+                </div>
+                <div class="flex flex-col justify-center gap-4">
+                  <h3 class="text-xs font-medium text-muted-foreground">큐 적체</h3>
+                  <template v-if="dashboardStats">
+                    <GaugeMeter
+                        label="HEAVY 레인" :pending="dashboardStats.heavyQueue.pending"
+                        :running="dashboardStats.heavyQueue.running" :threshold="dashboardStats.heavyQueue.threshold"
+                    />
+                    <GaugeMeter
+                        label="VIDEO 레인" :pending="dashboardStats.videoQueue.pending"
+                        :running="dashboardStats.videoQueue.running" :threshold="dashboardStats.videoQueue.threshold"
+                    />
+                  </template>
+                  <p v-else class="text-xs text-muted-foreground">불러오는 중…</p>
+                  <!-- 큐 적체 게이지(요약) ↔ 작업 큐 탭(상세 목록) 연결 — 둘이 같은 데이터의 요약/상세 관계라는 게
+                       기존엔 드러나지 않았다. 탭 전환 함수를 그대로 재사용해 클릭 시 데이터도 같이 지연 로드된다. -->
+                  <p class="text-xs text-muted-foreground">
+                    상세 목록은
+                    <button class="text-primary underline hover:no-underline" @click="switchTab('jobQueue')">작업 큐</button>
+                    탭에서 확인
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 class="mb-3 text-xs font-medium text-muted-foreground">가입 경로 비율</h3>
-                <DonutChart :data="providerDonutData" :donut="false"/>
+              <!-- 2행: 가입 경로 비율 + 구역별 사용량 분포(161) — 두 도넛을 나란히 -->
+              <div class="grid grid-cols-1 gap-x-8 gap-y-6 lg:grid-cols-2">
+                <div>
+                  <h3 class="mb-3 text-xs font-medium text-muted-foreground">가입 경로 비율</h3>
+                  <DonutChart :data="providerDonutData" :donut="false"/>
+                </div>
+                <div>
+                  <h3 class="mb-3 text-xs font-medium text-muted-foreground">구역별 사용량 분포</h3>
+                  <DonutChart :data="zoneUsageDonutChartData" :value-formatter="v => v.toLocaleString()"/>
+                </div>
               </div>
-              <div class="flex flex-col justify-center gap-4">
-                <h3 class="text-xs font-medium text-muted-foreground">큐 적체</h3>
-                <template v-if="dashboardStats">
-                  <GaugeMeter
-                      label="HEAVY 레인" :pending="dashboardStats.heavyQueue.pending"
-                      :running="dashboardStats.heavyQueue.running" :threshold="dashboardStats.heavyQueue.threshold"
-                  />
-                  <GaugeMeter
-                      label="VIDEO 레인" :pending="dashboardStats.videoQueue.pending"
-                      :running="dashboardStats.videoQueue.running" :threshold="dashboardStats.videoQueue.threshold"
-                  />
-                </template>
-                <p v-else class="text-xs text-muted-foreground">불러오는 중…</p>
-                <!-- 큐 적체 게이지(요약) ↔ 작업 큐 탭(상세 목록) 연결 — 둘이 같은 데이터의 요약/상세 관계라는 게
-                     기존엔 드러나지 않았다. 탭 전환 함수를 그대로 재사용해 클릭 시 데이터도 같이 지연 로드된다. -->
-                <p class="text-xs text-muted-foreground">
-                  상세 목록은
-                  <button class="text-primary underline hover:no-underline" @click="switchTab('jobQueue')">작업 큐</button>
-                  탭에서 확인
-                </p>
-              </div>
-              <div>
-                <h3 class="mb-3 text-xs font-medium text-muted-foreground">일별 Job 처리 (성공/실패)</h3>
-                <StackedAreaChart :data="dashboardStats?.dailyJobCounts ?? []"/>
-              </div>
-              <div>
-                <h3 class="mb-3 text-xs font-medium text-muted-foreground">일별 신규 가입자</h3>
-                <LineChart :data="dailySignupChartData" value-label="가입"/>
-              </div>
-              <!-- 구역별 사용량 분포(161) — ToolStats를 모듈 레지스트리 zones와 조인해 구역별 합산 -->
-              <div>
-                <h3 class="mb-3 text-xs font-medium text-muted-foreground">구역별 사용량 분포</h3>
-                <DonutChart :data="zoneUsageDonutChartData" :value-formatter="v => v.toLocaleString()"/>
+              <!-- 3행: 일별 Job 처리 + 일별 신규 가입자 — 전용 서브 그리드로 명시적으로 짝을 고정 -->
+              <div class="grid grid-cols-1 gap-x-8 gap-y-6 lg:grid-cols-2">
+                <div>
+                  <h3 class="mb-3 text-xs font-medium text-muted-foreground">일별 Job 처리 (성공/실패)</h3>
+                  <StackedAreaChart :data="dashboardStats?.dailyJobCounts ?? []"/>
+                </div>
+                <div>
+                  <h3 class="mb-3 text-xs font-medium text-muted-foreground">일별 신규 가입자</h3>
+                  <LineChart :data="dailySignupChartData" value-label="가입"/>
+                </div>
               </div>
             </div>
           </section>
@@ -119,7 +137,13 @@
           <section class="rounded-xl border border-border bg-card shadow-sm">
             <div class="flex items-center justify-between border-b border-border px-5 py-3">
               <h2 class="text-sm font-medium text-foreground">모듈 통계</h2>
-              <button class="text-xs text-muted-foreground hover:text-foreground" @click="loadStats">새로고침</button>
+              <button
+                  class="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-60"
+                  :disabled="moduleStatsLoading" @click="onRefreshModuleStats"
+              >
+                <Loader2 v-if="moduleStatsLoading" class="size-3 animate-spin"/>
+                새로고침
+              </button>
             </div>
             <div class="overflow-x-auto">
               <table class="w-full text-sm">
@@ -163,18 +187,21 @@
                   <span class="rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">{{ totalUsers }}명</span>
                 </div>
                 <p class="text-xs text-muted-foreground">
-                  '재사용 감지 발동' 횟수는 참고용 빈도 지표입니다 — 멀티탭 동시 재발급 등 오탐이 섞일 수 있어 이 수치만으로 계정 탈취를 단정할 수 없습니다.
+                  '이상 로그인 감지' 횟수는 참고용 빈도 지표입니다 — 멀티탭 동시 재발급 등 오탐이 섞일 수 있어 이 수치만으로 계정 탈취를 단정할 수 없습니다.
                 </p>
               </div>
-              <form class="flex w-full max-w-xs items-center gap-2 sm:w-auto" @submit.prevent="onSearch">
+              <!-- 검색창 너비 부족으로 placeholder가 단어 중간에서 그냥 잘리고(생략부호 없이),
+                   검색 버튼이 좁아져 "검"/"색" 두 글자가 세로로 줄바꿈되던 레이아웃 버그 수정(161 3라운드):
+                   max-w를 넉넉히 늘리고 input엔 truncate+min-w-0, 버튼엔 shrink-0+whitespace-nowrap. -->
+              <form class="flex w-full max-w-sm items-center gap-2 sm:w-auto" @submit.prevent="onSearch">
                 <input
                   v-model="searchInput"
                   type="text"
                   placeholder="닉네임, 제공자 검색… (예: kim, google)"
                   autocomplete="off"
-                  class="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm outline-none focus:border-primary"
+                  class="w-full min-w-0 truncate rounded-md border border-border bg-background px-3 py-1.5 text-sm outline-none focus:border-primary"
                 />
-                <button type="submit" class="rounded-md bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground hover:bg-secondary/80">
+                <button type="submit" class="shrink-0 whitespace-nowrap rounded-md bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground hover:bg-secondary/80">
                   검색
                 </button>
               </form>
@@ -190,7 +217,7 @@
                   <th class="px-5 py-3 font-medium">이메일</th>
                   <th class="px-5 py-3 font-medium">가입일</th>
                   <th class="px-5 py-3 font-medium text-right" title="참고용 빈도 지표 — 오탐(멀티탭 동시 재발급)이 섞일 수 있어 탈취 확정으로 단정할 수 없습니다.">
-                    재사용 감지 발동
+                    이상 로그인 감지
                   </th>
                   <th class="px-5 py-3 font-medium text-right">액션</th>
                 </tr>
@@ -284,7 +311,13 @@
           <section class="mt-6 rounded-xl border border-border bg-card shadow-sm">
             <div class="flex items-center justify-between border-b border-border px-5 py-3">
               <h2 class="text-sm font-medium text-foreground">댓글 신고 - 유저별 누적</h2>
-              <button class="text-xs text-muted-foreground hover:text-foreground" @click="loadReportUserAggregates">새로고침</button>
+              <button
+                  class="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-60"
+                  :disabled="reportAggregatesLoading" @click="onRefreshReportAggregates"
+              >
+                <Loader2 v-if="reportAggregatesLoading" class="size-3 animate-spin"/>
+                새로고침
+              </button>
             </div>
             <div class="overflow-x-auto">
               <table class="w-full text-sm">
@@ -319,7 +352,13 @@
           <section class="rounded-xl border border-border bg-card shadow-sm">
             <div class="flex items-center justify-between border-b border-border px-5 py-3">
               <h2 class="text-sm font-medium text-foreground">진행 중인 작업 (Jobs)</h2>
-              <button class="text-xs text-muted-foreground hover:text-foreground" @click="loadJobQueue">새로고침</button>
+              <button
+                  class="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-60"
+                  :disabled="jobQueueLoading" @click="onRefreshJobQueue"
+              >
+                <Loader2 v-if="jobQueueLoading" class="size-3 animate-spin"/>
+                새로고침
+              </button>
             </div>
             <div class="overflow-x-auto">
               <table class="w-full text-sm">
@@ -415,7 +454,13 @@
                   <option value="">전체 사유</option>
                   <option v-for="opt in COMMENT_REPORT_REASONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                 </select>
-                <button class="text-xs text-muted-foreground hover:text-foreground" @click="loadCommentReports">새로고침</button>
+                <button
+                    class="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-60"
+                    :disabled="commentReportsLoading" @click="onRefreshCommentReports"
+                >
+                  <Loader2 v-if="commentReportsLoading" class="size-3 animate-spin"/>
+                  새로고침
+                </button>
               </div>
             </div>
             <ul class="divide-y divide-border">
@@ -468,7 +513,13 @@
           <section class="rounded-xl border border-border bg-card shadow-sm">
             <div class="flex items-center justify-between border-b border-border px-5 py-3">
               <h2 class="text-sm font-medium text-foreground">관리자 액션 로그</h2>
-              <button class="text-xs text-muted-foreground hover:text-foreground" @click="loadActionLogs">새로고침</button>
+              <button
+                  class="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-60"
+                  :disabled="actionLogsLoading" @click="onRefreshActionLogs"
+              >
+                <Loader2 v-if="actionLogsLoading" class="size-3 animate-spin"/>
+                새로고침
+              </button>
             </div>
             <div class="p-5">
               <ActionLogTimeline :items="actionLogTimelineItems" :legend="actionLogLegend"/>
@@ -581,7 +632,7 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, ref, watch} from 'vue'
+import {computed, onUnmounted, ref, watch} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {Loader2} from 'lucide-vue-next'
 import {apiClient} from '../api/client'
@@ -880,9 +931,80 @@ async function loadDashboardStats() {
   }
 }
 
-function refreshStatsTab() {
-  loadStats()
-  loadDashboardStats()
+async function refreshStatsTab() {
+  await Promise.all([loadStats(), loadDashboardStats()])
+}
+
+// --- 큐 적체 게이지 폴링(161 3라운드) — 큐 적체는 관리자가 확인하는 신호 중 가장 시간에 민감해서,
+// 통계 탭이 열려 있는 동안은 수동 새로고침 없이도 주기적으로 갱신한다. 웹소켓 같은 실시간 인프라
+// 대신 폴링을 쓰기로 확정(저트래픽 관리자 화면이라 그 정도로 충분하다는 판단). 탭을 벗어나거나
+// 컴포넌트가 언마운트되면 반드시 인터벌을 정리해 백그라운드에서 계속 도는 걸 막는다.
+const DASHBOARD_POLL_INTERVAL_MS = 5000
+let dashboardPollTimer: ReturnType<typeof setInterval> | null = null
+
+function stopDashboardPolling() {
+  if (dashboardPollTimer !== null) {
+    clearInterval(dashboardPollTimer)
+    dashboardPollTimer = null
+  }
+}
+
+function startDashboardPolling() {
+  stopDashboardPolling()
+  dashboardPollTimer = setInterval(() => {
+    loadDashboardStats()
+  }, DASHBOARD_POLL_INTERVAL_MS)
+}
+
+const isDashboardPollActive = computed(() => authed.value && currentTab.value === 'stats')
+watch(isDashboardPollActive, active => {
+  if (active) startDashboardPolling()
+  else stopDashboardPolling()
+}, {immediate: true})
+
+onUnmounted(stopDashboardPolling)
+
+// --- 새로고침 버튼 로딩 표시(161 3라운드) — 클릭해도 아무 시각적 반응이 없어 "눌린 게 맞나" 헷갈린다는
+// 피드백. 데이터가 바뀌지 않아도(재조회 결과가 이전과 같아도) 최소한 "지금 로딩 중이다"는 알 수 있게
+// 모든 새로고침 버튼에 공용 헬퍼로 스피너/비활성화 상태를 통일해서 넣는다.
+async function withLoading(loadingRef: {value: boolean}, run: () => Promise<void>) {
+  loadingRef.value = true
+  try {
+    await run()
+  } finally {
+    loadingRef.value = false
+  }
+}
+
+const dashboardSummaryLoading = ref(false)
+const moduleStatsLoading = ref(false)
+const jobQueueLoading = ref(false)
+const reportAggregatesLoading = ref(false)
+const commentReportsLoading = ref(false)
+const actionLogsLoading = ref(false)
+
+function onRefreshDashboardSummary() {
+  return withLoading(dashboardSummaryLoading, refreshStatsTab)
+}
+
+function onRefreshModuleStats() {
+  return withLoading(moduleStatsLoading, loadStats)
+}
+
+function onRefreshJobQueue() {
+  return withLoading(jobQueueLoading, loadJobQueue)
+}
+
+function onRefreshReportAggregates() {
+  return withLoading(reportAggregatesLoading, loadReportUserAggregates)
+}
+
+function onRefreshCommentReports() {
+  return withLoading(commentReportsLoading, loadCommentReports)
+}
+
+function onRefreshActionLogs() {
+  return withLoading(actionLogsLoading, loadActionLogs)
 }
 
 async function loadUsers() {

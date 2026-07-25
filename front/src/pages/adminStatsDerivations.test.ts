@@ -111,32 +111,46 @@ describe('sortModuleStatsRows', () => {
     const rows: ModuleStatsRow[] = [
         {moduleId: 'b-tool', name: 'B 도구', useCount: 100, likeCount: 1, failCount: 10, canFail: true, failRate: 0.1},
         {moduleId: 'a-tool', name: 'A 도구', useCount: 20, likeCount: 5, failCount: 10, canFail: true, failRate: 0.5},
+        // canFail=false("-") 2개 — c/e-tool. canFail=true인데 사용 없음("사용 없음") 2개 — d/f-tool.
+        // 각 그룹에 2개 이상 있어야 "같은 그룹끼리 뭉치는지 vs 서로 섞이는지"를 구분해서 검증할 수 있다.
         {moduleId: 'c-tool', name: 'C 도구', useCount: 50, likeCount: 2, failCount: 0, canFail: false, failRate: null},
         {moduleId: 'd-tool', name: 'D 도구', useCount: 0, likeCount: 0, failCount: 0, canFail: true, failRate: null},
+        {moduleId: 'e-tool', name: 'E 도구', useCount: 5, likeCount: 0, failCount: 0, canFail: false, failRate: null},
+        {moduleId: 'f-tool', name: 'F 도구', useCount: 0, likeCount: 0, failCount: 0, canFail: true, failRate: null},
     ]
 
     it('useCount 내림차순으로 정렬한다', () => {
         const result = sortModuleStatsRows(rows, 'useCount', 'desc')
-        expect(result.map(r => r.moduleId)).toEqual(['b-tool', 'c-tool', 'a-tool', 'd-tool'])
+        expect(result.map(r => r.moduleId)).toEqual(['b-tool', 'c-tool', 'a-tool', 'e-tool', 'd-tool', 'f-tool'])
     })
 
     it('name 오름차순으로 정렬한다', () => {
         const result = sortModuleStatsRows(rows, 'name', 'asc')
-        expect(result.map(r => r.moduleId)).toEqual(['a-tool', 'b-tool', 'c-tool', 'd-tool'])
+        expect(result.map(r => r.moduleId)).toEqual(['a-tool', 'b-tool', 'c-tool', 'd-tool', 'e-tool', 'f-tool'])
     })
 
-    // failRate 정렬의 핵심 요구사항: 값이 없는 행(canFail=false 또는 사용 없음)은 정렬 방향과
-    // 무관하게 항상 맨 아래로 가야 한다 — desc로 정렬했다고 null이 위로 오면 안 된다.
-    it('failRate 내림차순 정렬 — null(해당 없음/사용 없음) 행은 맨 아래로 밀린다', () => {
+    // failRate 정렬의 핵심 요구사항(3단 티어): ① 실제 %가 있는 행이 먼저(내림차순 정렬), 그 다음
+    // ② canFail=true인데 사용 없음("사용 없음") 행들이 서로 뭉쳐서, 그 다음 ③ canFail=false인
+    // 행들("-")이 서로 뭉쳐서 온다 — ②와 ③이 섞여서 번갈아 나오면 안 된다.
+    it('failRate 내림차순 — 실제 % → 사용 없음(②) → 해당 없음(③) 순서로 티어가 분리된다', () => {
         const result = sortModuleStatsRows(rows, 'failRate', 'desc')
-        expect(result.map(r => r.moduleId)).toEqual(['a-tool', 'b-tool', 'c-tool', 'd-tool'])
+        expect(result.map(r => r.moduleId)).toEqual(['a-tool', 'b-tool', 'd-tool', 'f-tool', 'c-tool', 'e-tool'])
     })
 
-    it('failRate 오름차순으로 뒤집어도 null 행은 여전히 맨 아래다 — 방향과 무관하게 맨 아래 고정', () => {
+    it('failRate 오름차순으로 뒤집어도 티어 순서(① → ② → ③) 자체는 그대로다 — 방향은 ①티어 내부만 뒤집는다', () => {
         const result = sortModuleStatsRows(rows, 'failRate', 'asc')
-        expect(result.map(r => r.moduleId)).toEqual(['b-tool', 'a-tool', 'c-tool', 'd-tool'])
-        // null 두 행(c-tool, d-tool)은 여전히 마지막 두 자리에 있다.
-        expect(result.slice(2).map(r => r.moduleId).sort()).toEqual(['c-tool', 'd-tool'])
+        expect(result.map(r => r.moduleId)).toEqual(['b-tool', 'a-tool', 'd-tool', 'f-tool', 'c-tool', 'e-tool'])
+    })
+
+    it('"사용 없음"(canFail=true) 행과 "-"(canFail=false) 행이 인접해도 서로 섞이지 않고 각자 그룹으로 뭉친다', () => {
+        const result = sortModuleStatsRows(rows, 'failRate', 'desc')
+        const unusedTierIds = result.filter(r => r.failRate === null && r.canFail).map(r => r.moduleId)
+        const naTierIds = result.filter(r => r.failRate === null && !r.canFail).map(r => r.moduleId)
+        // 결과 배열에서 두 그룹의 인덱스가 연속 블록을 이루는지(교차 안 하는지) 확인.
+        const indices = result.map(r => r.moduleId)
+        const unusedIndices = unusedTierIds.map(id => indices.indexOf(id))
+        const naIndices = naTierIds.map(id => indices.indexOf(id))
+        expect(Math.max(...unusedIndices) < Math.min(...naIndices)).toBe(true)
     })
 })
 

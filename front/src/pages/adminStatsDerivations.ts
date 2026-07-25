@@ -75,17 +75,26 @@ export function mergedModuleStatsRows(
 
 export type ModuleStatsSortKey = 'name' | 'useCount' | 'likeCount' | 'failCount' | 'failRate'
 
-// 실패율 컬럼 정렬은 방향(asc/desc)과 무관하게 값이 없는 행(canFail=false 또는 사용 없음)을
-// 항상 맨 아래로 보낸다 — "정렬 방향을 바꾸면 빈 셀이 맨 위로 온다"는 혼란을 막기 위함.
+// 실패율 컬럼 정렬은 3단 티어로 고정한다 — 방향(asc/desc)은 1티어(실제 % 있는 행) 내부의
+// 순서만 뒤집을 뿐, 티어 자체의 순서(① 실제 %  ② 사용 없음  ③ 해당 없음)는 always 이 순서다.
+// "사용 없음"(canFail=true, 미사용)과 "-"(canFail=false, 애초에 대상 아님)는 둘 다 값이 없다는
+// 점에서 같아 보이지만 의미가 다르므로 한 블록에 섞이지 않고 항상 분리된 채로 뭉쳐 있어야 한다.
+function failRateSortTier(row: ModuleStatsRow): 0 | 1 | 2 {
+    if (row.failRate !== null) return 0
+    return row.canFail ? 1 : 2
+}
+
 export function sortModuleStatsRows(rows: ModuleStatsRow[], sortKey: ModuleStatsSortKey, sortDir: 'asc' | 'desc'): ModuleStatsRow[] {
     const dir = sortDir === 'asc' ? 1 : -1
     return [...rows].sort((a, b) => {
         if (sortKey === 'failRate') {
-            const aHas = a.failRate !== null
-            const bHas = b.failRate !== null
-            if (aHas !== bHas) return aHas ? -1 : 1
-            if (!aHas) return a.moduleId.localeCompare(b.moduleId)
-            return (a.failRate! - b.failRate!) * dir
+            const tierA = failRateSortTier(a)
+            const tierB = failRateSortTier(b)
+            if (tierA !== tierB) return tierA - tierB
+            if (tierA === 0) return (a.failRate! - b.failRate!) * dir
+            // 2·3티어(사용 없음/해당 없음) 내부는 값이 없으니 이름으로 안정 정렬한다 —
+            // 정렬 방향이 바뀌어도 이 하위 그룹 순서 자체는 흔들리지 않게.
+            return a.moduleId.localeCompare(b.moduleId)
         }
         if (sortKey === 'name') return a.name.localeCompare(b.name) * dir
         return (a[sortKey] - b[sortKey]) * dir

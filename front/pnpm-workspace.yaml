@@ -3,3 +3,6 @@ packages:
 
 allowBuilds:
   vue-demi: false
+
+overrides:
+  '@hono/node-server': '>=2.0.5'

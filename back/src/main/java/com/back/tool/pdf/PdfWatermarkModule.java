@@ -1,5 +1,6 @@
 package com.back.tool.pdf;
 
+import com.back.global.util.ExifOrientationSupport;
 import com.back.tool.model.ToolInput;
 import com.back.tool.model.ToolModule;
 import com.back.tool.model.ToolParams;
@@ -245,6 +246,9 @@ public class PdfWatermarkModule implements ToolModule {
             if (base == null) {
                 throw new ToolProcessingException("이미지 파일을 읽을 수 없습니다: " + target.getFileName());
             }
+            // 폰카메라 등은 픽셀은 그대로 두고 EXIF Orientation 태그로만 회전 방향을 표시하는데,
+            // ImageIO 리더는 이 태그를 무시하므로 직접 보정하지 않으면 결과물이 옆으로 눕거나 뒤집힌다.
+            base = ExifOrientationSupport.applyOrientation(base, ExifOrientationSupport.readOrientation(target));
             BufferedImage canvas = new BufferedImage(base.getWidth(), base.getHeight(), BufferedImage.TYPE_INT_ARGB);
             Graphics2D g = canvas.createGraphics();
             g.drawImage(base, 0, 0, null);
@@ -257,6 +261,7 @@ public class PdfWatermarkModule implements ToolModule {
                 if (wm == null) {
                     throw new ToolProcessingException("워터마크 이미지를 읽을 수 없습니다: " + watermarkImagePath.getFileName());
                 }
+                wm = ExifOrientationSupport.applyOrientation(wm, ExifOrientationSupport.readOrientation(watermarkImagePath));
                 // xPercent/yPercent가 있으면 텍스트와 같은 좌상단 앵커 퍼센트 좌표(top-down, 뒤집을
                 // 필요 없음)로 배치하고, 없으면(구버전 호출 등) 115가 정한 우하단 고정으로 폴백한다.
                 int wmX = (int) Math.round(

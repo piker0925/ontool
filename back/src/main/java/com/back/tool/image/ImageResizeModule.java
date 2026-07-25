@@ -1,5 +1,6 @@
 package com.back.tool.image;
 
+import com.back.global.util.ExifOrientationSupport;
 import com.back.tool.model.ToolInput;
 import com.back.tool.model.ToolModule;
 import com.back.tool.model.ToolParams;
@@ -49,6 +50,10 @@ public class ImageResizeModule implements ToolModule {
             if (srcImage == null) {
                 throw new ToolProcessingException("이미지 파일을 읽을 수 없습니다: " + src.getFileName());
             }
+            // 폰카메라 등은 픽셀은 그대로 두고 EXIF Orientation 태그로만 회전 방향을 표시하는데,
+            // ImageIO 리더는 이 태그를 무시하므로 직접 보정하지 않으면 결과물이 옆으로 눕거나 뒤집힌다.
+            int orientation = ExifOrientationSupport.readOrientation(src);
+            srcImage = ExifOrientationSupport.applyOrientation(srcImage, orientation);
             int srcWidth = srcImage.getWidth();
             int srcHeight = srcImage.getHeight();
 

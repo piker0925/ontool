@@ -38,6 +38,16 @@ public final class ExifOrientationSupport {
         };
     }
 
+    /**
+     * 이 방향값으로 {@link #applyOrientation}을 적용하면 가로/세로 치수가 서로 바뀌는지(90도 계열 회전).
+     * 픽셀을 실제로 디코딩하지 않고 파일 헤더만으로 크기를 미리 계산해야 하는 호출부(예: 여러 이미지를
+     * 합성하기 전 캔버스 크기를 정하는 {@code ImageCanvasUtil.detectMaxDimensions})가 방향 보정 후의
+     * 실제 치수를 예측할 때 쓴다 — 안 그러면 회전된 프레임과 캔버스 크기가 어긋나 불필요한 레터박스가 생긴다.
+     */
+    public static boolean swapsDimensions(int orientation) {
+        return orientation == 6 || orientation == 8;
+    }
+
     private static BufferedImage rotate(BufferedImage src, int degrees) {
         int w = src.getWidth();
         int h = src.getHeight();

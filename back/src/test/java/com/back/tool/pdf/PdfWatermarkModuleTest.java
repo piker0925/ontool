@@ -1,5 +1,6 @@
 package com.back.tool.pdf;
 
+import com.back.support.ExifJpegFixtures;
 import com.back.tool.model.ToolInput;
 import com.back.tool.model.ToolProcessingException;
 import com.back.tool.model.ToolResult;
@@ -470,6 +471,42 @@ class PdfWatermarkModuleTest {
             assertThat(containsColorInRegion(rendered, Color.BLACK, 10, 0.0, 0.15, 0.85, 1.0))
                     .as("좌하단은 오염되지 않아야 한다").isFalse();
         }
+    }
+
+    @Test
+    void 이미지_대상에_EXIF_Orientation이_있으면_워터마크_삽입_전에_대상_이미지_방향을_보정한다() throws Exception {
+        // 116 재현: 스마트폰 세로 사진(픽셀은 가로로 저장, EXIF에 90도 회전 태그)에 워터마크를 적용하면
+        // 예전엔 태그를 무시하고 그대로 옆으로 누운 채 나왔다.
+        Path target = ExifJpegFixtures.createJpegWithOrientation(
+                tempDir, "rotated.jpg", ExifJpegFixtures.asymmetricImage(40, 20), 6);
+        String elements = elementsJson(element("WM", 90, 90, "#000000", 10, null));
+
+        ToolResult result = module.process(new ToolInput(List.of(target),
+                Map.of("textElements", elements, "opacity", "100")));
+
+        BufferedImage output = ImageIO.read(result.outputFile().toFile());
+        assertThat(output.getWidth()).isEqualTo(20);
+        assertThat(output.getHeight()).isEqualTo(40);
+        // 90도 회전 후 빨강 사분면은 우상단으로 이동해야 한다 (ExifOrientationSupportTest와 동일 기준)
+        assertThat(ExifJpegFixtures.isRed(output.getRGB(output.getWidth() - 2, 2))).isTrue();
+        assertThat(ExifJpegFixtures.isRed(output.getRGB(2, 2))).isFalse();
+    }
+
+    @Test
+    void 워터마크_이미지에_EXIF_Orientation이_있으면_삽입_전에_방향을_보정한다() throws Exception {
+        Path base = createSolidImage("base.png", 400, 400, Color.WHITE);
+        Path stamp = ExifJpegFixtures.createJpegWithOrientation(
+                tempDir, "stamp.jpg", ExifJpegFixtures.asymmetricImage(40, 20), 6);
+
+        ToolResult result = module.process(new ToolInput(List.of(base, stamp),
+                Map.of("opacity", "100", "imageXPercent", "0", "imageYPercent", "0")));
+
+        BufferedImage output = ImageIO.read(result.outputFile().toFile());
+        // 보정 후 워터마크는 20(폭)x40(높이)로 찍혀야 한다 — 90도 회전 후 빨강 사분면은 우상단으로 이동
+        assertThat(ExifJpegFixtures.isRed(output.getRGB(18, 2))).isTrue();
+        assertThat(ExifJpegFixtures.isRed(output.getRGB(2, 2))).isFalse();
+        // 보정 전(가로 40폭) 기준이었다면 칠해졌을 x=30 지점은, 보정 후 폭이 20으로 좁아져 배경(흰색) 그대로여야 한다
+        assertThat(output.getRGB(30, 10)).isEqualTo(Color.WHITE.getRGB());
     }
 
     @Test

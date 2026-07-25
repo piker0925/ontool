@@ -1,5 +1,6 @@
 package com.back.tool.image;
 
+import com.back.support.ExifJpegFixtures;
 import com.back.tool.model.ToolInput;
 import com.back.tool.model.ToolProcessingException;
 import com.back.tool.model.ToolResult;
@@ -128,6 +129,48 @@ class ImageCollageModuleTest {
         // (늘려서(stretch) 꽉 채웠다면 이 여백이 사라져 아래 assertion이 깨진다)
         assertThat(new Color(out.getRGB(300, 10))).isEqualTo(Color.WHITE);
         assertThat(new Color(out.getRGB(300, 90))).isEqualTo(Color.WHITE);
+    }
+
+    @Test
+    void exif_Orientation가_있는_이미지는_콜라주_합성_전에_방향이_보정되고_프레임별로_독립적으로_적용된다() throws Exception {
+        // 116 재현: 콜라주는 여러 장을 합성하므로 프레임별로 방향이 제각각인 경우도 각자 독립적으로
+        // 보정돼야 한다 — 정사각형(40x40) 원본을 써서 회전해도 셀 크기(detectMaxDimensions 기준)와
+        // 어긋나지 않게 한다.
+        Path rotated = ExifJpegFixtures.createJpegWithOrientation(
+                tempDir, "rotated.jpg", ExifJpegFixtures.asymmetricImage(40, 40), 6);
+        Path normal = tempDir.resolve("normal.jpg");
+        ImageIO.write(ExifJpegFixtures.asymmetricImage(40, 40), "jpg", normal.toFile());
+
+        ToolResult result = module.process(new ToolInput(List.of(rotated, normal),
+                Map.of("columns", "2", "spacing", "0")));
+        BufferedImage out = readResult(result);
+
+        assertThat(out.getWidth()).isEqualTo(80);
+        assertThat(out.getHeight()).isEqualTo(40);
+
+        // 셀0(orientation=6): 90도 보정 후 빨강 사분면이 우상단으로 이동해야 한다
+        assertThat(ExifJpegFixtures.isRed(out.getRGB(36, 2))).isTrue();
+        assertThat(ExifJpegFixtures.isRed(out.getRGB(2, 2))).isFalse();
+
+        // 셀1(EXIF 없음, 전역 x는 +40 오프셋): 그대로 좌상단이 빨강이어야 한다 — 회귀 없음 확인
+        assertThat(ExifJpegFixtures.isRed(out.getRGB(42, 2))).isTrue();
+    }
+
+    @Test
+    void 자동_셀_크기_계산도_EXIF로_보정된_치수를_기준으로_한다() throws Exception {
+        // 116 후속: detectMaxDimensions가 헤더의 raw 픽셀 크기(방향 보정 전)만 보고 셀 크기를 정하면,
+        // 보정 후 실제로 그려지는 프레임(세로 20x40)과 셀 크기가 어긋나 불필요한 레터박스가 생긴다.
+        // raw 기준(40x20)이었다면 캔버스는 80x40, 보정된 기준(20x40)이면 40x40이 되어야 한다.
+        Path rotated = ExifJpegFixtures.createJpegWithOrientation(
+                tempDir, "rotated.jpg", ExifJpegFixtures.asymmetricImage(40, 20), 6);
+        Path normal = createSolidImage("normal.png", Color.RED, 20, 40); // 보정된 rotated와 같은 치수
+
+        ToolResult result = module.process(new ToolInput(List.of(rotated, normal),
+                Map.of("columns", "2", "spacing", "0")));
+        BufferedImage out = readResult(result);
+
+        assertThat(out.getWidth()).isEqualTo(40);
+        assertThat(out.getHeight()).isEqualTo(40);
     }
 
     @Test

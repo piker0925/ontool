@@ -6,7 +6,7 @@
 
     <!-- 목표 설정 -->
     <div class="flex flex-col gap-2 rounded-xl border border-border bg-card p-4">
-      <label class="text-[11px] font-medium text-muted-foreground">목표 번호 (슬롯별로 직접 지정하거나 랜덤으로 둘 수 있습니다)</label>
+      <label class="text-[12px] font-medium text-muted-foreground">목표 번호 (슬롯별로 직접 지정하거나 랜덤으로 둘 수 있습니다)</label>
       <div class="flex flex-wrap items-center gap-2">
         <select v-for="(_, i) in slots" :key="i" v-model.number="slots[i]" :disabled="running"
                 class="rounded-lg border border-border bg-background px-2 py-1.5 text-[12px] text-foreground outline-none focus:border-zone-accent-fun">
@@ -30,7 +30,7 @@
 
     <!-- 배속 -->
     <div class="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card p-4">
-      <label class="text-[11px] font-medium text-muted-foreground">배속</label>
+      <label class="text-[12px] font-medium text-muted-foreground">배속</label>
       <div class="flex flex-wrap rounded-lg border border-border overflow-hidden">
         <button v-for="s in SPEEDS" :key="s"
                 :class="speed === s ? 'bg-zone-accent-fun text-white' : 'bg-card text-muted-foreground hover:text-foreground'"

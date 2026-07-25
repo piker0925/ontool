@@ -2,7 +2,7 @@
   <div class="flex flex-col gap-4 max-w-lg mx-auto w-full">
     <div class="flex items-center gap-4 flex-wrap">
       <div class="flex items-center gap-2">
-        <label class="text-[11px] font-medium text-muted-foreground">버전</label>
+        <label class="text-[12px] font-medium text-muted-foreground">버전</label>
         <div class="flex rounded-lg border border-border overflow-hidden">
           <button v-for="v in (['v4', 'v7'] as const)" :key="v"
                   :class="uuidVersion === v ? 'bg-zone-accent text-primary-foreground' : 'bg-card text-muted-foreground hover:text-foreground'"
@@ -12,7 +12,7 @@
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <label class="text-[11px] font-medium text-muted-foreground">개수</label>
+        <label class="text-[12px] font-medium text-muted-foreground">개수</label>
         <input v-model.number="uuidCount"
                class="w-16 rounded-lg border border-border bg-card px-2 py-1 text-[12px] text-foreground outline-none focus:border-ring"
                max="100" min="1" type="number"

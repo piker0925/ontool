@@ -4,7 +4,7 @@
     <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <div class="flex flex-col gap-1.5">
         <div class="flex items-center justify-between">
-          <label class="text-[11px] font-medium text-muted-foreground">원본</label>
+          <label class="text-[12px] font-medium text-muted-foreground">원본</label>
           <div class="flex items-center gap-1">
             <button
                 class="rounded-md px-2 py-0.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
@@ -30,7 +30,7 @@
         />
       </div>
       <div class="flex flex-col gap-1.5">
-        <label class="text-[11px] font-medium text-muted-foreground">변경본</label>
+        <label class="text-[12px] font-medium text-muted-foreground">변경본</label>
         <textarea
             v-model="right"
             class="min-h-[24vh] resize-y rounded-xl border border-border bg-card p-3 font-mono text-[13px] text-foreground outline-none placeholder:text-muted-foreground/40 focus:border-ring"

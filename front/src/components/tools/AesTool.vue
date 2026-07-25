@@ -20,7 +20,7 @@
     </div>
 
     <div class="flex flex-col gap-1.5">
-      <label class="text-[11px] font-medium text-muted-foreground">{{ op === 'encrypt' ? '평문' : '암호문' }}</label>
+      <label class="text-[12px] font-medium text-muted-foreground">{{ op === 'encrypt' ? '평문' : '암호문' }}</label>
       <textarea v-model="text"
                 class="h-24 resize-none rounded-xl border border-border bg-card p-3 font-mono text-[13px] text-foreground outline-none focus:border-ring"/>
     </div>

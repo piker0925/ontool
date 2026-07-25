@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col gap-3 max-w-4xl mx-auto w-full">
     <div class="flex items-center gap-2">
-      <label class="text-[11px] font-medium text-muted-foreground">루트 interface 이름</label>
+      <label class="text-[12px] font-medium text-muted-foreground">루트 interface 이름</label>
       <input v-model="rootName"
              class="w-32 rounded-lg border border-border bg-card px-2 py-1 text-[12px] text-foreground outline-none focus:border-ring"
              placeholder="Root"/>

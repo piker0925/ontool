@@ -9,7 +9,7 @@
 
     <template v-else>
       <div class="flex items-center gap-3">
-        <label class="text-[11px] font-medium text-muted-foreground shrink-0">가로 해상도</label>
+        <label class="text-[12px] font-medium text-muted-foreground shrink-0">가로 해상도</label>
         <input v-model.number="columns" class="flex-1" max="200" min="20" step="10" type="range"/>
         <span class="w-10 text-right font-mono text-[12px] text-foreground">{{ columns }}</span>
       </div>

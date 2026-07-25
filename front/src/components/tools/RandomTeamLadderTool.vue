@@ -32,7 +32,7 @@
     <!-- 참가자 입력 (칩 방식) -->
     <div class="flex flex-col gap-2 rounded-xl border border-border bg-card p-4">
       <div class="flex items-center justify-between">
-        <label class="text-[11px] font-medium text-muted-foreground">참가자</label>
+        <label class="text-[12px] font-medium text-muted-foreground">참가자</label>
         <div class="flex items-center gap-2">
           <span class="rounded-full bg-muted px-2 py-0.5 font-mono text-[11px] text-muted-foreground">{{ participants.length }}명</span>
           <button v-if="participants.length > 0"
@@ -78,7 +78,7 @@
     <!-- 팀 나누기 -->
     <template v-if="mode === 'team'">
       <div class="flex flex-col gap-2 rounded-xl border border-border bg-card p-4">
-        <label class="text-[11px] font-medium text-muted-foreground">팀 수</label>
+        <label class="text-[12px] font-medium text-muted-foreground">팀 수</label>
         <div class="flex flex-wrap items-center gap-1.5">
           <button v-for="n in [2, 3, 4, 5, 6]" :key="n"
                   :class="teamCount === n ? 'bg-zone-accent-fun text-white' : 'bg-muted text-muted-foreground hover:text-foreground'"
@@ -148,7 +148,7 @@
         </div>
 
         <div v-else class="flex flex-col gap-1.5">
-          <label class="text-[11px] font-medium text-muted-foreground">당첨 항목 (참가자 수만큼 입력해야 항목명이 그대로 표시됩니다)</label>
+          <label class="text-[12px] font-medium text-muted-foreground">당첨 항목 (참가자 수만큼 입력해야 항목명이 그대로 표시됩니다)</label>
           <textarea v-model="outcomesInput"
                     class="min-h-16 resize-y rounded-lg border border-border bg-background p-3 text-[13px] text-foreground outline-none transition-colors focus:border-zone-accent-fun focus:ring-2 focus:ring-zone-accent-fun/20"
                     placeholder="커피 쏘기, 청소당번, 지각비 면제..."/>

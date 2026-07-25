@@ -2,7 +2,7 @@
   <div class="flex flex-col gap-4 max-w-lg mx-auto w-full">
     <label class="flex flex-col gap-1.5 text-[13px]">
       상품 종류
-      <select v-model="depositKind" class="rounded-md border border-input bg-background px-3 py-2">
+      <select v-model="depositKind" class="w-auto min-w-[96px] self-start rounded-md border border-input bg-background px-3 py-2">
         <option value="lump-sum">예금(거치식)</option>
         <option value="installment">적금(적립식)</option>
       </select>

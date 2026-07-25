@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col gap-4 max-w-lg mx-auto w-full">
     <div class="flex items-center gap-2 flex-wrap">
-      <label class="text-[11px] font-medium text-muted-foreground">규칙</label>
+      <label class="text-[12px] font-medium text-muted-foreground">규칙</label>
       <div class="flex rounded-lg border border-border overflow-hidden">
         <button v-for="r in ruleOptions" :key="r.value"
                 :class="rule === r.value ? 'bg-zone-accent-fun text-white' : 'bg-card text-muted-foreground hover:text-foreground'"

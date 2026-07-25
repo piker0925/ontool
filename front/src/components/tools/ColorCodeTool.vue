@@ -11,7 +11,7 @@
 
   <div v-if="colorMode === 'single'" class="flex flex-col gap-4 max-w-lg mx-auto w-full">
     <div class="flex flex-col gap-1.5">
-      <label class="text-[11px] font-medium text-muted-foreground">색상 (HEX / RGB / HSL)</label>
+      <label class="text-[12px] font-medium text-muted-foreground">색상 (HEX / RGB / HSL)</label>
       <div class="flex items-center gap-2">
         <div class="relative size-9 shrink-0 overflow-hidden rounded-lg border border-border checkerboard">
           <div :style="{ backgroundColor: previewCss }" class="absolute inset-0"/>
@@ -29,7 +29,7 @@
     </div>
 
     <div v-if="color" class="flex items-center gap-3">
-      <label class="text-[11px] font-medium text-muted-foreground shrink-0">
+      <label class="text-[12px] font-medium text-muted-foreground shrink-0">
         알파 {{ Math.round(alphaPercent) }}%
       </label>
       <input v-model.number="alphaPercent"
@@ -83,7 +83,7 @@
   <!-- 팔레트 대비 체커 -->
   <div v-else class="flex flex-col gap-3 max-w-2xl mx-auto w-full">
     <div class="flex flex-col gap-2">
-      <label class="text-[11px] font-medium text-muted-foreground">팔레트 색상</label>
+      <label class="text-[12px] font-medium text-muted-foreground">팔레트 색상</label>
       <div v-for="(_, i) in paletteInputs" :key="i" class="flex items-center gap-2">
         <input v-model="paletteInputs[i]"
                class="flex-1 rounded-xl border border-border bg-card px-4 py-2.5 font-mono text-[13px] text-foreground outline-none focus:border-ring"

@@ -69,7 +69,7 @@
 
     <!-- 치환 패턴 (치환 모드) -->
     <div v-if="mode === 'replace'" class="flex flex-col gap-1.5">
-      <label class="text-[11px] font-medium text-muted-foreground">치환 패턴 ($1, $&amp;, $&lt;name&gt; 지원)</label>
+      <label class="text-[12px] font-medium text-muted-foreground">치환 패턴 ($1, $&amp;, $&lt;name&gt; 지원)</label>
       <input
           v-model="replacement"
           class="rounded-xl border border-border bg-card px-3 py-2 font-mono text-[13px] text-foreground outline-none placeholder:text-muted-foreground/40 focus:border-ring"
@@ -81,7 +81,7 @@
 
     <!-- 테스트 텍스트 -->
     <div class="flex flex-col gap-1.5">
-      <label class="text-[11px] font-medium text-muted-foreground">테스트 텍스트</label>
+      <label class="text-[12px] font-medium text-muted-foreground">테스트 텍스트</label>
       <textarea
           v-model="text"
           class="min-h-[16vh] resize-y rounded-xl border border-border bg-card p-3 font-mono text-[13px] text-foreground outline-none placeholder:text-muted-foreground/40 focus:border-ring"

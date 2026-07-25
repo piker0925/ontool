@@ -341,6 +341,101 @@ class AdminControllerTest extends AbstractMySQLIntegrationTest {
     }
 
     @Test
+    void forceDeleteUser_withoutAuth_returns401() throws Exception {
+        User target = userRepository.save(new User(AuthProvider.GOOGLE, "force-delete-noauth", null, "삭제대상"));
+
+        mockMvc.perform(delete("/admin/users/" + target.getId()))
+                .andExpect(status().isUnauthorized());
+
+        assertThat(userRepository.findById(target.getId())).isPresent();
+    }
+
+    @Test
+    void forceDeleteUser_대상_유저의_User_row가_삭제된다() throws Exception {
+        User target = userRepository.save(new User(AuthProvider.GOOGLE, "force-delete-target", null, "삭제대상"));
+
+        mockMvc.perform(delete("/admin/users/" + target.getId())
+                        .with(httpBasic("admin", "1234")))
+                .andExpect(status().isNoContent());
+
+        assertThat(userRepository.findById(target.getId())).isEmpty();
+    }
+
+    @Test
+    void forceDeleteUser_본인_댓글은_삭제되지_않고_익명화된다() throws Exception {
+        User target = userRepository.save(new User(AuthProvider.GOOGLE, "force-delete-comment-target", null, "삭제대상"));
+        Comment comment = new Comment();
+        comment.setModuleId("test-module");
+        comment.setContent("삭제 전 작성한 댓글");
+        comment.setUserId(target.getId());
+        Comment savedComment = commentRepository.save(comment);
+
+        mockMvc.perform(delete("/admin/users/" + target.getId())
+                        .with(httpBasic("admin", "1234")))
+                .andExpect(status().isNoContent());
+
+        Comment reloaded = commentRepository.findById(savedComment.getId()).orElseThrow();
+        assertThat(reloaded.getUserId()).isNull();
+        assertThat(reloaded.getContent()).isEqualTo("삭제 전 작성한 댓글");
+    }
+
+    @Test
+    void forceDeleteUser_관리자_액션_로그에_ACCOUNT_FORCE_DELETE와_대상_유저_id로_기록된다() throws Exception {
+        User target = userRepository.save(new User(AuthProvider.GOOGLE, "force-delete-log-target", null, "삭제대상"));
+
+        mockMvc.perform(delete("/admin/users/" + target.getId())
+                        .with(httpBasic("admin", "1234")))
+                .andExpect(status().isNoContent());
+
+        List<AdminActionLog> logs = adminActionLogRepository.findAll();
+        assertThat(logs).hasSize(1);
+        assertThat(logs.get(0).getActionType()).isEqualTo(AdminActionType.ACCOUNT_FORCE_DELETE);
+        assertThat(logs.get(0).getTargetId()).isEqualTo(target.getId());
+    }
+
+    @Test
+    void forceDeleteUser_존재하지_않는_유저면_404() throws Exception {
+        mockMvc.perform(delete("/admin/users/999999")
+                        .with(httpBasic("admin", "1234")))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("USER_NOT_FOUND"));
+    }
+
+    @Test
+    void forceDeleteUser_존재하지_않는_유저면_액션_로그도_남기지_않는다() throws Exception {
+        mockMvc.perform(delete("/admin/users/999999")
+                        .with(httpBasic("admin", "1234")))
+                .andExpect(status().isNotFound());
+
+        assertThat(adminActionLogRepository.findAll()).isEmpty();
+    }
+
+    @Test
+    void forceDeleteUser_일반_소셜로그인_유저의_JWT로는_거부된다() throws Exception {
+        User target = userRepository.save(new User(AuthProvider.GOOGLE, "force-delete-forbidden-target", null, "삭제대상"));
+        String normalUserToken = jwtProvider.issueAccessToken(target.getId());
+
+        mockMvc.perform(delete("/admin/users/" + target.getId())
+                        .header("Authorization", "Bearer " + normalUserToken))
+                .andExpect(status().isForbidden());
+
+        assertThat(userRepository.findById(target.getId())).isPresent();
+    }
+
+    @Test
+    void forceDeleteUser_삭제_후_같은_provider_providerId로_재가입이_가능하다() throws Exception {
+        User target = userRepository.save(new User(AuthProvider.GOOGLE, "force-delete-rejoin", null, "삭제대상"));
+
+        mockMvc.perform(delete("/admin/users/" + target.getId())
+                        .with(httpBasic("admin", "1234")))
+                .andExpect(status().isNoContent());
+
+        User rejoined = userRepository.save(new User(AuthProvider.GOOGLE, "force-delete-rejoin", null, "재가입유저"));
+        assertThat(rejoined.getId()).isNotNull();
+        assertThat(userRepository.findById(rejoined.getId())).isPresent();
+    }
+
+    @Test
     void getActionLogs_withoutAuth_returns401() throws Exception {
         mockMvc.perform(get("/admin/action-logs"))
                 .andExpect(status().isUnauthorized());

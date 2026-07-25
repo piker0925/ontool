@@ -92,4 +92,20 @@ public class AdmissionControl {
             throw new AppException(ErrorCode.QUEUE_FULL);
         }
     }
+
+    /** 어드민 대시보드(118) 큐 적체 게이지용 — 레인별 PENDING/RUNNING 현재값과 admission 임계값을 함께 담는다. */
+    public record QueueDepth(
+            int heavyPending, int heavyRunning, int heavyThreshold,
+            int videoPending, int videoRunning, int videoThreshold) {
+    }
+
+    public QueueDepth queueDepthSnapshot() {
+        return new QueueDepth(
+                jobRepository.countByLaneAndStatus(Lane.HEAVY, JobStatus.PENDING),
+                jobRepository.countByLaneAndStatus(Lane.HEAVY, JobStatus.RUNNING),
+                heavyQueueThreshold,
+                jobRepository.countByLaneAndStatus(Lane.VIDEO, JobStatus.PENDING),
+                jobRepository.countByLaneAndStatus(Lane.VIDEO, JobStatus.RUNNING),
+                videoQueueThreshold);
+    }
 }

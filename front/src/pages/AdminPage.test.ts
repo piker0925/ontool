@@ -13,9 +13,18 @@ const mockDelete = apiClient.delete as ReturnType<typeof vi.fn>
 const mockPatch = apiClient.patch as ReturnType<typeof vi.fn>
 const mockPost = apiClient.post as ReturnType<typeof vi.fn>
 
+// 118: 통계 탭에 들어가면 항상 이 엔드포인트도 호출한다 — 대시보드 차트용 빈 응답.
+const EMPTY_DASHBOARD_STATS = {
+    laneDistribution: [], providerDistribution: [],
+    heavyQueue: {pending: 0, running: 0, threshold: 200},
+    videoQueue: {pending: 0, running: 0, threshold: 10},
+    dailyJobCounts: [], dailySignups: [],
+}
+
 function mockAdminEndpoints() {
     mockGet.mockImplementation((url: string) => {
         if (url === '/admin/stats') return Promise.resolve({data: []})
+        if (url === '/admin/stats/dashboard') return Promise.resolve({data: EMPTY_DASHBOARD_STATS})
         if (url === '/admin/suggestions') return Promise.resolve({data: []})
         if (url === '/admin/comments') {
             return Promise.resolve({
@@ -46,6 +55,7 @@ function mockAdminEndpoints() {
 function mockAdminEndpointsWithOneUser(status: 'ACTIVE' | 'SUSPENDED' = 'ACTIVE') {
     mockGet.mockImplementation((url: string) => {
         if (url === '/admin/stats') return Promise.resolve({data: []})
+        if (url === '/admin/stats/dashboard') return Promise.resolve({data: EMPTY_DASHBOARD_STATS})
         if (url.startsWith('/admin/users')) {
             return Promise.resolve({
                 data: {
@@ -66,6 +76,7 @@ function mockAdminEndpointsWithOneUser(status: 'ACTIVE' | 'SUSPENDED' = 'ACTIVE'
 function mockAdminEndpointsWithOneReport() {
     mockGet.mockImplementation((url: string) => {
         if (url === '/admin/stats') return Promise.resolve({data: []})
+        if (url === '/admin/stats/dashboard') return Promise.resolve({data: EMPTY_DASHBOARD_STATS})
         if (url === '/admin/suggestions') return Promise.resolve({data: []})
         if (url === '/admin/comments') return Promise.resolve({data: []})
         if (url === '/admin/action-logs') {
@@ -323,8 +334,9 @@ describe('AdminPage 관리자 액션 로그', () => {
         await flushPromises()
 
         expect(mockGet).toHaveBeenCalledWith('/admin/action-logs', expect.anything())
-        expect(wrapper.text()).toContain('COMMENT_DELETE')
-        expect(wrapper.text()).toContain('5')
+        // 118: 표를 타임라인으로 대체하면서 원시 enum 대신 한글 라벨로 보여준다.
+        expect(wrapper.text()).toContain('댓글 삭제')
+        expect(wrapper.text()).toContain('대상 ID 5')
     })
 })
 

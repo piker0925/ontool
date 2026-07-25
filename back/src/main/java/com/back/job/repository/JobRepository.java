@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -97,6 +98,32 @@ public interface JobRepository extends JpaRepository<Job, String> {
 
     interface ModuleFailCount {
         String getModuleId();
+        Long getCount();
+    }
+
+    /** 어드민 대시보드(118) — 레인별 전체 처리 분포 도넛 차트용. 상태 무관 전체 집계. */
+    @Query("select j.lane as lane, count(j) as count from Job j group by j.lane")
+    List<LaneCount> countGroupedByLane();
+
+    /**
+     * 어드민 대시보드(118) — 최근 N일 일별 생성 건수를 (날짜, 상태)로 그룹핑한다.
+     * PENDING/RUNNING은 아직 결과가 확정되지 않아 "성공/실패" 집계 대상이 아니므로 DONE/FAILED만 센다.
+     * 병합(날짜별 성공/실패 합치기, 빈 날짜 0 채우기)은 JobService가 맡는다 — 여기는 그룹 집계만.
+     */
+    @Query(value = "SELECT DATE(created_at) as date, status as status, COUNT(*) as count " +
+            "FROM job WHERE created_at >= :since AND status IN ('DONE', 'FAILED') " +
+            "GROUP BY DATE(created_at), status ORDER BY date",
+            nativeQuery = true)
+    List<DailyStatusCount> countGroupedByDateAndStatusSince(@Param("since") LocalDateTime since);
+
+    interface LaneCount {
+        Lane getLane();
+        Long getCount();
+    }
+
+    interface DailyStatusCount {
+        LocalDate getDate();
+        JobStatus getStatus();
         Long getCount();
     }
 }

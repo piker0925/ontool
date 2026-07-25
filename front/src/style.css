@@ -32,11 +32,18 @@
     --border: oklch(0.898 0.005 85);
     --input: oklch(0.898 0.005 85);
     --ring: oklch(0.495 0.185 257);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
+    /* 어드민 대시보드 차트 카테고리 팔레트(118) — dataviz 스킬 검증된 기본 팔레트(색맹 안전 순서 고정)의
+       처음 5슬롯(blue/green/magenta/yellow/aqua). 절대 순환·재배열하지 않는다 — 순서 자체가 인접 쌍
+       CVD 대비를 최대화하도록 산출된 값이다. */
+    --chart-1: #2a78d6;
+    --chart-2: #008300;
+    --chart-3: #e87ba4;
+    --chart-4: #eda100;
+    --chart-5: #1baf7a;
+    /* 상태 전용 고정색(성공/실패 등) — 카테고리 팔레트와 별개로 재사용 금지, 라이트/다크 공통 */
+    --chart-status-good: #0ca30c;
+    --chart-status-warning: #fab219;
+    --chart-status-critical: #d03b3b;
     --sidebar: oklch(0.9 0.006 260);
     --sidebar-foreground: oklch(0.35 0.014 262);
     --sidebar-primary: oklch(0.495 0.185 257);
@@ -94,11 +101,14 @@
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 14%);
     --ring: oklch(0.74 0.14 257);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
+    --chart-1: #3987e5;
+    --chart-2: #008300;
+    --chart-3: #d55181;
+    --chart-4: #c98500;
+    --chart-5: #199e70;
+    --chart-status-good: #0ca30c;
+    --chart-status-warning: #fab219;
+    --chart-status-critical: #d03b3b;
     --sidebar: oklch(0.14 0 0);
     --sidebar-foreground: oklch(0.72 0.008 262);
     --sidebar-primary: oklch(0.74 0.14 257);

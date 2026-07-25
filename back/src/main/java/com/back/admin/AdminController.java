@@ -5,6 +5,7 @@ import com.back.adminactionlog.service.AdminActionLogService;
 import com.back.comment.service.CommentService;
 import com.back.global.response.PageResponse;
 import com.back.job.entity.JobStatus;
+import com.back.job.service.AdmissionControl;
 import com.back.job.service.JobService;
 import com.back.stats.entity.ToolStats;
 import com.back.stats.service.ToolStatsService;
@@ -40,6 +41,7 @@ public class AdminController {
     private final AdminActionLogService adminActionLogService;
     private final UserWithdrawalService userWithdrawalService;
     private final SocialUnlinkService socialUnlinkService;
+    private final AdmissionControl admissionControl;
 
     @GetMapping("/stats")
     public ResponseEntity<List<AdminToolStatsResponse>> getStats() {
@@ -131,5 +133,23 @@ public class AdminController {
             @RequestParam(defaultValue = "20") int size) {
         Page<AdminActionLogResponse> logs = adminActionLogService.findRecent(page, size).map(AdminActionLogResponse::from);
         return ResponseEntity.ok(PageResponse.of(logs));
+    }
+
+    /**
+     * 어드민 대시보드 시각화(118) — 레인 분포·가입경로 분포·큐 적체 게이지·일별 추이를 한 번에 담아 돌려준다.
+     * 기존 /admin/stats(모듈 통계), /admin/jobs(큐 목록), /admin/action-logs(감사로그)로 이미 커버되는
+     * 데이터는 다시 담지 않는다 — 그 셋은 프론트에서 각자 조회한다.
+     */
+    @GetMapping("/stats/dashboard")
+    public ResponseEntity<AdminDashboardStatsResponse> getDashboardStats(
+            @RequestParam(defaultValue = "14") int days) {
+        AdminDashboardStatsResponse response = AdminDashboardStatsResponse.of(
+                jobService.getLaneDistribution(),
+                userService.getProviderDistribution(),
+                admissionControl.queueDepthSnapshot(),
+                jobService.getDailyJobCounts(days),
+                userService.getDailySignups(days)
+        );
+        return ResponseEntity.ok(response);
     }
 }

@@ -624,6 +624,39 @@ class AdminControllerTest extends AbstractMySQLIntegrationTest {
                 .andExpect(jsonPath("$[?(@.moduleId == 'status-param-test' && @.status == 'PENDING')]", org.hamcrest.Matchers.hasSize(0)));
     }
 
+    @Test
+    void getDashboardStats_withoutAuth_returns401() throws Exception {
+        mockMvc.perform(get("/admin/stats/dashboard"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void getDashboardStats_withAuth_필요한_필드를_전부_담아_200을_반환한다() throws Exception {
+        saveJob("dashboard-test", JobStatus.PENDING); // 기본 레인 HEAVY — laneDistribution/heavyQueue에 반영돼야 함
+
+        mockMvc.perform(get("/admin/stats/dashboard")
+                        .with(httpBasic("admin", "1234")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.laneDistribution").isArray())
+                .andExpect(jsonPath("$.laneDistribution[?(@.lane == 'HEAVY')].count", org.hamcrest.Matchers.not(org.hamcrest.Matchers.empty())))
+                .andExpect(jsonPath("$.providerDistribution").isArray())
+                .andExpect(jsonPath("$.heavyQueue.pending", org.hamcrest.Matchers.greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$.heavyQueue.threshold").exists())
+                .andExpect(jsonPath("$.videoQueue.threshold").exists())
+                // days 기본값 14 — 오늘까지 14일치가 채워져야 한다(빈 날짜도 0으로 채움, 118).
+                .andExpect(jsonPath("$.dailyJobCounts", org.hamcrest.Matchers.hasSize(14)))
+                .andExpect(jsonPath("$.dailySignups", org.hamcrest.Matchers.hasSize(14)));
+    }
+
+    @Test
+    void getDashboardStats_days_파라미터로_조회_범위를_조절한다() throws Exception {
+        mockMvc.perform(get("/admin/stats/dashboard").param("days", "3")
+                        .with(httpBasic("admin", "1234")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.dailyJobCounts", org.hamcrest.Matchers.hasSize(3)))
+                .andExpect(jsonPath("$.dailyJobCounts[2].date").value(java.time.LocalDate.now().toString()));
+    }
+
     private void saveJob(String moduleId, JobStatus status) {
         Job job = new Job();
         job.setModuleId(moduleId);

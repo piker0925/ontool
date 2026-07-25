@@ -1,5 +1,6 @@
 import {ref} from 'vue'
 import {toast} from 'vue-sonner'
+import {apiClient} from '../api/client'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
 const STORAGE_KEY = 'devtoolbox-active-jobs'
@@ -16,6 +17,9 @@ export interface ActiveJob {
     progress: number
     queuePosition: number
     startedAt: number
+    // 164: DONE 시점에 한 번만 채워진다(만료 전이면 URL, 만료 후면 null — 백엔드 계약 그대로).
+    downloadUrl: string | null
+    expiresAt: string | null
 }
 
 function load(): ActiveJob[] {
@@ -54,6 +58,26 @@ function patchJob(jobId: string, patch: Partial<ActiveJob>) {
     persist()
 }
 
+/**
+ * 164: DONE 시점에 한 번 결과/만료 정보를 채운다 — 사이드바에서 다운로드 버튼을 노출하기 위함.
+ * 실패해도(네트워크 오류 등) 조용히 무시한다 — downloadUrl이 null로 남아 다운로드 버튼이
+ * 안 보이는 것으로 자연스럽게 표현되며, 이미 반영된 DONE 상태 자체는 그대로 유지된다.
+ */
+async function fetchResultInfo(jobId: string) {
+    try {
+        const [resultRes, statusRes] = await Promise.all([
+            apiClient.get(`/api/v1/jobs/${jobId}/result`),
+            apiClient.get(`/api/v1/jobs/${jobId}`),
+        ])
+        patchJob(jobId, {
+            downloadUrl: resultRes.data.url ?? null,
+            expiresAt: statusRes.data.expiresAt ?? null,
+        })
+    } catch {
+        // 조용히 무시(위 주석 참고)
+    }
+}
+
 function connect(jobId: string) {
     if (connections.has(jobId)) return
     const es = new EventSource(`${API_BASE}/api/v1/jobs/${jobId}/stream`)
@@ -71,6 +95,7 @@ function connect(jobId: string) {
             const name = jobs.value.find(j => j.jobId === jobId)?.moduleName ?? '작업'
             if (status === 'DONE') {
                 toast.success(`${name} 처리가 완료되었습니다.`)
+                fetchResultInfo(jobId)
             } else {
                 toast.error(`${name} 처리에 실패했습니다.`)
             }
@@ -92,6 +117,8 @@ function track(jobId: string, moduleId: string, moduleName: string) {
         progress: 0,
         queuePosition: 0,
         startedAt: Date.now(),
+        downloadUrl: null,
+        expiresAt: null,
     }
     jobs.value = [job, ...jobs.value].slice(0, MAX_JOBS)
     persist()

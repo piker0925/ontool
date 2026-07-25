@@ -4,6 +4,12 @@ vi.mock('vue-sonner', () => ({
     toast: {success: vi.fn(), error: vi.fn()},
 }))
 
+// 164: DONE 시점에 결과/만료 조회(GET /result, GET /{id})를 호출하므로 apiClient를 모킹한다 —
+// useHeavyJob.test.ts와 동일 패턴. 기본값은 "만료 전 + 다운로드 가능"이고, 개별 테스트에서 override한다.
+vi.mock('../api/client', () => ({
+    apiClient: {get: vi.fn()},
+}))
+
 // jsdom엔 EventSource가 없어 최소 mock을 직접 둔다 — useHeavyJob.test.ts와 동일 패턴.
 class MockEventSource {
     static readonly CONNECTING = 0
@@ -39,10 +45,13 @@ class MockEventSource {
 
 // 이 store는 모듈 최상단에서 즉시 localStorage를 읽고(load) SSE 재연결(resumeAll)까지 수행하므로,
 // "새로고침 후 복원" 시나리오를 검증하려면 매 테스트마다 모듈을 완전히 새로 import해야 한다.
+// vi.resetModules()는 mock 모듈도 다시 평가하므로, apiClient.get의 mock 함수도 매번 새로 가져와야
+// 실제로 useActiveJobs.ts가 호출하는 것과 같은 참조를 잡는다(파일 상단에서 한 번만 import하면 어긋난다).
 async function freshStore() {
     vi.resetModules()
+    const {apiClient} = await import('../api/client')
     const mod = await import('./useActiveJobs')
-    return mod.useActiveJobs()
+    return {...mod.useActiveJobs(), mockGet: apiClient.get as ReturnType<typeof vi.fn>}
 }
 
 beforeEach(() => {
@@ -107,6 +116,44 @@ describe('useActiveJobs', () => {
         expect(store.jobs.value[0].status).toBe('DONE')
         expect(es.closeSpy).toHaveBeenCalled()
         expect(toast.success).toHaveBeenCalledWith(expect.stringContaining('PDF 병합'))
+    })
+
+    it('DONE 메시지를 받으면 result·상태 API를 조회해 downloadUrl/expiresAt을 채운다', async () => {
+        const store = await freshStore()
+        store.mockGet.mockImplementation((url: string) => {
+            if (url === '/api/v1/jobs/job-1/result') {
+                return Promise.resolve({data: {url: 'https://files.example/job-1.pdf', text: null}})
+            }
+            if (url === '/api/v1/jobs/job-1') {
+                return Promise.resolve({data: {expiresAt: '2099-01-01T00:00:00'}})
+            }
+            throw new Error(`unexpected url: ${url}`)
+        })
+        store.track('job-1', 'pdf-merge', 'PDF 병합')
+        const es = MockEventSource.instances[0]
+
+        es.emitMessage('job-status-changed', {status: 'DONE', queuePosition: 0, progress: 100})
+
+        await vi.waitFor(() => expect(store.jobs.value[0].downloadUrl).not.toBeNull())
+        expect(store.jobs.value[0].downloadUrl).toBe('https://files.example/job-1.pdf')
+        expect(store.jobs.value[0].expiresAt).toBe('2099-01-01T00:00:00')
+    })
+
+    it('result 조회 API가 만료돼 url:null을 반환하면 downloadUrl도 null로 유지된다', async () => {
+        const store = await freshStore()
+        store.mockGet.mockImplementation((url: string) => {
+            if (url === '/api/v1/jobs/job-1/result') {
+                return Promise.resolve({data: {url: null, text: '결과 텍스트'}})
+            }
+            return Promise.resolve({data: {expiresAt: '2020-01-01T00:00:00'}})
+        })
+        store.track('job-1', 'pdf-merge', 'PDF 병합')
+        const es = MockEventSource.instances[0]
+
+        es.emitMessage('job-status-changed', {status: 'DONE', queuePosition: 0, progress: 100})
+
+        await vi.waitFor(() => expect(store.jobs.value[0].expiresAt).toBe('2020-01-01T00:00:00'))
+        expect(store.jobs.value[0].downloadUrl).toBeNull()
     })
 
     it('FAILED 메시지를 받으면 상태를 FAILED로 바꾸고 실패 토스트를 띄운다', async () => {

@@ -90,11 +90,11 @@
 
             <!-- image-resize 전용: 크기 단위/입력/락 아이콘/프리셋/실시간 미리보기 -->
             <div v-if="mod?.id === 'image-resize'" class="flex flex-col gap-2" data-testid="resize-size-block">
-              <label for="resize-unit" class="text-[11px] text-muted-foreground">크기 단위</label>
+              <label for="resize-unit" class="text-[12px] font-medium text-muted-foreground">크기 단위</label>
               <select
                   id="resize-unit"
                   v-model="heavyFormValues.unit"
-                  class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+                  class="w-auto min-w-[96px] self-start rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
                   data-testid="resize-unit"
               >
                 <option value="px">px</option>
@@ -194,7 +194,7 @@
             </div>
 
             <div v-for="p in visibleHeavyParams" :key="p.key" class="flex flex-col gap-1">
-              <label v-if="p.type !== 'checkbox'" :for="heavyParamId(p.key)" class="text-[11px] text-muted-foreground">{{ p.label }}</label>
+              <label v-if="p.type !== 'checkbox'" :for="heavyParamId(p.key)" class="text-[12px] font-medium text-muted-foreground">{{ p.label }}</label>
               <span v-if="p.type !== 'checkbox' && p.help" class="-mt-1 text-[11px] font-normal text-muted-foreground">— {{ p.help }}</span>
               <input
                   v-if="p.type === 'text'"
@@ -228,7 +228,7 @@
                   v-else-if="p.type === 'select'"
                   :id="heavyParamId(p.key)"
                   v-model="heavyFormValues[p.key]"
-                  class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+                  class="w-auto min-w-[96px] self-start rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
               >
                 <option v-for="opt in p.options" :key="opt" :value="opt">{{ opt }}</option>
               </select>

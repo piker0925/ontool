@@ -90,8 +90,9 @@
 
             <!-- image-resize 전용: 크기 단위/입력/락 아이콘/프리셋/실시간 미리보기 -->
             <div v-if="mod?.id === 'image-resize'" class="flex flex-col gap-2" data-testid="resize-size-block">
-              <label class="text-[11px] text-muted-foreground">크기 단위</label>
+              <label for="resize-unit" class="text-[11px] text-muted-foreground">크기 단위</label>
               <select
+                  id="resize-unit"
                   v-model="heavyFormValues.unit"
                   class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
                   data-testid="resize-unit"
@@ -193,10 +194,11 @@
             </div>
 
             <div v-for="p in visibleHeavyParams" :key="p.key" class="flex flex-col gap-1">
-              <label v-if="p.type !== 'checkbox'" class="text-[11px] text-muted-foreground">{{ p.label }}</label>
+              <label v-if="p.type !== 'checkbox'" :for="heavyParamId(p.key)" class="text-[11px] text-muted-foreground">{{ p.label }}</label>
               <span v-if="p.type !== 'checkbox' && p.help" class="-mt-1 text-[11px] font-normal text-muted-foreground/60">— {{ p.help }}</span>
               <input
                   v-if="p.type === 'text'"
+                  :id="heavyParamId(p.key)"
                   v-model="heavyFormValues[p.key]"
                   :placeholder="p.placeholder ?? ''"
                   class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-ring focus:ring-2 focus:ring-ring/20"
@@ -204,6 +206,7 @@
               />
               <div v-else-if="p.type === 'number'" class="flex items-center gap-2">
                 <input
+                    :id="heavyParamId(p.key)"
                     v-model="heavyFormValues[p.key]"
                     :placeholder="p.placeholder ?? ''"
                     class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-ring focus:ring-2 focus:ring-ring/20"
@@ -223,6 +226,7 @@
               </label>
               <select
                   v-else-if="p.type === 'select'"
+                  :id="heavyParamId(p.key)"
                   v-model="heavyFormValues[p.key]"
                   class="rounded-md border border-input bg-background px-3 py-1.5 text-[13px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
               >
@@ -230,6 +234,7 @@
               </select>
               <input
                   v-else-if="p.type === 'color'"
+                  :id="heavyParamId(p.key)"
                   v-model="heavyFormValues[p.key]"
                   class="h-8 w-16 rounded-md border border-input bg-background p-0.5"
                   type="color"
@@ -681,6 +686,13 @@ const visibleHeavyParams = computed(() => {
   if (mod.value?.id !== 'image-resize') return heavyConfig.value.params
   return heavyConfig.value.params.filter(p => !RESIZE_CUSTOM_KEYS.has(p.key))
 })
+
+// 147: Heavy 파라미터 <label>을 <input>/<select>와 프로그래매틱으로 연결하기 위한 id.
+// p.key는 모듈 하나의 파라미터 목록 안에서 고유하고, Heavy 워크벤치는 한 번에 한 모듈만
+// 렌더링하므로 이 id가 페이지 안에서 충돌하지 않는다.
+function heavyParamId(key: string) {
+  return `heavy-param-${key}`
+}
 
 const RESIZE_PRESETS = [
   {label: '1920 x 1080 (FHD)', width: 1920, height: 1080},

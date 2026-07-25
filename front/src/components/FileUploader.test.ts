@@ -676,7 +676,8 @@ describe('FileUploader 재업로드 없는 재실행 (114)', () => {
         const wrapper = mount(FileUploader, {
             props: {moduleId: 'image-resize', params: {width: '100'}},
         })
-        await selectFiles(wrapper, [new File(['a'], 'photo.jpg', {type: 'image/jpeg'})])
+        const originalFile = new File(['a'], 'photo.jpg', {type: 'image/jpeg'})
+        await selectFiles(wrapper, [originalFile])
         await clickRun(wrapper)
 
         mockPost.mockResolvedValueOnce({data: {jobId: 'job-2'}})
@@ -688,9 +689,11 @@ describe('FileUploader 재업로드 없는 재실행 (114)', () => {
         const secondForm = mockPost.mock.calls[1][1] as FormData
         expect(firstForm.get('width')).toBe('100')
         expect(secondForm.get('width')).toBe('200')
-        // 같은 파일이 재전송됐는지(재업로드 UI 없이) — 파일명이 두 요청 모두 동일해야 한다.
-        expect((firstForm.getAll('files')[0] as File).name).toBe('photo.jpg')
-        expect((secondForm.getAll('files')[0] as File).name).toBe('photo.jpg')
+        // 같은 파일이 재전송됐는지(재업로드 UI 없이) — 이름만이 아니라 원본 File 객체와의 참조
+        // 동일성까지 확인한다. 이름만 같은 "새로 만들어진" File을 보내는 회귀는 이름 비교만으론
+        // 잡히지 않는다.
+        expect(firstForm.getAll('files')[0]).toBe(originalFile)
+        expect(secondForm.getAll('files')[0]).toBe(originalFile)
         expect(wrapper.emitted('uploaded')![0]).toEqual([{jobId: 'job-1'}])
         expect(wrapper.emitted('uploaded')![1]).toEqual([{jobId: 'job-2'}])
     })

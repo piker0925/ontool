@@ -60,7 +60,10 @@ const detectedFormat = ref<OfficeDocumentFormat | null>(null)
 // 배열로 온다. 그 경우까지 배지를 꺼서 "선택된 파일 없음" 상태를 정확히 반영한다. 파일이 있을
 // 때만 형식을 갱신한다.
 function onStaged(files: File[]) {
-  if (files.length === 0) return
+  if (files.length === 0) {
+    detectedFormat.value = null
+    return
+  }
   detectedFormat.value = detectOfficeFormat(files[0].name)
 }
 

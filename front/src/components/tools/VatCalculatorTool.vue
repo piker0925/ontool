@@ -25,8 +25,8 @@
         <span class="font-mono text-foreground">{{ vatBreakdown.total.toLocaleString() }}원</span>
       </div>
     </div>
-    <p class="text-[11px] text-muted-foreground/70">부가가치세법 §30 — 세율 10% 기준</p>
-    <p class="text-[11px] text-muted-foreground/70">참고용 계산이며 법적 효력이 없습니다 · 2026년 기준</p>
+    <p class="text-[11px] text-muted-foreground">부가가치세법 §30 — 세율 10% 기준</p>
+    <p class="text-[11px] text-muted-foreground">참고용 계산이며 법적 효력이 없습니다 · 2026년 기준</p>
   </div>
 </template>
 

@@ -45,7 +45,7 @@
         <pre v-if="tocOutput" class="h-full flex-1 overflow-auto whitespace-pre-wrap break-all p-4 font-mono text-[13px] text-foreground">{{ tocOutput }}</pre>
         <div v-else class="flex h-full flex-1 flex-col items-center justify-center gap-2 text-center">
           <ArrowRight class="size-4 text-muted-foreground/40"/>
-          <p class="text-[11px] text-muted-foreground/50">헤딩(#~######)이 있으면 목차가 생성됩니다</p>
+          <p class="text-[11px] text-muted-foreground">헤딩(#~######)이 있으면 목차가 생성됩니다</p>
         </div>
       </div>
     </div>
@@ -102,7 +102,7 @@
       <div class="flex flex-wrap items-center gap-3">
         <span class="text-[11px] text-muted-foreground">열 정렬</span>
         <div v-for="(_, i) in tableColumnCount" :key="i" class="flex items-center gap-1">
-          <span class="text-[11px] text-muted-foreground/70">열{{ i + 1 }}</span>
+          <span class="text-[11px] text-muted-foreground">열{{ i + 1 }}</span>
           <select v-model="columnAligns[i]" class="rounded-md border border-input bg-background px-1.5 py-0.5 text-[12px] text-foreground outline-none">
             <option value="left">좌</option>
             <option value="center">중앙</option>
@@ -126,7 +126,7 @@
         <pre v-if="tableOutput" class="overflow-auto p-3 font-mono text-[13px] text-foreground whitespace-pre-wrap break-all">{{ tableOutput }}</pre>
         <div v-else class="flex flex-col items-center justify-center gap-2 px-4 py-10 text-center">
           <ArrowRight class="size-4 text-muted-foreground/40"/>
-          <p class="text-[11px] text-muted-foreground/50">데이터를 입력하면 마크다운 표가 생성됩니다</p>
+          <p class="text-[11px] text-muted-foreground">데이터를 입력하면 마크다운 표가 생성됩니다</p>
         </div>
       </div>
     </div>

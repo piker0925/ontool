@@ -22,7 +22,7 @@
       <div class="mt-1 font-mono text-xl font-semibold text-zone-accent-dev">{{ converted }}</div>
     </div>
 
-    <p class="text-[11px] text-muted-foreground/70">서머타임(DST)이 있는 지역은 시기에 따라 시차가 달라질 수 있습니다</p>
+    <p class="text-[11px] text-muted-foreground">서머타임(DST)이 있는 지역은 시기에 따라 시차가 달라질 수 있습니다</p>
   </div>
 </template>
 

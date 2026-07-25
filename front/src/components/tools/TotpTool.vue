@@ -3,7 +3,7 @@
     <div class="flex flex-col gap-1.5">
       <div class="flex items-center justify-between">
         <label class="text-[11px] font-medium text-muted-foreground">시크릿 키 (Base32)</label>
-        <span class="text-[10px] text-muted-foreground/70">서버로 전송되지 않고 브라우저에서만 계산됩니다</span>
+        <span class="text-[10px] text-muted-foreground">서버로 전송되지 않고 브라우저에서만 계산됩니다</span>
       </div>
       <input
           v-model="secret"

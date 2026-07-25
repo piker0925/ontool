@@ -29,7 +29,7 @@
       <span class="font-mono text-foreground">{{ billing.toLocaleString(undefined, {maximumFractionDigits: 2}) }}kg</span>
     </div>
 
-    <p class="text-[11px] text-muted-foreground/70">가로×세로×높이(cm)÷6000의 업계 공통 기준이며, 택배사별 계산식이 다를 수 있습니다 — 실제 청구액은 이용하는 택배사에 확인하세요.</p>
+    <p class="text-[11px] text-muted-foreground">가로×세로×높이(cm)÷6000의 업계 공통 기준이며, 택배사별 계산식이 다를 수 있습니다 — 실제 청구액은 이용하는 택배사에 확인하세요.</p>
   </div>
 </template>
 

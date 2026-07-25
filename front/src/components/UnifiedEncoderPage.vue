@@ -42,7 +42,7 @@
       />
 
       <div class="flex h-9 shrink-0 items-center border-t border-border px-4">
-        <p class="text-[11px] text-muted-foreground/70">입력하면 자동으로 변환됩니다</p>
+        <p class="text-[11px] text-muted-foreground">입력하면 자동으로 변환됩니다</p>
       </div>
     </div>
 

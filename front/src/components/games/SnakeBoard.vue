@@ -24,7 +24,7 @@
     </div>
 
     <p v-if="state.status === 'over'" class="text-sm font-medium text-destructive" data-testid="game-over">게임 오버!</p>
-    <p v-else class="text-[11px] text-muted-foreground/70">방향키 또는 스와이프로 이동하세요</p>
+    <p v-else class="text-[11px] text-muted-foreground">방향키 또는 스와이프로 이동하세요</p>
   </div>
 </template>
 

@@ -114,7 +114,7 @@
         <p class="text-[11px]" :class="isLoggedIn ? 'text-foreground font-medium' : 'text-muted-foreground'">
           <template v-if="isLoggedIn">{{ user?.nickname }} (으)로 댓글 작성</template>
           <template v-else>익명 · 로그인 없이 작성</template>
-          <span class="hidden text-muted-foreground/60 sm:inline"> · Ctrl + Enter로 등록</span>
+          <span class="hidden text-muted-foreground sm:inline"> · Ctrl + Enter로 등록</span>
         </p>
         <Button
             :disabled="submitting || !newContent.trim()"

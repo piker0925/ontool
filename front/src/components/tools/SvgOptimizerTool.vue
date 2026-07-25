@@ -80,7 +80,7 @@
 
     <div v-else class="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border py-10 text-center">
       <ArrowRight class="size-4 text-muted-foreground/40"/>
-      <p class="text-[11px] text-muted-foreground/50">SVG를 입력하면 최적화 결과가 표시됩니다</p>
+      <p class="text-[11px] text-muted-foreground">SVG를 입력하면 최적화 결과가 표시됩니다</p>
     </div>
   </div>
 </template>

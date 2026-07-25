@@ -132,12 +132,12 @@
         <!-- 합쳐진 모드 -->
         <template v-else>
           <div>
-            <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Header</p>
+            <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Header</p>
             <JwtPanel :data="jwtResult.header as Record<string,unknown>" :is-payload="false" :show-claims="false"
                       :show-expiry="false" :show-raw="true"/>
           </div>
           <div>
-            <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Payload</p>
+            <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Payload</p>
             <JwtPanel :data="jwtResult.payload as Record<string,unknown>" :is-payload="true"
                       :show-claims="jwtOptions.showClaims" :show-expiry="jwtOptions.showExpiry"
                       :show-raw="jwtOptions.showRaw"/>
@@ -147,7 +147,7 @@
 
       <div v-else class="flex flex-col items-center justify-center gap-2 py-16 text-center">
         <ArrowRight class="size-4 text-muted-foreground/40"/>
-        <p class="text-[11px] text-muted-foreground/50">JWT 토큰을 입력하세요</p>
+        <p class="text-[11px] text-muted-foreground">JWT 토큰을 입력하세요</p>
       </div>
     </div>
   </div>
@@ -201,7 +201,7 @@
 
       <div v-else class="flex flex-col items-center justify-center gap-2 py-16 text-center">
         <ArrowRight class="size-4 text-muted-foreground/40"/>
-        <p class="text-[11px] text-muted-foreground/50">페이로드와 서명 키를 입력하세요</p>
+        <p class="text-[11px] text-muted-foreground">페이로드와 서명 키를 입력하세요</p>
       </div>
     </div>
   </div>
@@ -288,7 +288,7 @@ const JwtPanel = defineComponent({
               h('div', {class: 'flex items-start gap-3 px-3 py-2 border-b border-border last:border-0'}, [
                 h('div', {class: 'w-28 shrink-0'}, [
                   h('p', {class: 'text-[10px] font-medium text-muted-foreground'}, CLAIM_LABELS[k]),
-                  h('p', {class: 'font-mono text-[9px] text-muted-foreground/50'}, k),
+                  h('p', {class: 'font-mono text-[9px] text-muted-foreground'}, k),
                 ]),
                 h('span', {class: 'flex-1 font-mono text-[11px] text-foreground break-all'}, formatClaimValue(k, v, props.showExpiry)),
                 copyBtn(k, claimCopyText(v)),

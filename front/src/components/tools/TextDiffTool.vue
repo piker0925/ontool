@@ -127,7 +127,7 @@
                 class="grid grid-cols-2 gap-x-2"
             >
               <div :class="lineClass(row.left.type)" class="flex min-w-0 rounded-sm">
-                <span class="w-10 shrink-0 select-none pr-2 text-right text-muted-foreground/60">{{ row.left.lineNum ?? '' }}</span>
+                <span class="w-10 shrink-0 select-none pr-2 text-right text-muted-foreground">{{ row.left.lineNum ?? '' }}</span>
                 <span class="min-w-0 whitespace-pre-wrap break-all">
                   <template v-if="row.left.spans">
                     <span
@@ -140,7 +140,7 @@
                 </span>
               </div>
               <div :class="lineClass(row.right.type)" class="flex min-w-0 rounded-sm">
-                <span class="w-10 shrink-0 select-none pr-2 text-right text-muted-foreground/60">{{ row.right.lineNum ?? '' }}</span>
+                <span class="w-10 shrink-0 select-none pr-2 text-right text-muted-foreground">{{ row.right.lineNum ?? '' }}</span>
                 <span class="min-w-0 whitespace-pre-wrap break-all">
                   <template v-if="row.right.spans">
                     <span
@@ -172,8 +172,8 @@
                 :data-block="line.blockIndex ?? undefined"
                 class="flex min-w-0 rounded-sm"
             >
-              <span class="w-10 shrink-0 select-none pr-2 text-right text-muted-foreground/60">{{ line.oldLineNum ?? '' }}</span>
-              <span class="w-10 shrink-0 select-none pr-2 text-right text-muted-foreground/60">{{ line.newLineNum ?? '' }}</span>
+              <span class="w-10 shrink-0 select-none pr-2 text-right text-muted-foreground">{{ line.oldLineNum ?? '' }}</span>
+              <span class="w-10 shrink-0 select-none pr-2 text-right text-muted-foreground">{{ line.newLineNum ?? '' }}</span>
               <span
                   :class="line.type === 'add' ? 'text-emerald-600 dark:text-emerald-400' : line.type === 'remove' ? 'text-rose-600 dark:text-rose-400' : 'text-muted-foreground/50'"
                   class="w-4 shrink-0 select-none"

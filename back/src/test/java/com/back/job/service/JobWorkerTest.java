@@ -5,6 +5,7 @@ import com.back.global.storage.FileStorage;
 import com.back.job.entity.Job;
 import com.back.job.entity.JobStatus;
 import com.back.job.repository.JobRepository;
+import com.back.tool.model.Lane;
 import com.back.tool.model.ToolInput;
 import com.back.tool.model.ToolModule;
 import com.back.tool.model.ToolProcessingException;
@@ -65,9 +66,14 @@ class JobWorkerTest extends AbstractMySQLIntegrationTest {
 
     /** 저장하지 않고 엔티티만 구성 — 여러 건을 saveAll로 한 트랜잭션에 묶어 넣을 때 쓴다. */
     private Job buildPendingOwnedBy(String moduleId, String ownerToken) {
+        return buildPendingOwnedBy(moduleId, ownerToken, Lane.HEAVY);
+    }
+
+    private Job buildPendingOwnedBy(String moduleId, String ownerToken, Lane lane) {
         Job job = new Job();
         job.setModuleId(moduleId);
         job.setOwnerToken(ownerToken);
+        job.setLane(lane);
         job.setStatus(JobStatus.PENDING);
         job.setInputPaths(List.of());
         job.setParams(Map.of());
@@ -190,6 +196,48 @@ class JobWorkerTest extends AbstractMySQLIntegrationTest {
                     .filter(j -> j.getStatus() == JobStatus.PENDING)
                     .count();
             return remainingBacklog > 0;
+        });
+    }
+
+    @Test
+    void lane_rotatesAnonymousOwnerGroupAcrossTicks_soNamedOwnerIsServedWithoutDrainingAnonymousBacklog() {
+        // 127 후속(1차 코드리뷰 지적 반영) — 위 테스트는 문자열 owner("A"/"B"/"C")만 다뤄, dispatchLane의
+        // null→"" 정규화(JobWorker.normalizeOwner)가 통째로 빠져도 잡지 못한다: 그 경우
+        // lastServedOwner에는 raw null이 저장되고, selectFair는 이를 "회전 상태 없음"으로 오인해 매
+        // 틱 맨 앞(가장 오래된 owner, 여기서는 익명 그룹)부터 다시 시작한다 — 그러면 USER는 익명
+        // 백로그가 전부 빠질 때까지 굶는다. 이 테스트는 익명 그룹(ownerToken=null)이 "마지막으로
+        // 서비스된 owner"가 되는 케이스를 실제 dispatchLane 배선으로 검증한다.
+        //
+        // VIDEO 레인(permit=1, test property)을 쓴다 — 매 틱 정확히 1건만 골라, "이번 틱에 마지막으로
+        // 고른 owner"가 곧 "이번 틱에 고른 유일한 owner"가 되므로 통제가 결정론적이다. 익명 그룹이
+        // 가장 먼저(가장 오래된 created_at) 생성돼 첫 틱은 반드시 익명 그룹에서 뽑히고, 두 번째 틱은
+        // (정규화가 정상이면) 회전이 걸려 USER로 넘어가야 한다.
+        List<Job> batch = new ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            batch.add(buildPendingOwnedBy("echo", null, Lane.VIDEO));
+        }
+        Job userToSave = buildPendingOwnedBy("echo", "USER", Lane.VIDEO);
+        batch.add(userToSave);
+        jobRepository.saveAll(batch);
+        Job user = userToSave;
+
+        // USER가 DONE이 되는 시점에도 익명 그룹의 PENDING 잔여가 남아있어야 한다 — 회전이 실제로 걸려
+        // USER가 익명 백로그를 다 소진하기 전에(두 번째 틱 안에) 서비스됐다는 뜻이다.
+        // null→"" 정규화가 빠진 코드라면 USER는 익명 그룹의 4건이 전부 끝난 뒤에야 DONE이 되므로 이
+        // 조건이 성립하는 순간을 관찰하지 못하고 타임아웃된다.
+        await().atMost(10, SECONDS).pollInterval(java.time.Duration.ofMillis(50)).until(() -> {
+            boolean userDone = jobRepository.findById(user.getId())
+                    .map(j -> j.getStatus() == JobStatus.DONE)
+                    .orElse(false);
+            if (!userDone) {
+                return false;
+            }
+            long remainingAnonymousBacklog = jobRepository.findAll().stream()
+                    .filter(j -> "echo".equals(j.getModuleId()))
+                    .filter(j -> j.getOwnerToken() == null)
+                    .filter(j -> j.getStatus() == JobStatus.PENDING)
+                    .count();
+            return remainingAnonymousBacklog > 0;
         });
     }
 

@@ -84,8 +84,7 @@ public class JobWorker {
             // 같은 정규화를 거쳐야 한다 — 안 그러면 마지막으로 고른 job이 익명 그룹 소속일 때 저장되는
             // 값이 raw null이 되어 "회전 상태 없음"(null)과 구분 안 되고, 다음 틱이 매번 맨 앞(익명 그룹)
             // 부터 리셋돼 그 뒤 owner가 굶는 127과 같은 패턴이 재발한다.
-            String lastOwnerToken = chosen.get(chosen.size() - 1).getOwnerToken();
-            lastServedOwner.put(lane, lastOwnerToken == null ? "" : lastOwnerToken);
+            lastServedOwner.put(lane, normalizeOwner(chosen.get(chosen.size() - 1).getOwnerToken()));
         }
         for (Job job : chosen) {
             if (!laneLimiter.tryAcquire(lane)) {
@@ -121,8 +120,7 @@ public class JobWorker {
     List<Job> selectFair(List<Job> candidates, int limit, String startAfterOwner) {
         LinkedHashMap<String, Deque<Job>> byOwner = new LinkedHashMap<>();
         for (Job job : candidates) {
-            String owner = job.getOwnerToken() == null ? "" : job.getOwnerToken();
-            byOwner.computeIfAbsent(owner, _ -> new ArrayDeque<>()).add(job);
+            byOwner.computeIfAbsent(normalizeOwner(job.getOwnerToken()), _ -> new ArrayDeque<>()).add(job);
         }
         List<String> owners = new ArrayList<>(byOwner.keySet());
         int ownerCount = owners.size();
@@ -152,6 +150,17 @@ public class JobWorker {
             }
         }
         return chosen;
+    }
+
+    /**
+     * owner 키 정규화 — ownerToken=null(익명 그룹)을 ""로 통일한다.
+     * {@link #selectFair}의 {@code byOwner} 그룹핑과 {@link #dispatchLane}의 회전 상태 저장이
+     * 서로 다른 정규화를 쓰면(예: 한쪽만 null→"" 변환) 익명 그룹이 마지막으로 서비스된 다음 틱에
+     * "회전 상태 없음"(null)과 구분이 안 돼 맨 앞으로 리셋되고, 그 뒤 owner가 굶는 127과 같은
+     * 패턴이 익명 그룹 한정으로 재발한다 — 두 곳에서 항상 이 메서드 하나만 쓴다.
+     */
+    private static String normalizeOwner(String ownerToken) {
+        return ownerToken == null ? "" : ownerToken;
     }
 
     /** 진행률→DB 저장 간 최소 간격(ms) — FFmpeg가 짧은 주기로 tick을 보고해도 DB를 매번 때리지 않게 스로틀링(037). */

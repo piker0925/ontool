@@ -23,13 +23,27 @@
     </form>
     <p v-if="guessInput && !isValidGuess" class="text-[11px] text-destructive">서로 다른 숫자 {{ SECRET_LENGTH }}개를 입력하세요</p>
 
+    <!-- 166: NumberBaseballBoard는 GameResultOverlay를 안 쓴다(오버레이로 덮으면 추측 기록이
+         가려지므로) — 대신 승리 메시지 바로 옆에 재시작 버튼을 둬 같은 목적(시선이 머무는 자리에
+         재시작 동선을 두는 것)을 만족시킨다. 기록은 그대로 아래에 남아있어 복기할 수 있다. -->
     <Transition name="win-pop">
-      <GameStat
-          v-if="won"
-          testid="win-message"
-          :text="`${history.length}번 만에 맞혔습니다! 정답: ${secret.join('')}`"
-          tone="win"
-      />
+      <div v-if="won" class="flex flex-col items-center gap-2">
+        <GameStat
+            testid="win-message"
+            :text="`${history.length}번 만에 맞혔습니다! 정답: ${secret.join('')}`"
+            tone="win"
+        />
+        <button
+            v-if="props.restart"
+            class="flex items-center gap-1.5 rounded-full bg-foreground px-4 py-1.5 text-[13px] font-medium text-background transition-opacity hover:opacity-90"
+            data-testid="game-result-restart"
+            type="button"
+            @click="props.restart"
+        >
+          <RotateCcw aria-hidden="true" class="size-3.5"/>
+          다시 시작
+        </button>
+      </div>
     </Transition>
 
     <TransitionGroup class="flex w-full max-w-xs flex-col gap-1" data-testid="history" name="history-pop" tag="ul">
@@ -49,13 +63,14 @@
 
 <script lang="ts" setup>
 import {computed, ref} from 'vue'
+import {RotateCcw} from 'lucide-vue-next'
 import {generateSecret, type GuessResult, isWin, judgeGuess} from '../../utils/numberBaseball'
 import {useGameSound} from '../../composables/useGameSound'
 import GameStat from '../GameStat.vue'
 
 const SECRET_LENGTH = 3
 
-const props = defineProps<{ submitScore?: (score: number) => void }>()
+const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void }>()
 
 const secret = ref(generateSecret(SECRET_LENGTH))
 const guessInput = ref('')

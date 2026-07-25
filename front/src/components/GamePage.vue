@@ -1,12 +1,15 @@
 <template>
   <div class="flex flex-col gap-3">
-    <div class="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-border bg-card p-4 shadow-sm">
+    <div class="grid grid-cols-1 items-center gap-x-3 gap-y-3 rounded-xl border border-border bg-card p-4 shadow-sm sm:grid-cols-[1fr_auto_1fr] sm:gap-y-2">
       <div class="flex min-w-0 flex-col gap-0.5">
         <h1 class="text-lg font-semibold tracking-tight text-foreground">{{ title }}</h1>
         <p v-if="description" class="text-[13px] text-muted-foreground">{{ description }}</p>
       </div>
 
-      <div class="ml-auto flex items-center gap-2">
+      <!-- 좌측 제목·우측 빈 스페이서와 동일한 1fr 트랙 사이에 놓여, 헤더 바 전체를 기준으로
+           실제로 가운데 정렬된다(자기 컬럼 안에서만 가운데인 게 아님) — CSS 그리드의
+           대칭 트랙 폭 특성을 이용한다. 모바일(grid-cols-1)에서는 제목 아래 한 줄로 쌓인다. -->
+      <div class="flex items-center justify-center gap-2">
         <button
             v-if="gameId"
             :aria-pressed="showLeaderboard"
@@ -37,12 +40,16 @@
           다시 시작
         </button>
       </div>
+
+      <!-- 우측 균형용 빈 스페이서 — 좌측 제목과 같은 1fr 트랙이라 버튼 그룹이 헤더 바 전체
+           기준으로 가운데에 오게 만든다. 모바일에서는 별도 줄을 차지하지 않도록 숨긴다. -->
+      <div aria-hidden="true" class="hidden sm:block"></div>
     </div>
 
     <GameLeaderboardPanel v-if="gameId && showLeaderboard" ref="leaderboardPanelRef" :game-id="gameId"/>
 
     <div :key="restartKey" class="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-6">
-      <slot :submit-score="submitScore"/>
+      <slot :restart="restart" :submit-score="submitScore"/>
     </div>
 
     <!-- 053: 게임 종료(submitScore 호출) 이후에만 뜨는 로그인 유인 문구. 비로그인 상태에서만 보인다 —
@@ -67,9 +74,9 @@ import {useAuth} from '../composables/useAuth'
 import {startGameSession, submitGameScore} from '../api/games'
 import GameLeaderboardPanel from './GameLeaderboardPanel.vue'
 
-// gameId는 GameCatalog(백엔드)에 등록된 8개 게임에서만 넘어온다 — 뽀모도로처럼 점수 개념이 없는
-// FULL_SHELL_COMPONENTS 입주 모듈은 gameId 없이 GamePage를 쓰고, 그 경우 순위표·제출 로직 전체가
-// 조용히 비활성화된다(053 스코프 밖).
+// gameId는 GameCatalog(백엔드)에 등록된 게임(053의 8개 + 121의 8개, 총 16개)에서만 넘어온다 —
+// 뽀모도로처럼 점수 개념이 없는 FULL_SHELL_COMPONENTS 입주 모듈은 gameId 없이 GamePage를 쓰고,
+// 그 경우 순위표·제출 로직 전체가 조용히 비활성화된다.
 const props = defineProps<{ title: string; description?: string; gameId?: string }>()
 
 const {muted, toggleMuted} = useGameSound()

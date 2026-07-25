@@ -235,6 +235,69 @@ class GameControllerTest extends AbstractMySQLIntegrationTest {
                 .andExpect(jsonPath("$.code").value("RATE_LIMITED"));
     }
 
+    @Test
+    void 신규_점수_게임도_세션_검증_후_제출되고_리더보드에_반영된다() throws Exception {
+        // 121: 높을수록 좋은 신규 게임(예: 블록 블라스트)이 기존 8개와 같은 배선을 타는지 확인.
+        User user = saveUser("s10", "유저10");
+        String accessToken = jwtProvider.issueAccessToken(user.getId());
+        String sessionToken = startSession("game-block-blast");
+
+        Thread.sleep(450);
+
+        mockMvc.perform(post("/api/v1/games/game-block-blast/scores")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType("application/json")
+                        .content(scoreBody(12, sessionToken)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.score").value(12))
+                .andExpect(jsonPath("$.gameId").value("game-block-blast"));
+
+        mockMvc.perform(get("/api/v1/games/game-block-blast/leaderboard"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.topScores[0].nickname").value("유저10"))
+                .andExpect(jsonPath("$.topScores[0].score").value(12));
+    }
+
+    @Test
+    void 신규_적을수록_좋은_게임도_세션_검증_후_제출되고_리더보드에_반영된다() throws Exception {
+        // 121: 적을수록 좋은 신규 게임(예: 워터소트 퍼즐)이 오름차순 정렬로 등록되는지 확인.
+        User user = saveUser("s11", "유저11");
+        String accessToken = jwtProvider.issueAccessToken(user.getId());
+        String sessionToken = startSession("game-water-sort");
+
+        Thread.sleep(450);
+
+        mockMvc.perform(post("/api/v1/games/game-water-sort/scores")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType("application/json")
+                        .content(scoreBody(20, sessionToken)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.score").value(20))
+                .andExpect(jsonPath("$.gameId").value("game-water-sort"));
+
+        mockMvc.perform(get("/api/v1/games/game-water-sort/leaderboard"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.topScores[0].nickname").value("유저11"))
+                .andExpect(jsonPath("$.topScores[0].score").value(20));
+    }
+
+    @Test
+    void 신규_게임은_이동_횟수_0점_제출이_거부된다() throws Exception {
+        // 121: game-sliding-puzzle은 minScore=1 — 0수 완성은 물리적으로 불가능한 값이라 거부돼야 한다.
+        User user = saveUser("s12", "유저12");
+        String accessToken = jwtProvider.issueAccessToken(user.getId());
+        String sessionToken = startSession("game-sliding-puzzle"); // minDurationMs=400
+
+        Thread.sleep(450);
+
+        mockMvc.perform(post("/api/v1/games/game-sliding-puzzle/scores")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType("application/json")
+                        .content(scoreBody(0, sessionToken)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("GAME_SCORE_IMPLAUSIBLE"));
+    }
+
     private String startSession(String gameId) throws Exception {
         MvcResult result = mockMvc.perform(post("/api/v1/games/" + gameId + "/session"))
                 .andExpect(status().isOk())

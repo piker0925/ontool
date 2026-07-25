@@ -16,7 +16,7 @@
         </template>
       </div>
 
-      <GameResultOverlay :show="gameOver" testid="game-over" title="게임 오버!" tone="lose"/>
+      <GameResultOverlay :restart="props.restart" :show="gameOver" testid="game-over" title="게임 오버!" tone="lose"/>
     </div>
 
     <p v-if="!gameOver" class="text-[11px] text-muted-foreground">방향키 또는 스와이프로 이동하세요</p>
@@ -31,7 +31,8 @@ import GameResultOverlay from '../GameResultOverlay.vue'
 import GameStat from '../GameStat.vue'
 
 // 053: GamePage가 넘겨주는 제출 훅. optional로 둬 기존 테스트(prop 없이 마운트)가 깨지지 않게 한다.
-const props = defineProps<{ submitScore?: (score: number) => void }>()
+// 166: restart도 함께 받아 GameResultOverlay 안의 재시작 버튼에 그대로 연결한다.
+const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void }>()
 
 const board = ref<Board>(createEmptyBoard(4))
 const score = ref(0)

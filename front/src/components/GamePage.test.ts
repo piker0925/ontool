@@ -146,4 +146,53 @@ describe('GamePage', () => {
         const withoutGame = mount(GamePage, {props: {title: '뽀모도로'}})
         expect(withoutGame.find('[data-testid="game-leaderboard-toggle"]').exists()).toBe(false)
     })
+
+    // 166: 헤더 바 버튼 그룹 가운데 정렬 — jsdom은 실제 레이아웃을 계산하지 않으므로 여기서는
+    // 좌측 제목/가운데 버튼 그룹/우측 스페이서라는 3분할 구조 자체가 존재하는지만 구조적으로
+    // 확인한다. 실제 가운데 정렬 여부(라이트/다크·데스크톱/모바일)는 실브라우저로 검증한다.
+    it('166: 헤더 바가 좌측 제목 / 가운데 버튼 그룹 / 우측 스페이서의 3분할 구조를 갖는다', () => {
+        const wrapper = mount(GamePage, {props: {title: '2048', gameId: 'game-2048'}})
+        const header = wrapper.find('[data-testid="game-mute-toggle"]').element.closest('.grid')
+        expect(header).not.toBeNull()
+
+        const columns = header!.children
+        expect(columns.length).toBe(3) // 제목 블록 / 버튼 그룹 / 빈 스페이서
+        // 버튼 그룹(가운데 컬럼)이 재시작·음소거 버튼을 모두 담고 있어야 한다.
+        expect(columns[1].querySelector('[data-testid="game-mute-toggle"]')).not.toBeNull()
+        expect(columns[1].querySelector('[data-testid="game-restart"]')).not.toBeNull()
+        // 우측 스페이서(3번째 컬럼)는 내용이 비어있다 — 순전히 균형용.
+        expect(columns[2].textContent?.trim()).toBe('')
+    })
+
+    // 166: restart도 submitScore처럼 slot scope로 노출돼, GameResultOverlay 안의 재시작 버튼이
+    // GamePage의 실제 restart()를 호출할 수 있게 한다. 실제 게임(TowerStackGame 등)에서는 이
+    // slot scope의 restart가 GameResultOverlay까지 그대로 이어지는 걸 종단 간으로 검증하지만,
+    // 여기서는 GamePage가 slot에 restart 함수 자체를 실어 보내는지를 직접 확인한다.
+    it('166: slot scope로 넘겨준 restart를 호출하면 헤더 버튼을 누른 것과 동일하게 내부 상태가 초기화된다', async () => {
+        const RestartAwareStub = defineComponent({
+            props: {
+                restart: {type: Function, required: false, default: undefined},
+                submitScore: {type: Function, required: false, default: undefined},
+            },
+            setup() {
+                const count = ref(0)
+                return {count}
+            },
+            template: `<button data-testid="bump" @click="count++">{{ count }}</button>
+                        <button data-testid="call-restart" @click="restart?.()"/>`,
+        })
+        const wrapper = mount(GamePage, {
+            props: {title: '테스트 게임'},
+            slots: {default: (scope: any) => h(RestartAwareStub, scope)},
+        })
+
+        await wrapper.find('[data-testid="bump"]').trigger('click')
+        expect(wrapper.find('[data-testid="bump"]').text()).toBe('1')
+
+        await wrapper.find('[data-testid="call-restart"]').trigger('click')
+
+        // slot으로 받은 restart()가 GamePage의 진짜 restart와 같은 함수라면, 헤더 버튼과
+        // 동일하게 restartKey가 바뀌어 슬롯 전체가 재마운트되고 count가 0으로 되돌아간다.
+        expect(wrapper.find('[data-testid="bump"]').text()).toBe('0')
+    })
 })

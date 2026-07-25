@@ -35,7 +35,7 @@
     </p>
 
     <button
-        class="flex items-center justify-center gap-1.5 rounded-xl bg-zone-accent-fun py-2.5 text-[14px] font-semibold text-white transition-[opacity,scale] hover:opacity-90 active:scale-[0.99]"
+        class="flex items-center justify-center gap-1.5 rounded-xl bg-zone-accent-fun py-2.5 text-[14px] font-semibold text-white transition-[opacity,scale] hover:opacity-90 active:scale-[0.99] dark:text-background"
         @click="nextQuestion">
       <RefreshCw class="size-4"/>
       다음 질문

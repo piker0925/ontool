@@ -4,7 +4,7 @@
       <label class="text-[12px] font-medium text-muted-foreground">변환 방향</label>
       <div class="flex rounded-lg border border-border overflow-hidden">
         <button v-for="d in DIRECTIONS" :key="d.value"
-                :class="direction === d.value ? 'bg-zone-accent-life text-white' : 'bg-card text-muted-foreground hover:text-foreground'"
+                :class="direction === d.value ? 'bg-zone-accent-life text-white dark:text-background' : 'bg-card text-muted-foreground hover:text-foreground'"
                 class="px-3 py-1 text-[12px] font-medium transition-colors"
                 @click="manualDirection = d.value">{{ d.label }}
         </button>

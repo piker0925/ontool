@@ -2,7 +2,7 @@
   <div class="flex flex-col gap-4 max-w-lg mx-auto w-full">
     <div class="flex rounded-lg border border-border overflow-hidden">
       <button v-for="c in CATEGORIES" :key="c.id"
-              :class="category === c.id ? 'bg-zone-accent-life text-white' : 'bg-card text-muted-foreground hover:text-foreground'"
+              :class="category === c.id ? 'bg-zone-accent-life text-white dark:text-background' : 'bg-card text-muted-foreground hover:text-foreground'"
               class="flex-1 px-3 py-1.5 text-[12px] font-medium transition-colors"
               @click="category = c.id">{{ c.label }}
       </button>

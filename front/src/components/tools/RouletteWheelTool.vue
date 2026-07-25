@@ -41,7 +41,7 @@
                @keydown="onPendingKeydown"
                @paste="onPendingPaste"/>
         <button
-            class="flex items-center justify-center gap-1 rounded-lg bg-zone-accent-fun px-3 py-2 text-[12px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+            class="flex items-center justify-center gap-1 rounded-lg bg-zone-accent-fun px-3 py-2 text-[12px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40 dark:text-background"
             :disabled="!pendingInput.trim()"
             @click="commitPending">
           <Plus class="size-3.5"/>
@@ -79,7 +79,7 @@
 
       <button
           :disabled="items.length < 2 || spinning"
-          class="flex items-center justify-center gap-1.5 rounded-xl bg-zone-accent-fun px-6 py-2.5 text-[14px] font-semibold text-white transition-[opacity,scale] hover:opacity-90 active:scale-[0.99] disabled:opacity-40"
+          class="flex items-center justify-center gap-1.5 rounded-xl bg-zone-accent-fun px-6 py-2.5 text-[14px] font-semibold text-white transition-[opacity,scale] hover:opacity-90 active:scale-[0.99] disabled:opacity-40 dark:text-background"
           @click="spin">
         <RotateCw class="size-4" :class="{ 'animate-spin': spinning }"/>
         {{ spinning ? '돌아가는 중…' : '돌림판 돌리기' }}

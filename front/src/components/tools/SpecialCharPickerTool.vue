@@ -5,7 +5,7 @@
           v-for="c in SPECIAL_CHAR_CATEGORIES"
           :key="c.id"
           :class="activeCategory === c.id
-          ? 'bg-zone-accent-life text-white'
+          ? 'bg-zone-accent-life text-white dark:text-background'
           : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'"
           class="shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors"
           @click="activeCategory = c.id"

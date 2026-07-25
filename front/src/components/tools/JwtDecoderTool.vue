@@ -31,7 +31,7 @@
         <p class="mb-3 text-[11px] font-medium text-muted-foreground">표시 옵션</p>
         <div class="flex flex-col gap-2.5">
           <label v-for="opt in JWT_OPTIONS" :key="opt.key" class="flex items-start gap-2 cursor-pointer">
-            <input v-model="(jwtOptions as any)[opt.key]" class="mt-0.5 accent-primary" type="checkbox"/>
+            <input v-model="(jwtOptions as any)[opt.key]" class="mt-0.5 accent-zone-accent" type="checkbox"/>
             <div>
               <span class="text-[12px] text-foreground">{{ opt.label }}</span>
               <span class="ml-1.5 text-[10px] text-muted-foreground">{{ opt.desc }}</span>
@@ -158,7 +158,7 @@
       <div class="rounded-xl border border-border bg-card overflow-hidden">
         <div class="flex h-9 items-center justify-between border-b border-border px-3">
           <span class="text-[11px] font-medium text-muted-foreground">페이로드 (JSON)</span>
-          <button class="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-muted-foreground/70 transition-colors hover:text-primary"
+          <button class="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-muted-foreground/70 transition-colors hover:text-zone-accent"
                   @click="applyGenSample">
             <Wand2 class="size-3"/>
             예시

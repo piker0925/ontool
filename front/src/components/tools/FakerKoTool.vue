@@ -3,8 +3,8 @@
     <div class="flex flex-wrap gap-2">
       <label v-for="field in FIELD_OPTIONS" :key="field.value"
              class="flex items-center gap-1.5 cursor-pointer rounded-lg border border-border bg-card px-3 py-1.5 transition-colors hover:bg-accent"
-             :class="fields[field.value] ? 'border-primary/50 bg-primary/5' : ''">
-        <input v-model="fields[field.value]" class="accent-primary" type="checkbox"/>
+             :class="fields[field.value] ? 'border-zone-accent/50 bg-zone-accent/5' : ''">
+        <input v-model="fields[field.value]" class="accent-zone-accent" type="checkbox"/>
         <span class="text-[12px] text-foreground">{{ field.label }}</span>
       </label>
     </div>
@@ -18,7 +18,7 @@
     </div>
 
     <button
-        class="rounded-xl bg-primary py-2.5 text-[14px] font-semibold text-primary-foreground transition-colors hover:opacity-90"
+        class="rounded-xl bg-zone-accent py-2.5 text-[14px] font-semibold text-primary-foreground transition-colors hover:opacity-90"
         @click="generate">생성
     </button>
 

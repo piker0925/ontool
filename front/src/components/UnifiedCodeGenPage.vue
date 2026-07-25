@@ -7,7 +7,7 @@
       <div class="flex h-10 shrink-0 items-center justify-between border-b border-border px-4">
         <span class="font-mono text-[11px] font-medium uppercase tracking-wider text-muted-foreground">입력</span>
         <button
-            class="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-muted-foreground/70 transition-colors hover:text-primary"
+            class="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-muted-foreground/70 transition-colors hover:text-zone-accent"
             @click="applySample"
         >
           <Wand2 class="size-3"/>

@@ -6,7 +6,7 @@
           v-for="t in TABS"
           :key="t.id"
           :class="tab === t.id
-          ? 'bg-primary text-primary-foreground'
+          ? 'bg-zone-accent text-primary-foreground'
           : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'"
           class="shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors sm:flex-1"
           @click="tab = t.id"
@@ -79,7 +79,7 @@
             <label class="flex items-center gap-1.5">Spread <input v-model.number="layer.spread" class="w-14 rounded-md border border-input bg-background px-1.5 py-1 text-[13px] text-foreground outline-none" type="number"/></label>
             <input v-model="layer.color" class="size-7 cursor-pointer rounded border border-input bg-background" type="color"/>
             <label class="flex items-center gap-1.5">
-              <input v-model="layer.inset" class="accent-primary" type="checkbox"/>
+              <input v-model="layer.inset" class="accent-zone-accent" type="checkbox"/>
               inset
             </label>
           </div>

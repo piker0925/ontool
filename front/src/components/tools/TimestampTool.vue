@@ -3,7 +3,7 @@
     <div class="flex items-center gap-3 flex-wrap">
       <div class="flex rounded-lg border border-border overflow-hidden">
         <button v-for="u in unitOptions" :key="u.value"
-                :class="tsUnit === u.value ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:text-foreground'"
+                :class="tsUnit === u.value ? 'bg-zone-accent text-primary-foreground' : 'bg-card text-muted-foreground hover:text-foreground'"
                 class="px-3 py-1 text-[12px] font-medium transition-colors"
                 @click="setUnit(u.value)">{{ u.label }}
         </button>
@@ -28,7 +28,7 @@
              type="text"
              inputmode="numeric"
              @input="onUnixInput"/>
-      <p v-if="unitNotice" class="text-[11px] text-primary">{{ unitNotice }}</p>
+      <p v-if="unitNotice" class="text-[11px] text-zone-accent">{{ unitNotice }}</p>
     </div>
 
     <div class="flex items-center justify-center">

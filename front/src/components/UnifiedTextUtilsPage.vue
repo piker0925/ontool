@@ -6,7 +6,7 @@
           v-for="t in TABS"
           :key="t.id"
           :class="tab === t.id
-          ? 'bg-primary text-primary-foreground'
+          ? 'bg-zone-accent text-primary-foreground'
           : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'"
           class="shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors sm:flex-1"
           @click="tab = t.id"
@@ -31,7 +31,7 @@
               지우기
             </button>
             <button
-                class="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-muted-foreground/70 transition-colors hover:text-primary"
+                class="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-muted-foreground/70 transition-colors hover:text-zone-accent"
                 @click="applySample"
             >
               <Wand2 class="size-3"/>
@@ -89,7 +89,7 @@
               </select>
             </div>
             <label class="flex items-end gap-1.5 pb-2.5 text-[12px] text-foreground">
-              <input v-model="lineDedupe" class="accent-primary" type="checkbox"/>
+              <input v-model="lineDedupe" class="accent-zone-accent" type="checkbox"/>
               중복 줄 제거
             </label>
           </div>

@@ -59,7 +59,7 @@
       <template v-if="codes.current">
         <div aria-hidden="true" class="h-1.5 w-full overflow-hidden rounded-full bg-muted">
           <div
-              :class="secondsLeft <= 5 ? 'bg-destructive' : 'bg-primary'"
+              :class="secondsLeft <= 5 ? 'bg-destructive' : 'bg-zone-accent'"
               :style="{width: progressPercent + '%'}"
               class="h-full rounded-full transition-[width] duration-1000 ease-linear"
           />

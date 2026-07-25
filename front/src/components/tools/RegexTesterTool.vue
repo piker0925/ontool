@@ -32,7 +32,7 @@
             type="text"
         />
         <span class="select-none text-muted-foreground">/</span>
-        <span class="select-none pl-0.5 text-primary">{{ flags }}</span>
+        <span class="select-none pl-0.5 text-zone-accent">{{ flags }}</span>
       </div>
 
       <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5">
@@ -42,7 +42,7 @@
             :title="f.desc"
             class="flex cursor-pointer items-center gap-1.5"
         >
-          <input v-model="flagState[f.flag]" class="accent-primary" type="checkbox"/>
+          <input v-model="flagState[f.flag]" class="accent-zone-accent" type="checkbox"/>
           <span class="font-mono text-[12px] font-semibold text-foreground">{{ f.flag }}</span>
           <span class="text-[11px] text-muted-foreground">{{ f.label }}</span>
         </label>
@@ -102,7 +102,7 @@
         <template v-for="(seg, i) in segments" :key="i">
           <mark
               v-if="seg.matchIndex !== null"
-              :class="seg.matchIndex % 2 === 0 ? 'bg-primary/20' : 'bg-primary/40'"
+              :class="seg.matchIndex % 2 === 0 ? 'bg-zone-accent/20' : 'bg-zone-accent/40'"
               class="rounded-[3px] px-px text-foreground"
           >{{ seg.text }}</mark>
           <template v-else>{{ seg.text }}</template>
@@ -121,7 +121,7 @@
             type="button"
             @click="copyText(replaceOutcome.result, 'replace')"
         >
-          <Check v-if="copiedKey === 'replace'" class="size-3.5 text-primary"/>
+          <Check v-if="copiedKey === 'replace'" class="size-3.5 text-zone-accent"/>
           <Copy v-else class="size-3.5"/>
         </button>
       </div>
@@ -161,7 +161,7 @@
           >
             <td class="px-4 py-2 text-muted-foreground">{{ m.index + 1 }}</td>
             <td class="max-w-[24rem] break-all px-2 py-2 text-foreground">
-              <mark :class="m.index % 2 === 0 ? 'bg-primary/20' : 'bg-primary/40'"
+              <mark :class="m.index % 2 === 0 ? 'bg-zone-accent/20' : 'bg-zone-accent/40'"
                     class="rounded-[3px] px-px text-foreground">{{ m.text }}</mark>
             </td>
             <td class="whitespace-nowrap px-2 py-2 text-muted-foreground">{{ m.start }}–{{ m.end }}</td>
@@ -169,7 +169,7 @@
               <span v-if="m.groups.length === 0" class="text-muted-foreground">—</span>
               <div v-else class="flex flex-col gap-0.5">
                 <span v-for="g in m.groups" :key="g.num" class="break-all">
-                  <span class="text-primary">{{ g.name ?? `$${g.num}` }}</span><span class="text-muted-foreground">:</span>
+                  <span class="text-zone-accent">{{ g.name ?? `$${g.num}` }}</span><span class="text-muted-foreground">:</span>
                   <span v-if="g.text !== null" class="text-foreground"> {{ g.text }}</span>
                   <span v-else class="text-muted-foreground"> (미참여)</span>
                 </span>
@@ -182,7 +182,7 @@
                   type="button"
                   @click="copyMatchRow(m)"
               >
-                <Check v-if="copiedKey === `m-${m.index}`" class="size-3 text-primary"/>
+                <Check v-if="copiedKey === `m-${m.index}`" class="size-3 text-zone-accent"/>
                 <Copy v-else class="size-3"/>
               </button>
             </td>

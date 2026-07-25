@@ -17,7 +17,7 @@
       <div class="flex h-10 shrink-0 items-center justify-between border-b border-border px-4">
         <span class="font-mono text-[11px] font-medium uppercase tracking-wider text-muted-foreground">입력</span>
         <button
-            class="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-muted-foreground/70 transition-colors hover:text-primary"
+            class="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-muted-foreground/70 transition-colors hover:text-zone-accent"
             @click="applySample"
         >
           <Wand2 class="size-3"/>
@@ -101,7 +101,7 @@
         <div class="flex flex-col gap-2">
           <input ref="imageFileInput" accept="image/*" class="hidden" type="file" @change="onImageFileChange"/>
           <button
-              class="flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border py-8 text-[12px] text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+              class="flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border py-8 text-[12px] text-muted-foreground transition-colors hover:border-zone-accent hover:text-zone-accent"
               type="button" @click="imageFileInput?.click()">
             <Upload class="size-4"/>
             이미지 선택

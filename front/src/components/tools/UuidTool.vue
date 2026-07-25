@@ -5,7 +5,7 @@
         <label class="text-[11px] font-medium text-muted-foreground">버전</label>
         <div class="flex rounded-lg border border-border overflow-hidden">
           <button v-for="v in (['v4', 'v7'] as const)" :key="v"
-                  :class="uuidVersion === v ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:text-foreground'"
+                  :class="uuidVersion === v ? 'bg-zone-accent text-primary-foreground' : 'bg-card text-muted-foreground hover:text-foreground'"
                   class="px-3 py-1 text-[12px] font-medium transition-colors"
                   @click="uuidVersion = v; generateUuids()">{{ v }}
           </button>
@@ -19,7 +19,7 @@
                @change="clampCount"/>
       </div>
       <label class="flex items-center gap-1.5 cursor-pointer">
-        <input v-model="uuidNoHyphen" class="rounded accent-primary" type="checkbox"/>
+        <input v-model="uuidNoHyphen" class="rounded accent-zone-accent" type="checkbox"/>
         <span class="text-[11px] text-muted-foreground">하이픈 제거</span>
       </label>
     </div>
@@ -31,7 +31,7 @@
            class="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 transition-colors hover:bg-accent">
         <span class="flex-1 font-mono text-[13px] text-foreground break-all">{{ uid }}</span>
         <span v-if="copiedIndex === i"
-              class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">복사됨</span>
+              class="rounded-full bg-zone-accent/10 px-2 py-0.5 text-[10px] font-semibold text-zone-accent">복사됨</span>
         <button :aria-label="`${uid} 복사`" class="rounded p-1 transition-colors text-muted-foreground/50 hover:text-foreground"
                 @click="copyRow(uid, i)">
           <Copy class="size-3.5"/>
@@ -41,7 +41,7 @@
     </div>
     <div class="flex gap-2 items-center flex-wrap">
       <button
-          class="flex-1 min-w-24 rounded-xl bg-primary py-2.5 text-[14px] font-semibold text-primary-foreground transition-colors hover:opacity-90"
+          class="flex-1 min-w-24 rounded-xl bg-zone-accent py-2.5 text-[14px] font-semibold text-primary-foreground transition-colors hover:opacity-90"
           @click="generateUuids()">생성
       </button>
       <template v-if="uuidList.length > 0">

@@ -1,6 +1,7 @@
 <template>
   <div class="flex flex-col items-center gap-4 py-6">
     <GameStat v-if="state.status === 'playing'" testid="status" text="지뢰가 아닌 칸을 모두 열어보세요" tone="neutral"/>
+    <GameStat label="경과 시간" testid="elapsed" :value="`${elapsedSeconds}초`"/>
     <p v-if="state.status === 'playing'" class="text-[11px] text-muted-foreground">칸을 길게 누르면 깃발을 꽂을 수 있어요 (데스크톱은 우클릭)</p>
 
     <div class="relative">
@@ -30,7 +31,9 @@
         </template>
       </div>
 
-      <GameResultOverlay :show="state.status !== 'playing'" :title="statusText" :tone="resultTone" testid="game-result-overlay"/>
+      <GameResultOverlay :show="state.status !== 'playing'" :title="statusText" :tone="resultTone" testid="game-result-overlay">
+        <span v-if="state.status === 'won'" data-testid="clear-time">{{ elapsedSeconds }}초 만에 클리어했습니다</span>
+      </GameResultOverlay>
     </div>
   </div>
 </template>
@@ -48,6 +51,18 @@ const MINE_COUNT = 10
 const LONG_PRESS_MS = 500
 // 롱프레스 도중 손가락이 이 픽셀만큼 움직이면 스크롤 의도로 보고 깃발 꽂기를 취소한다.
 const TOUCH_MOVE_CANCEL_PX = 10
+
+// 053: 지뢰찾기는 자체 점수 개념이 없으므로 "클리어까지 걸린 시간(ms, 낮을수록 좋음)"을 점수로 쓴다.
+// 컴포넌트가 마운트된 시점을 시작 시각으로 본다 — GamePage가 재시작마다 slot 전체를 재마운트하므로
+// 별도 reset 로직 없이 매 판마다 새로 잰다. elapsedSeconds는 화면 표시용(053 AC: "게임 종료 시 항상
+// 점수 표시") — 1초마다 갱신하고, 게임이 끝나면(승/패 무관) 그 시점의 값에서 멈춘다.
+const props = defineProps<{ submitScore?: (score: number) => void }>()
+const startedAt = Date.now()
+const elapsedSeconds = ref(0)
+let tickTimer: ReturnType<typeof setInterval> | null = null
+tickTimer = setInterval(() => {
+  elapsedSeconds.value = Math.floor((Date.now() - startedAt) / 1000)
+}, 1000)
 
 const state = ref<MinesweeperState>(createMinesweeperState(placeMines(ROWS, COLS, MINE_COUNT)))
 
@@ -108,8 +123,19 @@ function onCellTouchEnd(e: TouchEvent) {
 
 watch(() => state.value.status, (next, prev) => {
   if (next === prev) return
-  if (next === 'won') playSuccess()
-  else if (next === 'lost') playFail()
+  if (next === 'won' || next === 'lost') {
+    if (tickTimer) {
+      clearInterval(tickTimer)
+      tickTimer = null
+    }
+    elapsedSeconds.value = Math.floor((Date.now() - startedAt) / 1000)
+  }
+  if (next === 'won') {
+    playSuccess()
+    props.submitScore?.(Date.now() - startedAt)
+  } else if (next === 'lost') {
+    playFail()
+  }
 })
 
 const statusText = computed(() => {
@@ -144,6 +170,7 @@ function cellClass(cell: Cell): string {
 
 onUnmounted(() => {
   if (touchTimer) clearTimeout(touchTimer)
+  if (tickTimer) clearInterval(tickTimer)
 })
 </script>
 

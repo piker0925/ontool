@@ -44,6 +44,8 @@ import {useGameSound} from '../../composables/useGameSound'
 import GameResultOverlay from '../GameResultOverlay.vue'
 import GameStat from '../GameStat.vue'
 
+const props = defineProps<{ submitScore?: (score: number) => void }>()
+
 // Tailwind 기본 팔레트(red-700 등) 원색 대신 style.css에 조색된 --simon-* 토큰을 사용한다
 // (DESIGN.md 6 "촌스러운 원색 사용 금지"). 평상시에도 색이 뚜렷이 구분되도록 어두운 톤으로,
 // 눌렸을 때는 밝은 톤으로 확실히 밝아지게 한다.
@@ -102,6 +104,7 @@ function onColorClick(color: number) {
   if (state.value.status === 'over') {
     phase.value = 'over'
     playFail()
+    props.submitScore?.(state.value.round)
     return
   }
 

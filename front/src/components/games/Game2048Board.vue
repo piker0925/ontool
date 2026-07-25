@@ -30,6 +30,9 @@ import {useGameSound} from '../../composables/useGameSound'
 import GameResultOverlay from '../GameResultOverlay.vue'
 import GameStat from '../GameStat.vue'
 
+// 053: GamePage가 넘겨주는 제출 훅. optional로 둬 기존 테스트(prop 없이 마운트)가 깨지지 않게 한다.
+const props = defineProps<{ submitScore?: (score: number) => void }>()
+
 const board = ref<Board>(createEmptyBoard(4))
 const score = ref(0)
 const gameOver = computed(() => isGameOver(board.value))
@@ -172,7 +175,10 @@ function tileClass(value: number): string {
 }
 
 watch(gameOver, isOver => {
-  if (isOver) playFail()
+  if (isOver) {
+    playFail()
+    props.submitScore?.(score.value)
+  }
 })
 
 onMounted(() => {

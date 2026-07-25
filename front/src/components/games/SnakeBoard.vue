@@ -37,6 +37,8 @@ import {useGameSound} from '../../composables/useGameSound'
 import GameResultOverlay from '../GameResultOverlay.vue'
 import GameStat from '../GameStat.vue'
 
+const props = defineProps<{ submitScore?: (score: number) => void }>()
+
 const {playSuccess, playFail} = useGameSound()
 
 // 먹이를 먹어 점수가 오른 틱에 캔버스 테두리를 잠깐 밝혀 손맛을 준다.
@@ -156,7 +158,10 @@ watch(() => state.value.score, (next, prev) => {
 })
 
 watch(() => state.value.status, status => {
-  if (status === 'over') playFail()
+  if (status === 'over') {
+    playFail()
+    props.submitScore?.(state.value.score)
+  }
 })
 
 onMounted(() => {

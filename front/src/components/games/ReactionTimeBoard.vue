@@ -37,6 +37,10 @@ import {computed, onUnmounted, ref, watch} from 'vue'
 import {handleReactionClick, type ReactionState} from '../../utils/reactionTime'
 import {useGameSound} from '../../composables/useGameSound'
 
+// 053: "다시 도전"은 GamePage의 restartKey를 거치지 않고 이 컴포넌트 내부 start()만 다시 부른다
+// (재마운트되지 않음) — 그래서 시도마다 매번 submitScore를 호출한다(1회성 마운트 가드를 두지 않음).
+const props = defineProps<{ submitScore?: (score: number) => void }>()
+
 const state = ref<ReactionState>({phase: 'idle', signalAt: null, elapsedMs: null})
 let timer: ReturnType<typeof setTimeout> | null = null
 
@@ -67,9 +71,14 @@ const areaClass = computed(() => state.value.phase === 'ready' ? 'bg-zone-accent
 const areaText = computed(() => state.value.phase === 'ready' ? '지금 클릭!' : '기다리세요…')
 
 watch(() => state.value.phase, phase => {
-  if (phase === 'ready') playClick()
-  else if (phase === 'result') playSuccess()
-  else if (phase === 'false-start') playFail()
+  if (phase === 'ready') {
+    playClick()
+  } else if (phase === 'result') {
+    playSuccess()
+    props.submitScore?.(Math.round(state.value.elapsedMs ?? 0))
+  } else if (phase === 'false-start') {
+    playFail()
+  }
 })
 
 onUnmounted(clearTimer)

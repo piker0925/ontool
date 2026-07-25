@@ -19,7 +19,7 @@
     </div>
 
     <div class="flex flex-col gap-1.5">
-      <label class="text-[11px] font-medium text-muted-foreground">
+      <label class="text-[12px] font-medium text-muted-foreground">
         Unix Timestamp ({{ tsUnit === 's' ? '초' : '밀리초' }})
       </label>
       <input v-model="tsUnix"
@@ -36,7 +36,7 @@
     </div>
 
     <div class="flex flex-col gap-1.5">
-      <label class="text-[11px] font-medium text-muted-foreground">날짜/시간 (ISO 8601 등)</label>
+      <label class="text-[12px] font-medium text-muted-foreground">날짜/시간 (ISO 8601 등)</label>
       <input v-model="tsDate"
              class="rounded-xl border border-border bg-card px-4 py-2.5 font-mono text-[13px] text-foreground outline-none focus:border-ring"
              placeholder="예: 2023-11-14T22:13:20.000Z"
@@ -45,7 +45,7 @@
     </div>
 
     <div class="flex items-center gap-2 flex-wrap">
-      <label class="text-[11px] font-medium text-muted-foreground">출력 형식</label>
+      <label class="text-[12px] font-medium text-muted-foreground">출력 형식</label>
       <select v-model="formatPreset"
               class="rounded-lg border border-border bg-card px-2 py-1 text-[12px] text-foreground outline-none focus:border-ring">
         <option value="iso">ISO 8601</option>

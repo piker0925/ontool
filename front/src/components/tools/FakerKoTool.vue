@@ -10,7 +10,7 @@
     </div>
 
     <div class="flex items-center gap-2">
-      <label class="text-[11px] font-medium text-muted-foreground">생성 개수</label>
+      <label class="text-[12px] font-medium text-muted-foreground">생성 개수</label>
       <input v-model.number="count"
              class="w-24 rounded-lg border border-border bg-card px-2 py-1 text-[12px] text-foreground outline-none focus:border-ring"
              max="1000" min="1" type="number"

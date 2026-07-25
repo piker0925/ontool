@@ -1,14 +1,14 @@
 <template>
   <div class="flex flex-col gap-3 max-w-lg mx-auto w-full">
     <div class="flex flex-col gap-1.5">
-      <label class="text-[11px] font-medium text-muted-foreground">메시지</label>
+      <label class="text-[12px] font-medium text-muted-foreground">메시지</label>
       <textarea v-model="text"
                 class="h-24 resize-none rounded-xl border border-border bg-card p-3 font-mono text-[13px] text-foreground outline-none focus:border-ring"
                 placeholder="서명할 텍스트"/>
     </div>
 
     <div class="flex flex-col gap-1.5">
-      <label class="text-[11px] font-medium text-muted-foreground">키</label>
+      <label class="text-[12px] font-medium text-muted-foreground">키</label>
       <div class="flex gap-2">
         <input v-model="keyValue"
                class="flex-1 rounded-xl border border-border bg-card px-4 py-2.5 font-mono text-[13px] text-foreground outline-none focus:border-ring"

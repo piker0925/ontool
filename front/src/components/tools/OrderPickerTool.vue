@@ -13,7 +13,7 @@
     <!-- 참가자 입력 (칩 방식) -->
     <div class="flex flex-col gap-2 rounded-xl border border-border bg-card p-4">
       <div class="flex items-center justify-between">
-        <label class="text-[11px] font-medium text-muted-foreground">참가자</label>
+        <label class="text-[12px] font-medium text-muted-foreground">참가자</label>
         <div class="flex items-center gap-2">
           <span class="rounded-full bg-muted px-2 py-0.5 font-mono text-[11px] text-muted-foreground">{{ participants.length }}명</span>
           <button v-if="participants.length > 0"

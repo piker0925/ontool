@@ -13,13 +13,13 @@
     <div class="grid grid-cols-2 gap-3">
       <label class="flex flex-col gap-1.5 text-[13px]">
         내 혈액형
-        <select v-model="myBloodType" class="rounded-md border border-input bg-background px-3 py-2">
+        <select v-model="myBloodType" class="w-auto min-w-[96px] self-start rounded-md border border-input bg-background px-3 py-2">
           <option v-for="t in BLOOD_TYPES" :key="t" :value="t">{{ t }}형</option>
         </select>
       </label>
       <label class="flex flex-col gap-1.5 text-[13px]">
         상대 혈액형
-        <select v-model="partnerBloodType" class="rounded-md border border-input bg-background px-3 py-2">
+        <select v-model="partnerBloodType" class="w-auto min-w-[96px] self-start rounded-md border border-input bg-background px-3 py-2">
           <option v-for="t in BLOOD_TYPES" :key="t" :value="t">{{ t }}형</option>
         </select>
       </label>

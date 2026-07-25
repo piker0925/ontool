@@ -2,7 +2,7 @@
   <div class="flex flex-col gap-4 max-w-lg mx-auto w-full">
     <label class="flex flex-col gap-1.5 text-[13px]">
       기준
-      <select v-model="salaryUnit" class="rounded-md border border-input bg-background px-3 py-2">
+      <select v-model="salaryUnit" class="w-auto min-w-[96px] self-start rounded-md border border-input bg-background px-3 py-2">
         <option value="hourly">시급 입력</option>
         <option value="monthly">월급 입력</option>
         <option value="annual">연봉 입력</option>

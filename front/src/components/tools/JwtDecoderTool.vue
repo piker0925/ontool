@@ -169,7 +169,7 @@
                   placeholder='{"sub": "1234567890"}'/>
       </div>
       <div class="rounded-xl border border-border bg-card p-4">
-        <label class="mb-2 block text-[11px] font-medium text-muted-foreground">서명 키 (secret, HS256)</label>
+        <label class="mb-2 block text-[12px] font-medium text-muted-foreground">서명 키 (secret, HS256)</label>
         <input v-model="genSecret"
                class="w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-[12px] text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
                placeholder="secret" type="text"/>

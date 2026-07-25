@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col gap-3 max-w-lg mx-auto w-full">
     <div class="flex items-center justify-between gap-2">
-      <label class="text-[11px] font-medium text-muted-foreground">변환 방향</label>
+      <label class="text-[12px] font-medium text-muted-foreground">변환 방향</label>
       <div class="flex rounded-lg border border-border overflow-hidden">
         <button v-for="d in DIRECTIONS" :key="d.value"
                 :class="direction === d.value ? 'bg-zone-accent-life text-white' : 'bg-card text-muted-foreground hover:text-foreground'"

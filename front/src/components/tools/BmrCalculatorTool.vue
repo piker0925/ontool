@@ -2,7 +2,7 @@
   <div class="flex flex-col gap-4 max-w-lg mx-auto w-full">
     <label class="flex flex-col gap-1.5 text-[13px]">
       성별
-      <select v-model="sex" class="rounded-md border border-input bg-background px-3 py-2">
+      <select v-model="sex" class="w-auto min-w-[96px] self-start rounded-md border border-input bg-background px-3 py-2">
         <option value="male">남성</option>
         <option value="female">여성</option>
       </select>

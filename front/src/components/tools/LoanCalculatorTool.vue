@@ -2,7 +2,7 @@
   <div class="flex flex-col gap-4 max-w-lg mx-auto w-full">
     <label class="flex flex-col gap-1.5 text-[13px]">
       상환 방식
-      <select v-model="loanMethod" class="rounded-md border border-input bg-background px-3 py-2">
+      <select v-model="loanMethod" class="w-auto min-w-[96px] self-start rounded-md border border-input bg-background px-3 py-2">
         <option value="equal-payment">원리금균등상환</option>
         <option value="equal-principal">원금균등상환</option>
       </select>

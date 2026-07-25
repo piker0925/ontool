@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col gap-4 max-w-lg mx-auto w-full">
     <div class="flex flex-col gap-1.5">
-      <label class="text-[11px] font-medium text-muted-foreground">CIDR</label>
+      <label class="text-[12px] font-medium text-muted-foreground">CIDR</label>
       <input v-model="cidrInput"
              class="rounded-xl border border-border bg-card px-4 py-2.5 font-mono text-[13px] text-foreground outline-none focus:border-ring"
              placeholder="192.168.1.0/24"

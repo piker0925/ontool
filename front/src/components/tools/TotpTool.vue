@@ -2,7 +2,7 @@
   <div class="mx-auto flex w-full max-w-lg flex-col gap-4">
     <div class="flex flex-col gap-1.5">
       <div class="flex items-center justify-between">
-        <label class="text-[11px] font-medium text-muted-foreground">시크릿 키 (Base32)</label>
+        <label class="text-[12px] font-medium text-muted-foreground">시크릿 키 (Base32)</label>
         <span class="text-[10px] text-muted-foreground">서버로 전송되지 않고 브라우저에서만 계산됩니다</span>
       </div>
       <input
@@ -18,20 +18,20 @@
 
     <div class="flex gap-4">
       <div class="flex flex-1 flex-col gap-1.5">
-        <label class="text-[11px] font-medium text-muted-foreground">자릿수</label>
+        <label class="text-[12px] font-medium text-muted-foreground">자릿수</label>
         <select
             v-model="digits"
-            class="rounded-xl border border-border bg-card px-3 py-2 text-[13px] text-foreground outline-none focus:border-ring"
+            class="w-auto min-w-[96px] self-start rounded-xl border border-border bg-card px-3 py-2 text-[13px] text-foreground outline-none focus:border-ring"
         >
           <option value="6">6자리</option>
           <option value="8">8자리</option>
         </select>
       </div>
       <div class="flex flex-1 flex-col gap-1.5">
-        <label class="text-[11px] font-medium text-muted-foreground">주기</label>
+        <label class="text-[12px] font-medium text-muted-foreground">주기</label>
         <select
             v-model="period"
-            class="rounded-xl border border-border bg-card px-3 py-2 text-[13px] text-foreground outline-none focus:border-ring"
+            class="w-auto min-w-[96px] self-start rounded-xl border border-border bg-card px-3 py-2 text-[13px] text-foreground outline-none focus:border-ring"
         >
           <option value="30">30초</option>
           <option value="60">60초</option>

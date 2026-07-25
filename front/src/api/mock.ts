@@ -387,6 +387,36 @@ export const MOCK_MODULES: Module[] = [
         ],
         zones: ['fun'],
     },
+    {
+        id: 'roulette-wheel', name: '룰렛 돌림판', category: '재미', isHeavy: false, isFrontendOnly: true,
+        description: '항목을 입력하고 돌림판을 돌려 하나를 무작위로 뽑는 추첨기',
+        keywords: ['룰렛', 'roulette', '돌림판', '추첨기'],
+        zones: ['fun'],
+    },
+    {
+        id: 'order-picker', name: '순서 정하기', category: '재미', isHeavy: false, isFrontendOnly: true,
+        description: '참가자 전원의 순서를 한 번에 무작위로 결정',
+        keywords: ['순서 정하기', '순서 뽑기', 'order picker'],
+        zones: ['fun'],
+    },
+    {
+        id: 'pinball-drop', name: '핀볼 추첨기', category: '재미', isHeavy: false, isFrontendOnly: true,
+        description: '구슬이 핀에 부딪히며 떨어지는 모습으로 당첨 항목을 뽑는 추첨기(마블 룰렛)',
+        keywords: ['핀볼', '마블 룰렛', 'marble roulette', '구슬 뽑기', '플린코'],
+        zones: ['fun'],
+    },
+    {
+        id: 'balance-game', name: '밸런스 게임', category: '재미', isHeavy: false, isFrontendOnly: true,
+        description: '둘 중 하나만 고를 수 있다면? 양자택일 질문 게임',
+        keywords: ['밸런스 게임', 'balance game', '양자택일'],
+        zones: ['fun'],
+    },
+    {
+        id: 'icebreaker-question', name: '아이스브레이킹 질문', category: '재미', isHeavy: false, isFrontendOnly: true,
+        description: '모임·MT·워크샵용 자기소개·스몰토크 질문 무작위 뽑기',
+        keywords: ['아이스브레이킹', '자기소개 질문', 'icebreaker'],
+        zones: ['fun'],
+    },
 
     // 미니게임 (프론트 전용, 상태는 컴포넌트 내부 — 서버 저장 없음, v3 이전 범위. ADR-0026)
     // component 로더는 여기 두지 않는다 — config/shellComponents.ts와 그 주석 참고.

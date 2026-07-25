@@ -12,11 +12,11 @@
         </div>
       </div>
       <label class="flex items-center gap-1.5 cursor-pointer">
-        <input v-model="removeMetadata" class="accent-primary" type="checkbox" @change="compute()"/>
+        <input v-model="removeMetadata" class="accent-zone-accent" type="checkbox" @change="compute()"/>
         <span class="text-[11px] text-muted-foreground">주석·메타데이터 제거</span>
       </label>
       <label class="flex items-center gap-1.5 cursor-pointer">
-        <input v-model="keepViewBox" class="accent-primary" type="checkbox" @change="compute()"/>
+        <input v-model="keepViewBox" class="accent-zone-accent" type="checkbox" @change="compute()"/>
         <span class="text-[11px] text-muted-foreground">viewBox 유지</span>
       </label>
     </div>

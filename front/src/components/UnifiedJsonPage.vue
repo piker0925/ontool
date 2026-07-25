@@ -6,7 +6,7 @@
           v-for="t in TABS"
           :key="t.id"
           :class="tab === t.id
-          ? 'bg-primary text-primary-foreground'
+          ? 'bg-zone-accent text-primary-foreground'
           : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'"
           class="shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors sm:flex-1"
           @click="tab = t.id"
@@ -37,7 +37,7 @@
           </div>
         </template>
         <label class="flex items-center gap-1.5 cursor-pointer ml-auto">
-          <input v-model="fmtSortKeys" class="accent-primary" type="checkbox" @change="fmtCompute()"/>
+          <input v-model="fmtSortKeys" class="accent-zone-accent" type="checkbox" @change="fmtCompute()"/>
           <span class="text-[11px] text-muted-foreground">키 정렬 (A→Z)</span>
         </label>
       </div>

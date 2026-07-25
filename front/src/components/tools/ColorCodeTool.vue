@@ -33,7 +33,7 @@
         알파 {{ Math.round(alphaPercent) }}%
       </label>
       <input v-model.number="alphaPercent"
-             class="flex-1 accent-primary"
+             class="flex-1 accent-zone-accent"
              max="100" min="0" step="1" type="range"
              @input="onAlphaInput"/>
     </div>
@@ -60,15 +60,15 @@
         </span>
         <span class="font-mono text-[13px] text-foreground">{{ row.ratio }}:1</span>
         <div class="flex gap-1 ml-auto">
-          <span :class="row.levels.aa ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'"
+          <span :class="row.levels.aa ? 'bg-zone-accent/10 text-zone-accent' : 'bg-destructive/10 text-destructive'"
                 class="rounded-full px-2 py-0.5 text-[10px] font-semibold">
             {{ row.levels.aa ? '✓' : '✗' }} AA
           </span>
-          <span :class="row.levels.aaa ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'"
+          <span :class="row.levels.aaa ? 'bg-zone-accent/10 text-zone-accent' : 'bg-destructive/10 text-destructive'"
                 class="rounded-full px-2 py-0.5 text-[10px] font-semibold">
             {{ row.levels.aaa ? '✓' : '✗' }} AAA
           </span>
-          <span :class="row.levels.aaLarge ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'"
+          <span :class="row.levels.aaLarge ? 'bg-zone-accent/10 text-zone-accent' : 'bg-destructive/10 text-destructive'"
                 class="rounded-full px-2 py-0.5 text-[10px] font-semibold"
                 title="큰 텍스트(18pt+) AA 기준 3:1">
             {{ row.levels.aaLarge ? '✓' : '✗' }} AA-Large
@@ -94,7 +94,7 @@
           <X class="size-3.5"/>
         </button>
       </div>
-      <button class="self-start text-[11px] text-primary transition-colors hover:underline" @click="paletteInputs.push('#888888')">
+      <button class="self-start text-[11px] text-zone-accent transition-colors hover:underline" @click="paletteInputs.push('#888888')">
         + 색상 추가
       </button>
     </div>
@@ -124,19 +124,19 @@
           </td>
           <td class="px-3 py-2 font-mono text-foreground">{{ p.ratio }}:1</td>
           <td class="px-3 py-2">
-            <span :class="p.levels.aa ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'"
+            <span :class="p.levels.aa ? 'bg-zone-accent/10 text-zone-accent' : 'bg-destructive/10 text-destructive'"
                   class="rounded-full px-2 py-0.5 text-[10px] font-semibold">
               {{ p.levels.aa ? '✓' : '✗' }}
             </span>
           </td>
           <td class="px-3 py-2">
-            <span :class="p.levels.aaa ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'"
+            <span :class="p.levels.aaa ? 'bg-zone-accent/10 text-zone-accent' : 'bg-destructive/10 text-destructive'"
                   class="rounded-full px-2 py-0.5 text-[10px] font-semibold">
               {{ p.levels.aaa ? '✓' : '✗' }}
             </span>
           </td>
           <td class="px-3 py-2">
-            <span :class="p.levels.aaLarge ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'"
+            <span :class="p.levels.aaLarge ? 'bg-zone-accent/10 text-zone-accent' : 'bg-destructive/10 text-destructive'"
                   class="rounded-full px-2 py-0.5 text-[10px] font-semibold">
               {{ p.levels.aaLarge ? '✓' : '✗' }}
             </span>

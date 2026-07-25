@@ -3,8 +3,8 @@
     <div class="flex flex-wrap gap-2">
       <label v-for="template in GITIGNORE_TEMPLATES" :key="template.id"
              class="flex items-center gap-1.5 cursor-pointer rounded-lg border border-border bg-card px-3 py-1.5 transition-colors hover:bg-accent"
-             :class="selected.includes(template.id) ? 'border-primary/50 bg-primary/5' : ''">
-        <input v-model="selected" :value="template.id" class="accent-primary" type="checkbox"/>
+             :class="selected.includes(template.id) ? 'border-zone-accent/50 bg-zone-accent/5' : ''">
+        <input v-model="selected" :value="template.id" class="accent-zone-accent" type="checkbox"/>
         <span class="text-[12px] text-foreground">{{ template.label }}</span>
       </label>
     </div>

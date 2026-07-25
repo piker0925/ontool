@@ -7,7 +7,7 @@
       <div class="flex h-10 shrink-0 items-center justify-between border-b border-border px-4">
         <span class="font-mono text-[11px] font-medium uppercase tracking-wider text-muted-foreground">입력</span>
         <button
-            class="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-muted-foreground/70 transition-colors hover:text-primary"
+            class="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-muted-foreground/70 transition-colors hover:text-zone-accent"
             @click="applySample"
         >
           <Wand2 class="size-3"/>
@@ -27,7 +27,7 @@
           </select>
         </div>
         <button
-            class="mb-1 flex size-8 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+            class="mb-1 flex size-8 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-zone-accent/40 hover:text-zone-accent"
             title="방향 바꾸기"
             @click="swap"
         >
@@ -53,13 +53,13 @@
       <!-- 입력 형식 자동 감지 제안 -->
       <div
           v-if="detected && detected !== from"
-          class="flex h-9 shrink-0 items-center justify-between border-t border-border bg-primary/5 px-4"
+          class="flex h-9 shrink-0 items-center justify-between border-t border-border bg-zone-accent/5 px-4"
       >
         <p class="text-[11px] text-muted-foreground">
-          입력이 <span class="font-mono font-medium uppercase text-primary">{{ detected }}</span> 형식으로 보입니다
+          입력이 <span class="font-mono font-medium uppercase text-zone-accent">{{ detected }}</span> 형식으로 보입니다
         </p>
         <button
-            class="rounded px-1.5 py-0.5 text-[11px] font-medium text-primary transition-colors hover:bg-primary/10"
+            class="rounded px-1.5 py-0.5 text-[11px] font-medium text-zone-accent transition-colors hover:bg-zone-accent/10"
             @click="applyDetected"
         >
           From을 {{ detected.toUpperCase() }}로 변경

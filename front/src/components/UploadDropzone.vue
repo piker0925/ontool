@@ -35,7 +35,7 @@
 
 <script lang="ts" setup>
 import {computed, ref} from 'vue'
-import {Upload} from 'lucide-vue-next'
+import {FolderOpen} from 'lucide-vue-next'
 import type {Component} from 'vue'
 
 type Zone = 'dev' | 'files' | 'life' | 'fun'
@@ -66,7 +66,9 @@ const emit = defineEmits<{
   select: [files: File[]]
 }>()
 
-const iconComponent = computed(() => props.icon ?? Upload)
+// 145: 이슈 원문·Heavy 워크벤치(FileUploader.vue)가 공통으로 "폴더 아이콘"(📂)을 기준으로 삼으므로
+// 기본 아이콘도 업로드 화살표가 아니라 폴더 계열로 맞춘다. 도구별로 다른 아이콘이 더 맞으면 icon prop으로 덮어쓴다.
+const iconComponent = computed(() => props.icon ?? FolderOpen)
 
 const inputRef = ref<HTMLInputElement | null>(null)
 const dragging = ref(false)

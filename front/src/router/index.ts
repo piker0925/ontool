@@ -29,6 +29,7 @@ export const router = createRouter({
         {path: '/tools/char-count', redirect: '/tools/text-utils?tab=count'},
         {path: '/tools/keyboard-convert', redirect: '/tools/text-utils?tab=keyboard'},
         {path: '/tools/whitespace', redirect: '/tools/text-utils?tab=whitespace'},
+        {path: '/tools/random-team-ladder', redirect: '/tools/random-team-split'},
 
         {path: '/tools/:moduleId', component: () => import('../pages/ToolPage.vue')},
         {path: '/suggestions', component: () => import('../pages/SuggestionPage.vue')},

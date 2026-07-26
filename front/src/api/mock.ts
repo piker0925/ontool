@@ -444,9 +444,15 @@ export const MOCK_MODULES: Module[] = [
         zones: ['life'],
     },
     {
-        id: 'random-team-ladder', name: '랜덤 팀 나누기·사다리타기', category: '재미', isHeavy: false, isFrontendOnly: true,
-        description: '참가자 무작위 팀 분배 또는 사다리타기 경로 배정',
-        keywords: ['팀 나누기', '사다리타기', '사다리', 'ladder'],
+        id: 'random-team-split', name: '팀 나누기', category: '재미', isHeavy: false, isFrontendOnly: true,
+        description: '참가자를 입력하면 무작위로 균등하게 팀을 나눠줍니다',
+        keywords: ['팀 나누기', 'team split', '조 나누기'],
+        zones: ['life'],
+    },
+    {
+        id: 'ladder-game', name: '사다리타기', category: '재미', isHeavy: false, isFrontendOnly: true,
+        description: '참가자를 입력하고 사다리를 타고 내려가 결과를 확인합니다',
+        keywords: ['사다리타기', '사다리', 'ladder'],
         zones: ['life'],
     },
     {

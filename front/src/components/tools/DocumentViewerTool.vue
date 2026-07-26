@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col gap-3 max-w-3xl mx-auto w-full">
-    <UploadDropzone ref="dropzoneRef" :active="!docType" :icon="FileText" accept=".docx,.xlsx"
+    <UploadDropzone ref="dropzoneRef" :active="!docType" :icon="FileText" accept=".docx,.xlsx,.hwp,.hwpx,.pptx,.ppt,.doc,.xls"
                     label="DOCX 또는 XLSX 파일을 선택하세요" @select="onFilesSelected"/>
 
     <div v-show="!!docType" class="flex flex-col gap-3">
@@ -38,15 +38,26 @@
       </div>
     </div>
 
-    <p v-if="error" class="text-[11px] text-destructive/70">{{ error }}</p>
+    <div v-if="officeGuidanceLabel" class="flex flex-col gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3.5">
+      <p class="text-[12px] text-foreground/80">
+        이 뷰어는 DOCX/XLSX만 직접 봅니다. {{ officeGuidanceLabel }} 파일은 오피스 문서 변환기로 PDF 변환 후 확인하세요.
+      </p>
+      <router-link class="flex items-center gap-1 text-[11px] font-medium text-zone-accent-files hover:underline"
+                   to="/tools/office-document-convert">
+        오피스 문서 변환기로 이동
+        <ArrowRight class="size-3"/>
+      </router-link>
+    </div>
+    <p v-else-if="error" class="text-[11px] text-destructive/70">{{ error }}</p>
   </div>
 </template>
 
 <script lang="ts" setup>
 import {computed, ref} from 'vue'
+import {ArrowRight, FileText} from 'lucide-vue-next'
 import {renderAsync} from 'docx-preview'
-import {FileText} from 'lucide-vue-next'
 import {detectDocumentType, type DocumentType} from '../../utils/documentViewer'
+import {detectOfficeFormat, officeFormatLabel} from '../../utils/officeDocumentFormat'
 import {parseWorkbook} from '../../utils/xlsxViewer'
 import UploadDropzone from '../UploadDropzone.vue'
 
@@ -55,6 +66,7 @@ const docxContainer = ref<HTMLDivElement | null>(null)
 const docType = ref<DocumentType | null>(null)
 const fileName = ref('')
 const error = ref('')
+const officeGuidanceLabel = ref<string | null>(null)
 
 const sheetNames = ref<string[]>([])
 const sheets = ref<Record<string, unknown[][]>>({})
@@ -66,9 +78,15 @@ async function onFilesSelected(files: File[]) {
   if (!file) return
 
   error.value = ''
+  officeGuidanceLabel.value = null
   const type = detectDocumentType(file.name)
   if (!type) {
-    error.value = '지원하지 않는 파일 형식입니다 (DOCX, XLSX만 지원)'
+    const officeFormat = detectOfficeFormat(file.name)
+    if (officeFormat) {
+      officeGuidanceLabel.value = officeFormatLabel(officeFormat)
+    } else {
+      error.value = '지원하지 않는 파일 형식입니다 (DOCX, XLSX만 지원)'
+    }
     docType.value = null
     return
   }

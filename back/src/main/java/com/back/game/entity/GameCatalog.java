@@ -19,7 +19,9 @@ public final class GameCatalog {
             Map.entry("game-reaction-time", new GameDefinition("game-reaction-time", false, 900, 80, null)),
             // 최소 한 칸을 열어야 승패가 갈림
             Map.entry("game-minesweeper", new GameDefinition("game-minesweeper", false, 300, null, null)),
-            // 첫 라운드 시퀀스 재생(SHOW_MS+GAP_MS=700ms)을 봐야 입력 가능
+            // 첫 라운드 시퀀스 재생을 봐야 입력 가능. 172부터 라운드별 속도 스케줄(초반 라운드는
+            // 기본 속도인 SHOW_MS=500+GAP_MS=200=700ms보다 느리게, 예: 1라운드는 약 1450ms)을
+            // 적용해 실제 최소 소요 시간은 더 길어졌으므로 600ms 하한은 여전히 안전하게 낮은 값이다
             Map.entry("game-simon", new GameDefinition("game-simon", true, 600, null, null)),
             // 카드 짝 확인에 RESOLVE_DELAY_MS(700ms) 이상 소요
             Map.entry("game-memory-cards", new GameDefinition("game-memory-cards", false, 600, null, null)),

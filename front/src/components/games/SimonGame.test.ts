@@ -8,7 +8,9 @@ describe('SimonGame — 재시작', () => {
         try {
             const wrapper = mount(SimonGame)
             await wrapper.find('[data-testid="simon-start"]').trigger('click')
-            await vi.advanceTimersByTimeAsync(1000) // 시퀀스 재생 끝 → input 단계
+            // 172: 1라운드는 속도 스케줄상 기본 속도보다 느리게(showMs+gapMs≈1450ms) 재생되므로
+            // 넉넉히 대기한다 — 시퀀스 재생 끝 → input 단계
+            await vi.advanceTimersByTimeAsync(1600)
             await wrapper.find('[data-testid="simon-color-0"]').trigger('click') // 정답이든 오답이든 상태가 idle을 벗어남
 
             expect(wrapper.find('[data-testid="simon-start"]').exists()).toBe(false)

@@ -330,6 +330,67 @@ describe('ToolPage Heavy 파라미터 label-input 연결 (147)', () => {
     })
 })
 
+// 177: 영상 워터마크에 이미지 워터마크 전용 업로드 UI가 없어 도움말 텍스트("파일 순서대로
+// 업로드하세요")로만 안내하던 문제 — PdfWatermarkPage의 second-slot 패턴(전용 "추가" 버튼)을
+// 범용 Heavy 워크벤치(ToolPage)에도 heavyConfig 기반으로 적용한다.
+describe('ToolPage 영상 워터마크 이미지 업로드 UI (177)', () => {
+    async function mountVideoWatermark() {
+        return mountAt('video-watermark', [
+            {id: 'video-watermark', name: '영상 워터마크', category: '영상', isHeavy: true, zones: ['files']},
+        ])
+    }
+
+    it('FileUploader에 multiple=false·maxFiles=2·전용 두 번째 슬롯 설정이 전달된다', async () => {
+        const wrapper = await mountVideoWatermark()
+        const props = wrapper.findComponent(FileUploader).props()
+
+        expect(props.multiple).toBe(false)
+        expect(props.maxFiles).toBe(2)
+        expect(props.secondSlotLabel).toContain('이미지 워터마크')
+        expect(props.secondSlotAccept).toBe('.jpg,.jpeg,.png')
+        expect(props.secondSlotItemLabel).toBe('워터마크 이미지')
+    })
+
+    it('대상 파일 accept는 영상 확장자만 허용하고, 이미지 확장자는 두 번째 슬롯 전용으로 분리된다', async () => {
+        const wrapper = await mountVideoWatermark()
+        const props = wrapper.findComponent(FileUploader).props()
+
+        expect(props.accept).toBe('.mp4,.webm,.mov,.mkv,.avi')
+        expect(props.accept).not.toContain('.png')
+    })
+
+    it('파일 순서로 업로드하라는 옛 도움말 문구는 더 이상 노출되지 않는다', async () => {
+        const wrapper = await mountVideoWatermark()
+
+        expect(wrapper.text()).not.toContain('순서로 업로드')
+    })
+
+    it('이미지 워터마크 없이 대상 영상 1개만 스테이징해 업로드해도(텍스트 워터마크만 사용하는 기존 경로) 정상적으로 job이 생성된다', async () => {
+        const wrapper = await mountVideoWatermark()
+        mockPost.mockResolvedValue({data: {jobId: 'job-video-1'}})
+
+        const target = new File(['x'], 'clip.mp4', {type: 'video/mp4'})
+        const inputEl = wrapper.find('input[data-testid="main-file-input"]').element as HTMLInputElement
+        Object.defineProperty(inputEl, 'files', {value: [target], configurable: true})
+        await wrapper.find('input[data-testid="main-file-input"]').trigger('change')
+        await flushPromises()
+
+        // AC: 대상 영상이 스테이징되면 이미지 워터마크 추가 전용 버튼이 실제로 화면에 보여야 한다
+        // (props가 FileUploader에 전달되는 것과 별개로, 실제 렌더링까지 확인).
+        expect(wrapper.find('[data-testid="add-second-slot"]').exists()).toBe(true)
+
+        await wrapper.find('[data-testid="confirm-upload"]').trigger('click')
+        await flushPromises()
+
+        expect(mockPost).toHaveBeenCalledWith(
+            '/api/v1/tools/video-watermark/upload',
+            expect.any(FormData),
+            expect.anything(),
+        )
+        expect(mockTrackActiveJob).toHaveBeenCalledWith('job-video-1', 'video-watermark', '영상 워터마크')
+    })
+})
+
 describe('ToolPage 이미지 리사이즈 크기 입력 UI', () => {
     const imageResize: Module = {id: 'image-resize', name: '이미지 리사이즈', category: '이미지', isHeavy: true, zones: ['files']}
 

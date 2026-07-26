@@ -88,7 +88,7 @@ export const GITIGNORE_TEMPLATES: GitignoreTemplate[] = [
     },
     {
         id: 'react',
-        label: 'React',
+        label: 'React / Next.js',
         entries: [
             '/node_modules',
             '/.pnp',

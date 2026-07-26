@@ -51,7 +51,7 @@ describe('GITIGNORE_TEMPLATES', () => {
         expect(vite.entries).toContain('dist-ssr')
     })
 
-    it('React 템플릿은 표준 빌드 산출물·환경변수 패턴을 포함한다', () => {
+    it('React / Next.js 템플릿은 표준 빌드 산출물·환경변수 패턴을 포함한다', () => {
         const react = GITIGNORE_TEMPLATES.find(t => t.id === 'react')!
         expect(react.entries).toContain('/node_modules')
         expect(react.entries).toContain('/build')

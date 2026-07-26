@@ -136,8 +136,8 @@ export const VIDEO_HEAVY_CONFIGS: Record<string, ModuleConfig> = {
                 label: '텍스트 워터마크(선택 — 이미지 워터마크와 동시 사용 가능)',
                 type: 'text',
                 placeholder: '© 2026 내 채널',
-                help: '파일은 [대상 영상, 워터마크 이미지(선택)] 순서로 업로드하세요. 텍스트만 쓸 경우 영상 1개만 올리면 됩니다. ' +
-                    '텍스트 위치는 우하단 고정입니다(115) — 이 도구는 미리보기가 없어 이미지처럼 드래그로 잡을 수 없습니다.',
+                help: '텍스트 위치는 우하단 고정입니다(115) — 이 도구는 미리보기가 없어 이미지처럼 드래그로 잡을 수 없습니다. ' +
+                    '이미지 워터마크는 대상 영상을 올린 뒤 아래 "이미지 워터마크 추가" 버튼으로 더할 수 있습니다.',
             },
             {
                 key: 'imageXPercent',
@@ -162,7 +162,13 @@ export const VIDEO_HEAVY_CONFIGS: Record<string, ModuleConfig> = {
                 help: '0~100',
             },
         ],
-        fileAccept: '.mp4,.webm,.mov,.mkv,.avi,.png,.jpg,.jpeg',
-        fileMultiple: true,
+        // 177: 대상 영상은 1개만 받고(multiple: false), 이미지 워터마크는 전용 두 번째 슬롯으로
+        // 받는다(PdfWatermarkPage와 동일한 패턴) — 순서 기반 암묵 규칙 대신 명시적인 업로드 버튼.
+        fileAccept: '.mp4,.webm,.mov,.mkv,.avi',
+        fileMultiple: false,
+        maxFiles: 2,
+        secondSlotLabel: '+ 이미지 워터마크 추가(선택)',
+        secondSlotAccept: '.jpg,.jpeg,.png',
+        secondSlotItemLabel: '워터마크 이미지',
     },
 }

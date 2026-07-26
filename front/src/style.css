@@ -241,3 +241,13 @@ html, body {
         }
     }
 }
+
+@utility tabular-nums {
+    font-variant-numeric: tabular-nums;
+}
+
+.tabular-nums, .font-mono {
+    font-variant-numeric: tabular-nums;
+}
+
+

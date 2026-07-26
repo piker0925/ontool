@@ -168,7 +168,7 @@ describe('zoneUsageDonutData', () => {
             {label: '개발자 도구', value: 3},
             {label: '파일·문서', value: 15},
             {label: '생활 도구', value: 0},
-            {label: '재미·게임', value: 0},
+            {label: '게임', value: 0},
         ])
     })
 

@@ -64,9 +64,9 @@ class GameControllerTest extends AbstractMySQLIntegrationTest {
 
     @Test
     void 비로그인으로_점수_제출하면_401() throws Exception {
-        String token = startSession("game-tictactoe");
+        String token = startSession("game-baseball");
 
-        mockMvc.perform(post("/api/v1/games/game-tictactoe/scores")
+        mockMvc.perform(post("/api/v1/games/game-baseball/scores")
                         .contentType("application/json")
                         .content(scoreBody(1, token)))
                 .andExpect(status().isUnauthorized());
@@ -77,7 +77,7 @@ class GameControllerTest extends AbstractMySQLIntegrationTest {
         User user = saveUser("s1", "유저1");
         String accessToken = jwtProvider.issueAccessToken(user.getId());
 
-        mockMvc.perform(post("/api/v1/games/game-tictactoe/scores")
+        mockMvc.perform(post("/api/v1/games/game-baseball/scores")
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType("application/json")
                         .content(scoreBody(1, "garbage-token")))
@@ -89,10 +89,10 @@ class GameControllerTest extends AbstractMySQLIntegrationTest {
     void 최소_플레이_시간을_채우지_않으면_거부된다() throws Exception {
         User user = saveUser("s2", "유저2");
         String accessToken = jwtProvider.issueAccessToken(user.getId());
-        String sessionToken = startSession("game-tictactoe"); // minDurationMs=400
+        String sessionToken = startSession("game-baseball"); // minDurationMs=300
 
-        // 발급 직후 곧바로 제출 — 400ms를 못 채웠으므로 거부되어야 한다.
-        mockMvc.perform(post("/api/v1/games/game-tictactoe/scores")
+        // 발급 직후 곧바로 제출 — 300ms를 못 채웠으므로 거부되어야 한다.
+        mockMvc.perform(post("/api/v1/games/game-baseball/scores")
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType("application/json")
                         .content(scoreBody(1, sessionToken)))
@@ -104,19 +104,19 @@ class GameControllerTest extends AbstractMySQLIntegrationTest {
     void 로그인_유저는_최소_플레이_시간을_채우면_점수를_제출하고_리더보드에_반영된다() throws Exception {
         User user = saveUser("s3", "유저3");
         String accessToken = jwtProvider.issueAccessToken(user.getId());
-        String sessionToken = startSession("game-tictactoe");
+        String sessionToken = startSession("game-baseball");
 
         Thread.sleep(450);
 
-        mockMvc.perform(post("/api/v1/games/game-tictactoe/scores")
+        mockMvc.perform(post("/api/v1/games/game-baseball/scores")
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType("application/json")
                         .content(scoreBody(1, sessionToken)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.score").value(1))
-                .andExpect(jsonPath("$.gameId").value("game-tictactoe"));
+                .andExpect(jsonPath("$.gameId").value("game-baseball"));
 
-        mockMvc.perform(get("/api/v1/games/game-tictactoe/leaderboard"))
+        mockMvc.perform(get("/api/v1/games/game-baseball/leaderboard"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.topScores.length()").value(1))
                 .andExpect(jsonPath("$.topScores[0].nickname").value("유저3"))
@@ -212,22 +212,22 @@ class GameControllerTest extends AbstractMySQLIntegrationTest {
     void 유저당_게임당_제출_빈도_상한을_넘으면_거부된다() throws Exception {
         User user = saveUser("s9", "유저9");
         String accessToken = jwtProvider.issueAccessToken(user.getId());
-        String sessionToken = startSession("game-tictactoe");
+        String sessionToken = startSession("game-baseball");
         Thread.sleep(450);
 
         // 같은 세션 토큰을 재사용한 반복 제출 — 토큰 검증만으론 막히지 않으므로 레이트리밋이 막아야 한다.
         // (max-per-window=2로 낮춰 테스트)
-        mockMvc.perform(post("/api/v1/games/game-tictactoe/scores")
+        mockMvc.perform(post("/api/v1/games/game-baseball/scores")
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType("application/json")
                         .content(scoreBody(1, sessionToken)))
                 .andExpect(status().isCreated());
-        mockMvc.perform(post("/api/v1/games/game-tictactoe/scores")
+        mockMvc.perform(post("/api/v1/games/game-baseball/scores")
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType("application/json")
                         .content(scoreBody(1, sessionToken)))
                 .andExpect(status().isCreated());
-        mockMvc.perform(post("/api/v1/games/game-tictactoe/scores")
+        mockMvc.perform(post("/api/v1/games/game-baseball/scores")
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType("application/json")
                         .content(scoreBody(1, sessionToken)))

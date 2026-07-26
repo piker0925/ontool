@@ -65,31 +65,33 @@ export const MOCK_MODULES: Module[] = [
     {
         id: 'text-diff', name: 'Diff 비교', category: '텍스트', isHeavy: false, isFrontendOnly: true,
         description: '두 텍스트 차이 시각화', keywords: ['diff', 'compare', '비교'],
-        zones: ['life'],
+        zones: ['dev'],
     },
     {
         id: 'hangul-romanizer', name: '한글 이름 로마자 변환기', category: '텍스트', isHeavy: false, isFrontendOnly: true,
         description: '국립국어원 로마자 표기법 기준으로 한글 이름을 영문으로 변환',
         keywords: ['로마자', '영문 이름', 'romanization', '여권 영문 이름'],
-        zones: ['life'],
+        zones: ['dev'],
     },
     {
         id: 'special-char-picker', name: '특수문자·이모지 모음', category: '텍스트', isHeavy: false, isFrontendOnly: true,
         description: '카테고리별 특수문자·이모지를 클릭 한 번으로 복사',
         keywords: ['특수문자', '이모지', '카오모지', 'symbol', 'emoji'],
+        // 168: '텍스트' 카테고리는 원칙적으로 개발자도구로 이동했지만, 이 도구만 재미·생활형
+        // 콘텐츠에 가까워 예외적으로 생활도구에 남긴다(사용자 결정, 2026-07-26).
         zones: ['life'],
     },
     {
         id: 'keyboard-typo-fixer', name: '한영타 변환기', category: '텍스트', isHeavy: false, isFrontendOnly: true,
         description: '키보드 배열을 안 바꾸고 잘못 입력한 문장을 원래 의도한 글자로 되돌리기',
         keywords: ['한영타', '오타 변환', 'dkssud', '한영 전환'],
-        zones: ['life'],
+        zones: ['dev'],
     },
     {
         id: 'char-counter', name: '글자수 세기', category: '텍스트', isHeavy: false, isFrontendOnly: true,
         description: '공백 포함/제외 글자 수·바이트 수·단어 수·줄 수 동시 표시',
         keywords: ['글자수', '글자 수 세기', '자소서 글자수', 'word count'],
-        zones: ['life'],
+        zones: ['dev'],
     },
     {
         id: 'regex-tester', name: 'Regex 테스터', category: '텍스트', isHeavy: false, isFrontendOnly: true,
@@ -326,12 +328,6 @@ export const MOCK_MODULES: Module[] = [
         zones: ['life'],
     },
     {
-        id: 'parcel-volume-weight', name: '택배 부피무게 계산기', category: '단위·변환', isHeavy: false, isFrontendOnly: true,
-        description: '가로×세로×높이로 부피무게 계산, 실중량과 비교해 청구 기준 안내',
-        keywords: ['택배', '부피무게', '부피중량', '박스', '운임'],
-        zones: ['life'],
-    },
-    {
         id: 'pet-age-converter', name: '반려동물 나이 변환기', category: '날짜·나이', isHeavy: false, isFrontendOnly: true,
         description: '강아지·고양이 나이를 사람 나이로 환산',
         keywords: ['반려동물', '강아지 나이', '고양이 나이', '펫 나이'],
@@ -353,12 +349,6 @@ export const MOCK_MODULES: Module[] = [
         id: 'age-calculator', name: '만 나이 계산기', category: '날짜·나이', isHeavy: false, isFrontendOnly: true,
         description: '생년월일 기준 만 나이 계산',
         keywords: ['만 나이', '나이 계산', '한국 나이'],
-        zones: ['life'],
-    },
-    {
-        id: 'baby-age-calculator', name: '육아 개월수 계산기', category: '날짜·나이', isHeavy: false, isFrontendOnly: true,
-        description: '출생일 기준 개월수·일수 계산',
-        keywords: ['육아', '개월수', '아기 개월수'],
         zones: ['life'],
     },
     {
@@ -445,31 +435,31 @@ export const MOCK_MODULES: Module[] = [
         id: 'lotto-number', name: '로또 번호 생성기', category: '재미', isHeavy: false, isFrontendOnly: true,
         description: '1~45 중 중복 없는 로또 번호 6개 무작위 생성',
         keywords: ['로또', 'lotto'],
-        zones: ['fun'],
+        zones: ['life'],
     },
     {
         id: 'lotto-simulator', name: '로또 시뮬레이터', category: '재미', isHeavy: false, isFrontendOnly: true,
         description: '목표 번호를 정해두고 무작위 구매를 반복해 당첨 확률을 체감하는 시뮬레이터',
         keywords: ['로또 시뮬레이터', 'lotto simulator', '확률'],
-        zones: ['fun'],
+        zones: ['life'],
     },
     {
         id: 'random-team-ladder', name: '랜덤 팀 나누기·사다리타기', category: '재미', isHeavy: false, isFrontendOnly: true,
         description: '참가자 무작위 팀 분배 또는 사다리타기 경로 배정',
         keywords: ['팀 나누기', '사다리타기', '사다리', 'ladder'],
-        zones: ['fun'],
+        zones: ['life'],
     },
     {
         id: 'random-nickname', name: '랜덤 닉네임 생성기', category: '재미', isHeavy: false, isFrontendOnly: true,
         description: '형용사+명사 조합 무작위 한국어 닉네임 생성',
         keywords: ['닉네임', 'nickname'],
-        zones: ['fun'],
+        zones: ['life'],
     },
     {
         id: 'random-palette', name: '색상 팔레트 생성기', category: '재미', isHeavy: false, isFrontendOnly: true,
         description: '보색·유사색 등 규칙 기반 무작위 색상 팔레트 생성',
         keywords: ['팔레트', 'palette', '색상 조합'],
-        zones: ['fun'],
+        zones: ['life'],
     },
     {
         id: 'wordcloud', name: '워드클라우드', category: '재미', isHeavy: false, isFrontendOnly: true,
@@ -481,49 +471,31 @@ export const MOCK_MODULES: Module[] = [
             {keyword: '단어 빈도', query: 'tab=table'},
             {keyword: '빈도 분석', query: 'tab=table'},
         ],
-        zones: ['fun'],
-    },
-    {
-        id: 'biorhythm-calculator', name: '바이오리듬', category: '재미', isHeavy: false, isFrontendOnly: true,
-        description: '생일 기준 신체·감성·지성 사인파 바이오리듬 계산',
-        keywords: ['바이오리듬', 'biorhythm'],
-        zones: ['fun'],
-    },
-    {
-        id: 'blood-type-name-compatibility', name: '혈액형·이름 궁합', category: '재미', isHeavy: false, isFrontendOnly: true,
-        description: '혈액형 궁합 속설표 + 이름 기반 궁합 점수 재미로 보기',
-        keywords: ['혈액형 궁합', '이름 궁합', '궁합'],
-        zones: ['fun'],
+        zones: ['life'],
     },
     {
         id: 'roulette-wheel', name: '룰렛 돌림판', category: '재미', isHeavy: false, isFrontendOnly: true,
         description: '항목을 입력하고 돌림판을 돌려 하나를 무작위로 뽑는 추첨기',
         keywords: ['룰렛', 'roulette', '돌림판', '추첨기'],
-        zones: ['fun'],
+        zones: ['life'],
     },
     {
         id: 'order-picker', name: '순서 정하기', category: '재미', isHeavy: false, isFrontendOnly: true,
         description: '참가자 전원의 순서를 한 번에 무작위로 결정',
         keywords: ['순서 정하기', '순서 뽑기', 'order picker'],
-        zones: ['fun'],
+        zones: ['life'],
     },
     {
         id: 'pinball-drop', name: '핀볼 추첨기', category: '재미', isHeavy: false, isFrontendOnly: true,
         description: '구슬이 핀에 부딪히며 떨어지는 모습으로 당첨 항목을 뽑는 추첨기(마블 룰렛)',
         keywords: ['핀볼', '마블 룰렛', 'marble roulette', '구슬 뽑기', '플린코'],
-        zones: ['fun'],
+        zones: ['life'],
     },
     {
         id: 'balance-game', name: '밸런스 게임', category: '재미', isHeavy: false, isFrontendOnly: true,
         description: '둘 중 하나만 고를 수 있다면? 양자택일 질문 게임',
         keywords: ['밸런스 게임', 'balance game', '양자택일'],
-        zones: ['fun'],
-    },
-    {
-        id: 'icebreaker-question', name: '아이스브레이킹 질문', category: '재미', isHeavy: false, isFrontendOnly: true,
-        description: '모임·MT·워크샵용 자기소개·스몰토크 질문 무작위 뽑기',
-        keywords: ['아이스브레이킹', '자기소개 질문', 'icebreaker'],
-        zones: ['fun'],
+        zones: ['life'],
     },
 
     // 미니게임 (프론트 전용, 상태는 컴포넌트 내부 — 서버 저장 없음, v3 이전 범위. ADR-0026)
@@ -561,11 +533,6 @@ export const MOCK_MODULES: Module[] = [
     {
         id: 'game-baseball', name: '숫자야구', category: '게임', isHeavy: false, isFrontendOnly: true,
         description: '중복 없는 숫자를 스트라이크·볼 힌트로 추리하는 게임',
-        kind: 'game', zones: ['fun'],
-    },
-    {
-        id: 'game-tictactoe', name: '틱택토', category: '게임', isHeavy: false, isFrontendOnly: true,
-        description: '컴퓨터를 상대로 3x3 판에서 한 줄을 먼저 만드는 삼목 게임',
         kind: 'game', zones: ['fun'],
     },
     // 121: 캐주얼 게임 8종 추가(한글 단어맞추기는 166에서 드롭). 전부 백엔드 GameCatalog에

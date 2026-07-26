@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * 16개 게임의 채점 규칙 레지스트리(053, 121). 프론트 shellComponents.ts / mock.ts 카탈로그의
+ * 15개 게임의 채점 규칙 레지스트리(053, 121). 프론트 shellComponents.ts / mock.ts 카탈로그의
  * 게임 moduleId와 정확히 일치해야 한다. minDurationMs는 각 게임을 "정상적으로 최소 1판" 진행하는 데
  * 걸리는 시간을 넉넉히 낮춰 잡았다 — 실제 플레이를 막지 않으면서 즉시 제출(위조/재생 공격)만 거른다.
  */
@@ -25,8 +25,6 @@ public final class GameCatalog {
             Map.entry("game-memory-cards", new GameDefinition("game-memory-cards", false, 600, null, null)),
             // 최소 한 번 추측 제출
             Map.entry("game-baseball", new GameDefinition("game-baseball", false, 300, null, null)),
-            // 사람 수 + 컴퓨터 응답 지연(400ms) 이상. score는 "승리까지 둔 사람 수"(적을수록 좋음)
-            Map.entry("game-tictactoe", new GameDefinition("game-tictactoe", false, 400, null, null)),
 
             // --- 121: 캐주얼 게임 8종 (한글 단어맞추기는 166에서 드롭) ---
             // 움직이는 블록을 최소 한 번은 관찰하고 탭해야 첫 점수가 남 — 사람이 반응할 시간을 감안

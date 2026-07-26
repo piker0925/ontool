@@ -21,11 +21,6 @@ export function calcInternationalAge(birthDateStr: string, baseDateStr: string):
     return baseYear - birthYear - (hasHadBirthdayThisYear ? 0 : 1)
 }
 
-export interface BabyAge {
-    months: number
-    days: number
-}
-
 function daysInMonth(year: number, month: number): number {
     return new Date(Date.UTC(year, month, 0)).getUTCDate()
 }
@@ -38,18 +33,6 @@ function addMonthsClamped(year: number, month: number, day: number, monthsToAdd:
     const newMonth = ((totalMonthIndex % 12) + 12) % 12 + 1
     const newDay = Math.min(day, daysInMonth(newYear, newMonth))
     return `${newYear}-${String(newMonth).padStart(2, '0')}-${String(newDay).padStart(2, '0')}`
-}
-
-export function calcBabyAge(birthDateStr: string, baseDateStr: string): BabyAge {
-    const [birthYear, birthMonth, birthDay] = birthDateStr.split('-').map(Number)
-    const [baseYear, baseMonth] = baseDateStr.split('-').map(Number)
-    let months = (baseYear - birthYear) * 12 + (baseMonth - birthMonth)
-    let anchor = addMonthsClamped(birthYear, birthMonth, birthDay, months)
-    if (daysBetween(anchor, baseDateStr) < 0) {
-        months -= 1
-        anchor = addMonthsClamped(birthYear, birthMonth, birthDay, months)
-    }
-    return {months, days: daysBetween(anchor, baseDateStr)}
 }
 
 function addDays(dateStr: string, days: number): string {

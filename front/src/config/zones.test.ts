@@ -33,10 +33,10 @@ describe('ZONES', () => {
         expect(life?.name).toBe('생활 도구')
     })
 
-    it('fun 구역의 라우트는 /fun, 표시명은 재미·게임이다', () => {
+    it('fun 구역의 라우트는 /fun, 표시명은 게임이다', () => {
         const fun = ZONES.find(z => z.id === 'fun')
         expect(fun?.route).toBe('/fun')
-        expect(fun?.name).toBe('재미·게임')
+        expect(fun?.name).toBe('게임')
     })
 })
 

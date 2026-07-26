@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest'
-import {calcBabyAge, calcDischargeDate, calcDueDate, calcGestationalWeeks, calcInternationalAge, daysBetween, formatDday} from './dateCalc'
+import {calcDischargeDate, calcDueDate, calcGestationalWeeks, calcInternationalAge, daysBetween, formatDday} from './dateCalc'
 
 describe('daysBetween', () => {
     it('윤년(2024) 2월을 포함하는 구간은 29일(2월 29일 포함)', () => {
@@ -34,19 +34,6 @@ describe('calcInternationalAge (만 나이)', () => {
     })
     it('기준일이 생일 당일이면 이미 생일이 지난 것으로 처리(그 해 나이 적용)', () => {
         expect(calcInternationalAge('2000-07-20', '2026-07-20')).toBe(26)
-    })
-})
-
-describe('calcBabyAge (육아 개월수)', () => {
-    it('출생일부터 경과한 개월 수와 남은 일수를 계산', () => {
-        expect(calcBabyAge('2026-01-15', '2026-07-20')).toEqual({months: 6, days: 5})
-    })
-    it('해를 넘긴 경우에도 정확히 계산', () => {
-        expect(calcBabyAge('2025-09-10', '2026-07-20')).toEqual({months: 10, days: 10})
-    })
-    it('출생일이 31일처럼 월말이라 경과 개월 수 계산 시 짧은 달을 거쳐도 일수가 음수로 내려가지 않음', () => {
-        // 1/31 -> 2/28(2026은 평년, 28일까지=1개월 경과) -> 3/1(+1일) = 1개월 1일
-        expect(calcBabyAge('2026-01-31', '2026-03-01')).toEqual({months: 1, days: 1})
     })
 })
 

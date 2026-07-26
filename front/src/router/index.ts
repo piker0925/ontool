@@ -64,14 +64,14 @@ function setPageMeta(title: string, description: string) {
 }
 
 router.afterEach((to, _from, failure) => {
-    // 취소된 네비게이션(사용자가 로딩 중 다른 링크를 눌러 앞선 전환이 밀려난 경우)에서는 로딩 바의
-    // finish()를 부르면 안 된다 — 취소된 쪽의 afterEach는 자신의(이미 버려진) 청크 로딩이 실제로
-    // 끝날 때까지 늦게 도착할 수 있어(실측 확인, 183), 먼저 완료된 최신 네비게이션의 afterEach보다
-    // 뒤늦게 와서 바를 계속 붙잡아 둘 수 있다.
-    if (!isNavigationFailure(failure, NavigationFailureType.cancelled)) {
-        finishRouteLoadingBar()
-    }
+    // 취소된 네비게이션(사용자가 로딩 중 다른 링크를 눌러 앞선 전환이 밀려난 경우)은 실제로 렌더되지
+    // 않은 라우트다 — 로딩 바 finish()뿐 아니라 페이지뷰 집계·문서 메타 갱신도 함께 건너뛴다.
+    // 건너뛰지 않으면 사용자 눈에 보이지도 않은 페이지가 조회수로 잡히고, 취소된 쪽의 늦은 afterEach가
+    // (자신의 버려진 청크 로딩이 끝날 때까지 지연될 수 있어, 실측 확인·183) 이미 새로 렌더된 페이지의
+    // title/description을 뒤늦게 자기 것으로 덮어써 버리는 문제도 함께 생긴다.
+    if (isNavigationFailure(failure, NavigationFailureType.cancelled)) return
 
+    finishRouteLoadingBar()
     trackPageView(to.path)
 
     const zone = ZONES.find(z => z.route === to.path)

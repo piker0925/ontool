@@ -487,8 +487,8 @@ export const MOCK_MODULES: Module[] = [
     },
     {
         id: 'pinball-drop', name: '핀볼 추첨기', category: '재미', isHeavy: false, isFrontendOnly: true,
-        description: '구슬이 핀에 부딪히며 떨어지는 모습으로 당첨 항목을 뽑는 추첨기(마블 룰렛)',
-        keywords: ['핀볼', '마블 룰렛', 'marble roulette', '구슬 뽑기', '플린코'],
+        description: '참가자마다 구슬 하나씩 동시에 장애물 코스에 투입해 완주 순서로 전체 순위를 정하는 추첨기(마블 룰렛)',
+        keywords: ['핀볼', '마블 룰렛', 'marble roulette', '구슬 뽑기', '구슬 경주', '순위 추첨'],
         zones: ['life'],
     },
     {

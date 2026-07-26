@@ -1,5 +1,25 @@
 import {describe, expect, it} from 'vitest'
 import {getTopCompatibilities, getWorstCompatibilities, listUniqueMbtiPairs} from './mbtiCompatibility'
+import {getTemplateForPair} from '../data/mbtiCompatibility'
+import type {MbtiCompatibilityCategory} from '../data/mbtiTypes'
+
+/** 랭킹 항목들이 실제로 몇 개의 서로 다른 원본 템플릿(치환 전 문장)을 쓰는지 세고,
+ *  같은 템플릿이 몇 번 "초과로" 반복됐는지(=중복 개수) 반환한다.
+ *  예: 5개 중 하나의 템플릿이 2번 쓰이면 중복 1, 3번 쓰이면 중복 2.
+ */
+function countDuplicateTemplates(
+    items: {a: string; b: string}[],
+    category: MbtiCompatibilityCategory,
+): number {
+    const counts = new Map<string, number>()
+    for (const {a, b} of items) {
+        const template = getTemplateForPair(a, b, category)
+        counts.set(template, (counts.get(template) ?? 0) + 1)
+    }
+    return [...counts.values()]
+        .filter(count => count > 1)
+        .reduce((sum, count) => sum + (count - 1), 0)
+}
 
 describe('listUniqueMbtiPairs', () => {
     it('16(자기 자신) + C(16,2)=120 = 136개의 유일한 순서-무관 조합을 반환한다', () => {
@@ -65,5 +85,17 @@ describe('getTopCompatibilities / getWorstCompatibilities — 실제 정렬 검�
         const romanceTop = getTopCompatibilities('romance', 5).map(p => `${p.a}-${p.b}`).sort()
         const workTop = getTopCompatibilities('work', 5).map(p => `${p.a}-${p.b}`).sort()
         expect(romanceTop).not.toEqual(workTop)
+    })
+
+    it('Top5/Worst5는 같은 문장 템플릿이 반복되더라도 최소한으로만 겹친다 (5개 중 중복은 1개 이하)', () => {
+        // 랭킹 탭에 노출되는 실제 조합들을 대상으로, 같은 궁합 설명 문장(치환 전 템플릿)이
+        // 두 쌍 이상 겹치면 "복붙 같다"는 인상을 주므로, 전체 카테고리에서 중복이 1건을 넘지 않아야 한다.
+        for (const category of ['romance', 'friendship', 'work'] as const) {
+            const top5 = getTopCompatibilities(category, 5)
+            const worst5 = getWorstCompatibilities(category, 5)
+
+            expect(countDuplicateTemplates(top5, category), `${category} Top5`).toBeLessThanOrEqual(1)
+            expect(countDuplicateTemplates(worst5, category), `${category} Worst5`).toBeLessThanOrEqual(1)
+        }
     })
 })

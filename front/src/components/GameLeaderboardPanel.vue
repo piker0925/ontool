@@ -1,5 +1,7 @@
 <template>
-  <div class="flex flex-col gap-2 rounded-lg border border-border bg-muted/30 p-3" data-testid="game-leaderboard-panel">
+  <!-- 게임 화면 전체 폭(워크벤치 카드 폭)을 그대로 물려받으면 이름·점수 두 칼럼짜리 목록이
+       좌우로 과하게 늘어나 보인다 — 실제 콘텐츠 폭에 맞춰 좁게 제한하고 가운데 정렬한다. -->
+  <div class="mx-auto flex w-full max-w-md flex-col gap-2 rounded-lg border border-border bg-muted/30 p-3" data-testid="game-leaderboard-panel">
     <p v-if="loading" aria-live="polite" class="text-[12px] text-muted-foreground">불러오는 중…</p>
     <p v-else-if="error" aria-live="polite" class="text-[12px] text-destructive">순위표를 불러오지 못했습니다. 잠시 후 다시 열어보세요.</p>
     <template v-else>

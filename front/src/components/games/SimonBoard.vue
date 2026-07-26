@@ -12,7 +12,7 @@
 
     <template v-else>
       <div class="relative">
-        <div class="grid grid-cols-2 gap-2" data-testid="simon-pad">
+        <div class="grid grid-cols-3 gap-2" data-testid="simon-pad">
           <button
               v-for="(color, i) in COLORS"
               :key="i"
@@ -22,7 +22,7 @@
               ]"
               :data-testid="`simon-color-${i}`"
               :disabled="phase !== 'input'"
-              class="simon-pad-button size-20 rounded-lg transition-[background-color,opacity,transform]"
+              class="simon-pad-button size-16 rounded-lg transition-[background-color,opacity,transform]"
               type="button"
               @click="onColorClick(i)"
           />
@@ -39,7 +39,7 @@
 
 <script lang="ts" setup>
 import {onUnmounted, ref} from 'vue'
-import {createSimonGame, press, type SimonState} from '../../utils/simon'
+import {createSimonGame, getSimonTiming, press, type SimonState} from '../../utils/simon'
 import {useGameSound} from '../../composables/useGameSound'
 import GameResultOverlay from '../GameResultOverlay.vue'
 import GameStat from '../GameStat.vue'
@@ -49,15 +49,21 @@ const props = defineProps<{ submitScore?: (score: number) => void; restart?: () 
 // Tailwind 기본 팔레트(red-700 등) 원색 대신 style.css에 조색된 --simon-* 토큰을 사용한다
 // (DESIGN.md 6 "촌스러운 원색 사용 금지"). 평상시에도 색이 뚜렷이 구분되도록 어두운 톤으로,
 // 눌렸을 때는 밝은 톤으로 확실히 밝아지게 한다.
+// 3x3(9버튼, 172)로 확장하며 색상환을 고르게 나눈 5색을 추가했다(style.css 주석 참고).
+// freq는 색상별로 다른 음을 내기 위한 사운드 팔레트 — 시각 구분이 어려운 사용자도 소리로
+// 버튼을 구분할 수 있게 한다. C장조 음계(도레미파솔라시도레)로 낮은 음~높은 음이 색상환
+// 순서와 나란히 가도록 배치했다.
 const COLORS = [
-  {base: 'bg-simon-red', active: 'bg-simon-red-active'},
-  {base: 'bg-simon-blue', active: 'bg-simon-blue-active'},
-  {base: 'bg-simon-yellow', active: 'bg-simon-yellow-active'},
-  {base: 'bg-simon-green', active: 'bg-simon-green-active'},
+  {base: 'bg-simon-red', active: 'bg-simon-red-active', freq: 261.63}, // 도
+  {base: 'bg-simon-orange', active: 'bg-simon-orange-active', freq: 293.66}, // 레
+  {base: 'bg-simon-yellow', active: 'bg-simon-yellow-active', freq: 329.63}, // 미
+  {base: 'bg-simon-lime', active: 'bg-simon-lime-active', freq: 349.23}, // 파
+  {base: 'bg-simon-green', active: 'bg-simon-green-active', freq: 392.00}, // 솔
+  {base: 'bg-simon-teal', active: 'bg-simon-teal-active', freq: 440.00}, // 라
+  {base: 'bg-simon-blue', active: 'bg-simon-blue-active', freq: 493.88}, // 시
+  {base: 'bg-simon-violet', active: 'bg-simon-violet-active', freq: 523.25}, // 높은 도
+  {base: 'bg-simon-magenta', active: 'bg-simon-magenta-active', freq: 587.33}, // 높은 레
 ]
-
-const SHOW_MS = 500
-const GAP_MS = 200
 
 const state = ref<SimonState>(createSimonGame())
 const phase = ref<'idle' | 'showing' | 'input' | 'over'>('idle')
@@ -74,14 +80,16 @@ function delay(ms: number) {
 
 async function playSequence(sequence: number[]) {
   phase.value = 'showing'
+  // 현재 라운드 기준 속도 — 초반 라운드는 느리게, 라운드가 진행될수록 기본 속도로 가속(172)
+  const {showMs, gapMs} = getSimonTiming(state.value.round)
   for (const color of sequence) {
     if (cancelled) return
     highlightIndex.value = color
-    playClick()
-    await delay(SHOW_MS)
+    playClick(COLORS[color].freq)
+    await delay(showMs)
     if (cancelled) return
     highlightIndex.value = -1
-    await delay(GAP_MS)
+    await delay(gapMs)
   }
   if (!cancelled) phase.value = 'input'
 }
@@ -99,7 +107,7 @@ function onColorClick(color: number) {
     pressedIndex.value = -1
   }, 150)
 
-  const prevLength = state.value.sequence.length
+  const prevRound = state.value.round
   state.value = press(state.value, color)
   if (state.value.status === 'over') {
     phase.value = 'over'
@@ -108,8 +116,11 @@ function onColorClick(color: number) {
     return
   }
 
-  playClick()
-  if (state.value.sequence.length > prevLength) {
+  playClick(COLORS[color].freq)
+  // round(클리어 횟수)로 라운드 완료 여부를 판단한다 — 172의 완화 스케줄 구간에서는
+  // 라운드를 클리어해도 시퀀스 길이가 그대로일 수 있어(sequence.length 비교로는 놓친다)
+  // round 증가 여부로 판단해야 완화 구간에서도 정상적으로 다음 라운드로 넘어간다.
+  if (state.value.round > prevRound) {
     playSuccess()
     playSequence(state.value.sequence)
   }

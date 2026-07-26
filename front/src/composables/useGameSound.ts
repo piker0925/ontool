@@ -69,9 +69,11 @@ export function useGameSound() {
             muted.value = !muted.value
             localStorage.setItem(STORAGE_KEY, muted.value ? '1' : '0')
         },
-        // 짧은 클릭/이동/입력 피드백 (예: 타일 이동, 카드 뒤집기, 버튼 누름)
-        playClick() {
-            playTones([{freq: 440, durationMs: 60}])
+        // 짧은 클릭/이동/입력 피드백 (예: 타일 이동, 카드 뒤집기, 버튼 누름).
+        // freq를 지정하면 버튼별로 다른 음을 낼 수 있다(예: SimonBoard 9색 사운드 팔레트, 172)
+        // — 기본값 440은 기존 호출부(색 구분이 필요 없는 다른 게임들)를 그대로 유지한다.
+        playClick(freq = 440) {
+            playTones([{freq, durationMs: 60}])
         },
         // 성공/합쳐짐/승리 피드백 (상승하는 2음)
         playSuccess() {

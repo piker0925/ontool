@@ -143,7 +143,7 @@ describe('GamePage', () => {
         expect(wrapper.find('[data-testid="game-login-hint"]').exists()).toBe(false)
     })
 
-    it('점수 제출 응답의 순위를 순위표 패널에 이번 판 순위로 전달하고, 재시작하면 초기화한다', async () => {
+    it('점수 제출 응답의 순위를 게임 결과 카드 안에 바로 보여주고, 재시작하면 사라진다', async () => {
         accessToken.value = 'a-token'
         user.value = {id: 1, provider: 'GOOGLE', nickname: '테스터', email: null, createdAt: '2026-01-01T00:00:00', status: 'ACTIVE'}
         mockSubmitScore.mockResolvedValue({id: 1, gameId: 'game-2048', score: 42, durationMs: 1000, createdAt: '', rank: 5})
@@ -154,17 +154,18 @@ describe('GamePage', () => {
         })
         await flushPromises()
 
-        // submitScore + onGameEnd를 함께 호출 — onGameEnd가 174의 자동 표시 로직을 트리거해
-        // 순위표 패널이 열린다(ScoringStubGame은 onGameEnd가 없어 패널이 안 열림).
         await wrapper.find('[data-testid="finish"]').trigger('click')
         await flushPromises()
-        const panel = wrapper.findComponent({name: 'GameLeaderboardPanel'})
-        expect(panel.props('lastRoundRank')).toBe(5)
+        // 별도로 열어야 하는 순위표 패널이 아니라, 게임 결과가 뜨는 카드 안에 바로 보여야 한다
+        // (순위표 패널 안에 두면 못 보고 지나친다는 피드백으로 위치를 옮김).
+        const banner = wrapper.find('[data-testid="game-last-round-rank"]')
+        expect(banner.exists()).toBe(true)
+        expect(banner.text()).toContain('5')
 
         await wrapper.find('[data-testid="game-restart"]').trigger('click')
         await flushPromises()
 
-        expect(wrapper.findComponent({name: 'GameLeaderboardPanel'}).props('lastRoundRank')).toBeNull()
+        expect(wrapper.find('[data-testid="game-last-round-rank"]').exists()).toBe(false)
     })
 
     it('비로그인 상태에서 게임이 끝나면 점수를 제출하지 않고 로그인 유도 문구를 보여준다', async () => {

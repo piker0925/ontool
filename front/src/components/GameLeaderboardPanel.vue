@@ -5,25 +5,23 @@
     <p v-if="loading" aria-live="polite" class="text-[12px] text-muted-foreground">불러오는 중…</p>
     <p v-else-if="error" aria-live="polite" class="text-[12px] text-destructive">순위표를 불러오지 못했습니다. 잠시 후 다시 열어보세요.</p>
     <template v-else>
-      <!-- 방금 제출한 점수 그 자체의 순위 — 아래 "역대 최고 기록" 줄과는 다른 정보라 헷갈리지
-           않도록 맨 위, 강조된 톤으로 별도 표시한다. -->
-      <p v-if="lastRoundRank != null" class="text-[12px] text-foreground" data-testid="leaderboard-last-round-rank">
-        이번 판 내 순위 <span class="font-mono font-semibold text-zone-accent">{{ lastRoundRank }}</span>위
-      </p>
-
       <p v-if="!entries.length" class="text-[12px] text-muted-foreground">아직 등록된 기록이 없어요. 첫 기록의 주인공이 되어보세요!</p>
       <ol v-else class="flex flex-col gap-1" data-testid="leaderboard-entries">
         <li
             v-for="(entry, i) in visibleEntries"
             :key="`${entry.userId}-${entry.createdAt}`"
             class="flex items-center gap-2 rounded-md px-2 py-1 text-[13px]"
-            :class="rankOf(i) <= 3 ? 'bg-zone-accent/10' : ''"
+            :class="isMine(entry) ? 'bg-zone-accent/10' : ''"
+            :data-testid="isMine(entry) ? 'leaderboard-my-entry' : undefined"
         >
           <span class="flex w-5 shrink-0 items-center justify-center">
             <Trophy v-if="rankOf(i) <= 3" :class="medalClass(rankOf(i))" aria-hidden="true" class="size-4" data-testid="leaderboard-trophy"/>
             <span v-else class="text-center font-mono text-[11px] text-muted-foreground" data-testid="leaderboard-rank-number">{{ rankOf(i) }}</span>
           </span>
-          <span class="min-w-0 flex-1 truncate text-foreground">{{ entry.nickname ?? '탈퇴한 사용자' }}</span>
+          <span
+              class="min-w-0 flex-1 truncate"
+              :class="isMine(entry) ? 'font-semibold text-zone-accent' : 'text-foreground'"
+          >{{ entry.nickname ?? '탈퇴한 사용자' }}</span>
           <span class="shrink-0 font-mono text-[12px] text-muted-foreground">{{ formatGameScore(gameId, entry.score) }}</span>
         </li>
       </ol>
@@ -71,8 +69,8 @@ import {fetchGameLeaderboard, type GameLeaderboardEntry} from '../api/games'
 import {useAuth} from '../composables/useAuth'
 import {formatGameScore} from '../config/gameScoreFormat'
 
-const props = defineProps<{ gameId: string; lastRoundRank?: number | null }>()
-const {isLoggedIn} = useAuth()
+const props = defineProps<{ gameId: string }>()
+const {isLoggedIn, user} = useAuth()
 
 // 174: 서버 오프셋 페이징 없이 최대 100등을 한 번에 받아 화면에서 10개씩 잘라 보여준다 —
 // "다음/이전" 페이지 전환이 네트워크 왕복 없이 즉시 반영되고, 100등이라는 상한도 이 한 번의
@@ -98,6 +96,12 @@ const visibleEntries = computed(() => expanded.value ? pagedEntries.value : entr
 /** 화면에 보이는 i번째 행의 실제 순위(1부터) — 접힌 상태는 항상 1페이지 기준이라 i+1과 같다. */
 function rankOf(i: number) {
   return (expanded.value ? page.value * PAGE_SIZE : 0) + i + 1
+}
+
+/** 1~3등 포디움 틴트 대신, 지금 보고 있는 사람 본인의 행만 강조한다(174 이후 사용자 피드백 —
+ * "1·2·3등 색칠은 트로피로 이미 표현되니 중복, 대신 내 기록을 바로 찾게 해달라"). */
+function isMine(entry: GameLeaderboardEntry) {
+  return user.value != null && entry.userId === user.value.id
 }
 
 const MEDAL_CLASSES: Record<number, string> = {

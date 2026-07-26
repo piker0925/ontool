@@ -227,39 +227,54 @@ describe('GameLeaderboardPanel', () => {
         })
     })
 
-    describe('이번 판 순위(lastRoundRank)', () => {
-        it('lastRoundRank가 있으면 역대 최고 기록과 별도로 이번 판 순위를 보여준다', async () => {
-            mockFetch.mockResolvedValue({
-                topScores: [{userId: 1, nickname: '나', score: 50, durationMs: 1000, createdAt: '2026-07-25T00:00:00'}],
-                myBest: 100,
-                myRank: 1,
-            })
+    describe('내 기록 강조 표시', () => {
+        function entriesOf(count: number) {
+            return Array.from({length: count}, (_, i) => ({
+                userId: i + 1,
+                nickname: `${i + 1}등`,
+                score: 1000 - i,
+                durationMs: 1000,
+                createdAt: '2026-07-25T00:00:00',
+            }))
+        }
 
-            const wrapper = mount(GameLeaderboardPanel, {props: {gameId: 'game-2048', lastRoundRank: 4}})
-            await flushPromises()
-
-            const lastRound = wrapper.find('[data-testid="leaderboard-last-round-rank"]')
-            expect(lastRound.exists()).toBe(true)
-            expect(lastRound.text()).toContain('4')
-
-            // 역대 최고 기록(myRank=1)과 이번 판 순위(4)가 서로 다른 값으로 동시에 보여야
-            // "최고 기록만 나와서 헷갈린다"는 문제가 실제로 해결됐음을 확인할 수 있다.
-            const myRankEl = wrapper.find('[data-testid="leaderboard-my-rank"]')
-            expect(myRankEl.text()).toContain('1')
-            expect(myRankEl.text()).toContain('100')
-        })
-
-        it('lastRoundRank가 없으면(null/미지정) 이번 판 순위 줄이 안 보인다', async () => {
-            mockFetch.mockResolvedValue({
-                topScores: [{userId: 1, nickname: '나', score: 50, durationMs: 1000, createdAt: '2026-07-25T00:00:00'}],
-                myBest: null,
-                myRank: null,
-            })
+        it('로그인한 내 userId와 같은 행에만 배경·닉네임 강조가 붙고, 1~3등이라도 내가 아니면 안 붙는다', async () => {
+            mockFetch.mockResolvedValue({topScores: entriesOf(5), myBest: null, myRank: null})
+            user.value = {id: 2, provider: 'GOOGLE', nickname: '2등', email: null, createdAt: '2026-01-01T00:00:00', status: 'ACTIVE'}
 
             const wrapper = mount(GameLeaderboardPanel, {props: {gameId: 'game-2048'}})
             await flushPromises()
 
-            expect(wrapper.find('[data-testid="leaderboard-last-round-rank"]').exists()).toBe(false)
+            const rows = wrapper.findAll('[data-testid="leaderboard-entries"] li')
+            // userId=2(2번째 행, 1~3등 포디움 안에 있음)만 강조돼야 한다
+            expect(rows[0].find('[data-testid="leaderboard-my-entry"]').exists()).toBe(false) // 1등(userId=1)은 내가 아님
+            expect(rows[1].attributes('data-testid')).toBe('leaderboard-my-entry') // 2등(userId=2)이 나
+            expect(rows[1].classes()).toContain('bg-zone-accent/10')
+            expect(rows[2].attributes('data-testid')).toBeUndefined() // 3등(userId=3)도 내가 아님, 포디움이라도 강조 없음
+            expect(rows[2].classes()).not.toContain('bg-zone-accent/10')
+        })
+
+        it('전체 순위 보기로 펼쳐서 4등 밖에 내가 있어도 그 행이 강조된다', async () => {
+            mockFetch.mockResolvedValue({topScores: entriesOf(10), myBest: null, myRank: null})
+            user.value = {id: 7, provider: 'GOOGLE', nickname: '7등', email: null, createdAt: '2026-01-01T00:00:00', status: 'ACTIVE'}
+
+            const wrapper = mount(GameLeaderboardPanel, {props: {gameId: 'game-2048'}})
+            await flushPromises()
+            await wrapper.find('[data-testid="leaderboard-expand-toggle"]').trigger('click')
+
+            const rows = wrapper.findAll('[data-testid="leaderboard-entries"] li')
+            expect(rows[6].attributes('data-testid')).toBe('leaderboard-my-entry') // 0-index 6 = 7등(userId=7)
+            expect(rows[6].text()).toContain('7등')
+        })
+
+        it('비로그인이면 아무 행도 강조되지 않는다', async () => {
+            mockFetch.mockResolvedValue({topScores: entriesOf(3), myBest: null, myRank: null})
+            user.value = null
+
+            const wrapper = mount(GameLeaderboardPanel, {props: {gameId: 'game-2048'}})
+            await flushPromises()
+
+            expect(wrapper.find('[data-testid="leaderboard-my-entry"]').exists()).toBe(false)
         })
     })
 

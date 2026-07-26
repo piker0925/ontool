@@ -46,14 +46,19 @@
       <div aria-hidden="true" class="hidden sm:block"></div>
     </div>
 
-    <GameLeaderboardPanel
-        v-if="gameId && showLeaderboard"
-        ref="leaderboardPanelRef"
-        :game-id="gameId"
-        :last-round-rank="lastRoundRank"
-    />
+    <GameLeaderboardPanel v-if="gameId && showLeaderboard" ref="leaderboardPanelRef" :game-id="gameId"/>
 
     <div :key="restartKey" class="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-6">
+      <!-- 방금 제출한 점수 그 자체의 순위 — 별도로 열어야 하는 순위표 패널 안에 두면 못 보고
+           지나친다는 피드백(174 이후)을 받아, 게임 결과가 뜨는 바로 이 카드 안에 함께 보여준다. -->
+      <p
+          v-if="lastRoundRank != null"
+          aria-live="polite"
+          class="mb-3 text-center text-[13px] text-foreground"
+          data-testid="game-last-round-rank"
+      >
+        이번 판 순위 <span class="font-mono font-semibold text-zone-accent">{{ lastRoundRank }}</span>위
+      </p>
       <slot :restart="restart" :submit-score="submitScore" :on-game-end="onGameEnd"/>
     </div>
 

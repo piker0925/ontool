@@ -32,7 +32,7 @@ export function imageToAscii(source: PixelBuffer, columns: number, charset: stri
             const y = Math.min(source.height - 1, Math.floor((row / rows) * source.height))
             const o = (y * source.width + x) * 4
             const gray = (source.data[o] + source.data[o + 1] + source.data[o + 2]) / 3
-            const idx = Math.floor((1 - gray / 255) * (charset.length - 1))
+            const idx = Math.round((1 - gray / 255) * (charset.length - 1))
             line += charset[idx]
         }
         lines.push(line)

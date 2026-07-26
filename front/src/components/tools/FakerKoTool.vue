@@ -55,17 +55,23 @@
 
 <script lang="ts" setup>
 import {computed, reactive, ref} from 'vue'
-import {fakerKoToCsv, generateFakerKoRecords, type FakerKoFieldSet, type FakerKoRecord} from '../../utils/fakerKo'
+import {
+  FAKER_KO_FIELD_LABELS,
+  FAKER_KO_FIELD_ORDER,
+  fakerKoToCsv,
+  generateFakerKoRecords,
+  type FakerKoFieldSet,
+  type FakerKoRecord,
+} from '../../utils/fakerKo'
 
-const FIELD_OPTIONS: { value: keyof FakerKoFieldSet; label: string }[] = [
-  {value: 'name', label: '이름'},
-  {value: 'phone', label: '전화번호'},
-  {value: 'address', label: '주소'},
-  {value: 'email', label: '이메일'},
-  {value: 'company', label: '회사명'},
-]
+const FIELD_OPTIONS: { value: keyof FakerKoFieldSet; label: string }[] = FAKER_KO_FIELD_ORDER.map(value => ({
+  value,
+  label: FAKER_KO_FIELD_LABELS[value],
+}))
 
-const fields = reactive<FakerKoFieldSet>({name: true, phone: true, address: true, email: true, company: true})
+const fields = reactive<FakerKoFieldSet>(
+    Object.fromEntries(FAKER_KO_FIELD_ORDER.map(field => [field, true])) as FakerKoFieldSet,
+)
 const count = ref(20)
 const records = ref<FakerKoRecord[]>([])
 

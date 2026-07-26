@@ -32,7 +32,8 @@ import GameStat from '../GameStat.vue'
 
 // 053: GamePage가 넘겨주는 제출 훅. optional로 둬 기존 테스트(prop 없이 마운트)가 깨지지 않게 한다.
 // 166: restart도 함께 받아 GameResultOverlay 안의 재시작 버튼에 그대로 연결한다.
-const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void }>()
+// 174: onGameEnd는 결과 오버레이가 뜨는 시점(2048은 게임오버 하나뿐)에 submitScore와 함께 호출된다.
+const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void; onGameEnd?: () => void }>()
 
 const board = ref<Board>(createEmptyBoard(4))
 const score = ref(0)
@@ -179,6 +180,7 @@ watch(gameOver, isOver => {
   if (isOver) {
     playFail()
     props.submitScore?.(score.value)
+    props.onGameEnd?.()
   }
 })
 

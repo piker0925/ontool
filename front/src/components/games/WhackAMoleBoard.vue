@@ -38,7 +38,8 @@ const HOLE_COUNT = 9
 const DURATION_MS = 30000
 const TICK_MS = 100
 
-const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void }>()
+// 174: onGameEnd는 결과 오버레이가 뜨는 시점(두더지잡기는 시간 종료 하나뿐)에 submitScore와 함께 호출된다.
+const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void; onGameEnd?: () => void }>()
 
 const state = ref(createWhackAMoleState(HOLE_COUNT, DURATION_MS))
 const {playClick, playSuccess} = useGameSound()
@@ -69,6 +70,7 @@ watch(() => state.value.status, status => {
   if (status === 'over') {
     playSuccess()
     props.submitScore?.(state.value.score)
+    props.onGameEnd?.()
   }
 })
 

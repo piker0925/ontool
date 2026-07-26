@@ -1,7 +1,7 @@
 <template>
   <GamePage description="시험관에 섞인 색깔을 같은 색끼리 모아 분리해보세요" game-id="game-water-sort" title="워터소트 퍼즐">
-    <template #default="{ submitScore, restart }">
-      <WaterSortBoard :restart="restart" :submit-score="submitScore"/>
+    <template #default="{ submitScore, restart, onGameEnd }">
+      <WaterSortBoard :restart="restart" :submit-score="submitScore" :on-game-end="onGameEnd"/>
     </template>
   </GamePage>
 </template>

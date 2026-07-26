@@ -45,7 +45,8 @@ const TILE_COLORS = ['bg-rose-500', 'bg-amber-400', 'bg-emerald-500', 'bg-sky-50
 
 // 053: 원래는 끝이 없는 스코어 어택이었지만, 리더보드 제출(onGameEnd)에 필요한 종료 시점을
 // 만들기 위해 제한된 이동 횟수 모드를 추가했다(match3.ts의 createMatch3State/swap 참고).
-const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void }>()
+// 174: onGameEnd는 결과 오버레이가 뜨는 시점(매치3은 이동 횟수 종료 하나뿐)에 submitScore와 함께 호출된다.
+const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void; onGameEnd?: () => void }>()
 
 const state = ref(createMatch3State(GRID_SIZE))
 const selected = ref<[number, number] | null>(null)
@@ -80,6 +81,7 @@ watch(() => state.value.status, status => {
   if (status === 'over') {
     playSuccess()
     props.submitScore?.(state.value.score)
+    props.onGameEnd?.()
   }
 })
 </script>

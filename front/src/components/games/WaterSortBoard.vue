@@ -48,7 +48,8 @@ const COLOR_CLASSES: Record<string, string> = {
   c4: 'bg-violet-500',
 }
 
-const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void }>()
+// 174: onGameEnd는 완성 시점(워터소트는 완성 하나뿐)에 submitScore와 함께 호출된다.
+const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void; onGameEnd?: () => void }>()
 
 const tubes = ref<Tubes>(createPuzzle(COLOR_COUNT, EMPTY_TUBES))
 const selected = ref<number | null>(null)
@@ -82,6 +83,7 @@ function onTubeClick(i: number) {
   if (isSolved(tubes.value)) {
     playSuccess()
     props.submitScore?.(moveCount.value)
+    props.onGameEnd?.()
   } else {
     playClick()
   }

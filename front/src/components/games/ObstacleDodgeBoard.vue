@@ -38,7 +38,8 @@ const BOARD_HEIGHT = 480
 const TICK_MS = 16
 const BIRD_X = 60
 
-const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void }>()
+// 174: onGameEnd는 결과 오버레이가 뜨는 시점(장애물피하기는 충돌 하나뿐)에 submitScore와 함께 호출된다.
+const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void; onGameEnd?: () => void }>()
 
 const state = ref(createObstacleDodgeState(BOARD_WIDTH, BOARD_HEIGHT))
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -92,6 +93,7 @@ watch(() => state.value.status, status => {
   if (status === 'over') {
     playFail()
     props.submitScore?.(state.value.score)
+    props.onGameEnd?.()
   }
 })
 

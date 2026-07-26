@@ -62,7 +62,9 @@ import GameStat from '../GameStat.vue'
 
 const GRID_SIZE = 8
 
-const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void }>()
+// 174: onGameEnd는 결과 오버레이가 뜨는 시점(블록블라스트는 더 놓을 자리 없음 하나뿐)에
+// submitScore와 함께 호출된다.
+const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void; onGameEnd?: () => void }>()
 
 const state = ref(createBlockBlastState())
 const selectedIndex = ref(0)
@@ -111,6 +113,7 @@ watch(() => state.value.status, status => {
   if (status === 'over') {
     playFail()
     props.submitScore?.(state.value.score)
+    props.onGameEnd?.()
   }
 })
 </script>

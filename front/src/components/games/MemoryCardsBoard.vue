@@ -49,7 +49,9 @@ import GameStat from '../GameStat.vue'
 const PAIR_COUNT = 8
 const RESOLVE_DELAY_MS = 700
 
-const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void }>()
+// 174: onGameEnd는 결과 오버레이가 뜨는 시점(카드짝맞추기는 승리 하나뿐, 시간제한 없음)에
+// submitScore와 함께 호출된다.
+const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void; onGameEnd?: () => void }>()
 
 const state = ref(createMemoryGame(PAIR_COUNT))
 const resolving = ref(false)
@@ -77,7 +79,10 @@ function onFlip(id: number) {
       resolving.value = false
       if (isMatch) playSuccess()
       else playFail()
-      if (state.value.status === 'won') props.submitScore?.(moves.value)
+      if (state.value.status === 'won') {
+        props.submitScore?.(moves.value)
+        props.onGameEnd?.()
+      }
     }, RESOLVE_DELAY_MS)
   }
 }

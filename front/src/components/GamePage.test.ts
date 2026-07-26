@@ -30,6 +30,24 @@ const ScoringStubGame = defineComponent({
     template: `<button data-testid="finish" @click="submitScore?.(42)">끝내기</button>`,
 })
 
+// 174: submitScore와 onGameEnd를 각각 독립적으로 눌러볼 수 있는 스텁 — 지뢰찾기 패배처럼
+// "점수는 제출하지 않지만 결과 오버레이는 뜨는" 상황을 흉내낸다.
+const GameEndStubGame = defineComponent({
+    props: {
+        submitScore: {type: Function, required: false, default: undefined},
+        onGameEnd: {type: Function, required: false, default: undefined},
+    },
+    // "점수 제출하며 끝내기"는 실제 보드(2048·스네이크 등)의 승리 경로처럼 submitScore와
+    // onGameEnd를 함께 호출한다. "점수 없이 끝내기"는 지뢰찾기 패배처럼 onGameEnd만
+    // 호출되는 경로를 흉내낸다.
+    template: `
+      <div>
+        <button data-testid="finish" @click="submitScore?.(42); onGameEnd?.()">점수 제출하며 끝내기</button>
+        <button data-testid="end-without-score" @click="onGameEnd?.()">점수 없이 끝내기</button>
+      </div>
+    `,
+})
+
 describe('GamePage', () => {
     beforeEach(() => {
         mockStartSession.mockClear()
@@ -194,5 +212,88 @@ describe('GamePage', () => {
         // slot으로 받은 restart()가 GamePage의 진짜 restart와 같은 함수라면, 헤더 버튼과
         // 동일하게 restartKey가 바뀌어 슬롯 전체가 재마운트되고 count가 0으로 되돌아간다.
         expect(wrapper.find('[data-testid="bump"]').text()).toBe('0')
+    })
+
+    describe('174: 게임 종료 시 순위표 자동 표시', () => {
+        it('점수를 제출하며 게임이 끝나면 순위표가 자동으로 열린다', async () => {
+            const wrapper = mount(GamePage, {
+                props: {title: '2048', gameId: 'game-2048'},
+                slots: {default: (scope: any) => h(GameEndStubGame, scope)},
+            })
+            await flushPromises()
+            expect(wrapper.find('[data-testid="game-leaderboard-panel"]').exists()).toBe(false)
+
+            await wrapper.find('[data-testid="finish"]').trigger('click')
+            await flushPromises()
+
+            expect(wrapper.find('[data-testid="game-leaderboard-panel"]').exists()).toBe(true)
+        })
+
+        // 174 핵심 시나리오: 지뢰찾기 패배처럼 submitScore는 호출되지 않아도(순위표에 제출할
+        // 점수가 없는 결과라도) 결과 오버레이가 뜨는 시점(onGameEnd)에는 순위표가 자동으로
+        // 열려야 한다 — submitScore 유무와 무관해야 함을 판별하는 테스트.
+        it('점수 제출 없이 게임이 끝나도(패배 등) 순위표가 자동으로 열린다', async () => {
+            const wrapper = mount(GamePage, {
+                props: {title: '지뢰찾기', gameId: 'game-minesweeper'},
+                slots: {default: (scope: any) => h(GameEndStubGame, scope)},
+            })
+            await flushPromises()
+            expect(wrapper.find('[data-testid="game-leaderboard-panel"]').exists()).toBe(false)
+
+            await wrapper.find('[data-testid="end-without-score"]').trigger('click')
+            await flushPromises()
+
+            expect(mockSubmitScore).not.toHaveBeenCalled()
+            expect(wrapper.find('[data-testid="game-leaderboard-panel"]').exists()).toBe(true)
+        })
+
+        it('자동으로 열린 순위표를 사용자가 닫으면, 재시작 후 다시 끝나도 자동으로 다시 열리지 않는다(수동 토글은 계속 동작)', async () => {
+            const wrapper = mount(GamePage, {
+                props: {title: '지뢰찾기', gameId: 'game-minesweeper'},
+                slots: {default: (scope: any) => h(GameEndStubGame, scope)},
+            })
+            await flushPromises()
+
+            await wrapper.find('[data-testid="end-without-score"]').trigger('click')
+            await flushPromises()
+            expect(wrapper.find('[data-testid="game-leaderboard-panel"]').exists()).toBe(true)
+
+            // 사용자가 명시적으로 닫는다.
+            await wrapper.find('[data-testid="game-leaderboard-toggle"]').trigger('click')
+            expect(wrapper.find('[data-testid="game-leaderboard-panel"]').exists()).toBe(false)
+
+            // 재시작 후 다시 게임이 끝나도 이번엔 자동으로 열리지 않는다.
+            await wrapper.find('[data-testid="game-restart"]').trigger('click')
+            await flushPromises()
+            await wrapper.find('[data-testid="end-without-score"]').trigger('click')
+            await flushPromises()
+            expect(wrapper.find('[data-testid="game-leaderboard-panel"]').exists()).toBe(false)
+
+            // 하지만 수동 토글 버튼은 여전히 살아있어 사용자가 원하면 언제든 다시 열 수 있다.
+            await wrapper.find('[data-testid="game-leaderboard-toggle"]').trigger('click')
+            expect(wrapper.find('[data-testid="game-leaderboard-panel"]').exists()).toBe(true)
+        })
+
+        // 억제 판정 기준이 "자동으로 열렸던 적이 있는지"가 아니라 "닫힌 적이 있는지"로 잘못 구현되면,
+        // 게임 도중 사용자가 순위표를 스스로 열어봤다가 닫기만 해도 정작 게임이 끝났을 때 자동으로
+        // 뜨지 않는 회귀가 생긴다 — 그 회귀를 잡아내는 판별 테스트.
+        it('게임 도중 순위표를 스스로 열었다가 닫아도, 게임이 끝나면 여전히 자동으로 열린다', async () => {
+            const wrapper = mount(GamePage, {
+                props: {title: '2048', gameId: 'game-2048'},
+                slots: {default: (scope: any) => h(GameEndStubGame, scope)},
+            })
+            await flushPromises()
+
+            // 게임이 끝나기 전에 사용자가 스스로 순위표를 열어봤다가 닫는다.
+            await wrapper.find('[data-testid="game-leaderboard-toggle"]').trigger('click')
+            expect(wrapper.find('[data-testid="game-leaderboard-panel"]').exists()).toBe(true)
+            await wrapper.find('[data-testid="game-leaderboard-toggle"]').trigger('click')
+            expect(wrapper.find('[data-testid="game-leaderboard-panel"]').exists()).toBe(false)
+
+            // 게임이 끝나면 (자동으로 열린 적이 아직 없었으므로) 여전히 자동으로 열려야 한다.
+            await wrapper.find('[data-testid="end-without-score"]').trigger('click')
+            await flushPromises()
+            expect(wrapper.find('[data-testid="game-leaderboard-panel"]').exists()).toBe(true)
+        })
     })
 })

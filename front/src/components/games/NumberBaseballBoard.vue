@@ -70,7 +70,9 @@ import GameStat from '../GameStat.vue'
 
 const SECRET_LENGTH = 3
 
-const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void }>()
+// 174: onGameEnd는 결과가 나오는 시점(숫자야구는 정답을 맞혀야만 끝나므로 승리 하나뿐)에
+// submitScore와 함께 호출된다.
+const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void; onGameEnd?: () => void }>()
 
 const secret = ref(generateSecret(SECRET_LENGTH))
 const guessInput = ref('')
@@ -95,6 +97,7 @@ function submitGuess() {
     playSuccess()
     // 053: 숫자야구는 자체 점수가 없으므로 "정답까지 걸린 시도 횟수(낮을수록 좋음)"를 점수로 쓴다.
     props.submitScore?.(history.value.length)
+    props.onGameEnd?.()
   } else {
     playClick()
   }

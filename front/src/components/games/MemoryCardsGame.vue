@@ -1,7 +1,7 @@
 <template>
   <GamePage description="카드 두 장을 뒤집어 짝을 맞추는 기억력 게임" game-id="game-memory-cards" title="카드 짝맞추기">
-    <template #default="{ submitScore, restart }">
-      <MemoryCardsBoard :restart="restart" :submit-score="submitScore"/>
+    <template #default="{ submitScore, restart, onGameEnd }">
+      <MemoryCardsBoard :restart="restart" :submit-score="submitScore" :on-game-end="onGameEnd"/>
     </template>
   </GamePage>
 </template>

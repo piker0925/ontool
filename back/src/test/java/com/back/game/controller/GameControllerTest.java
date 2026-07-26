@@ -298,6 +298,30 @@ class GameControllerTest extends AbstractMySQLIntegrationTest {
                 .andExpect(jsonPath("$.code").value("GAME_SCORE_IMPLAUSIBLE"));
     }
 
+    @Test
+    void limit을_99999로_요청해도_리더보드는_최대_100개까지만_반환한다() throws Exception {
+        // 174: 서버가 limit 상한(100)을 강제해야 한다 — 클라이언트가 큰 값을 보내도 무한정 조회되면 안 됨.
+        for (long userId = 1; userId <= 105; userId++) {
+            submitDirectly("game-2048", userId, (int) userId, 1000);
+        }
+
+        mockMvc.perform(get("/api/v1/games/game-2048/leaderboard").param("limit", "99999"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.topScores.length()").value(100));
+    }
+
+    @Test
+    void 정상적인_limit_10_요청은_10개_그대로_반환한다() throws Exception {
+        // 174: 상한 로직이 정상 범위 요청까지 잘라먹지 않는지 확인 (패턴 B 회피 — 상한 초과/정상 두 시나리오 비교).
+        for (long userId = 1; userId <= 15; userId++) {
+            submitDirectly("game-2048", userId, (int) userId, 1000);
+        }
+
+        mockMvc.perform(get("/api/v1/games/game-2048/leaderboard").param("limit", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.topScores.length()").value(10));
+    }
+
     private String startSession(String gameId) throws Exception {
         MvcResult result = mockMvc.perform(post("/api/v1/games/" + gameId + "/session"))
                 .andExpect(status().isOk())

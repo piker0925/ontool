@@ -39,7 +39,8 @@ const BOARD_HEIGHT = 400
 const TICK_MS = 16
 const PADDLE_KEY_STEP = 16
 
-const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void }>()
+// 174: onGameEnd는 결과 오버레이가 뜨는 시점(벽돌깨기는 클리어·게임오버 모두)에 submitScore와 함께 호출된다.
+const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void; onGameEnd?: () => void }>()
 
 const state = ref(createBreakoutState(BOARD_WIDTH, BOARD_HEIGHT))
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -110,6 +111,7 @@ watch(() => state.value.status, status => {
     if (status === 'won') playSuccess()
     else playFail()
     props.submitScore?.(state.value.score)
+    props.onGameEnd?.()
   }
 })
 

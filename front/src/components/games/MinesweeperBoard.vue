@@ -56,7 +56,9 @@ const TOUCH_MOVE_CANCEL_PX = 10
 // 컴포넌트가 마운트된 시점을 시작 시각으로 본다 — GamePage가 재시작마다 slot 전체를 재마운트하므로
 // 별도 reset 로직 없이 매 판마다 새로 잰다. elapsedSeconds는 화면 표시용(053 AC: "게임 종료 시 항상
 // 점수 표시") — 1초마다 갱신하고, 게임이 끝나면(승/패 무관) 그 시점의 값에서 멈춘다.
-const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void }>()
+// 174: onGameEnd는 승/패 모두에서 호출된다(GamePage가 순위표 자동 표시 여부를 판단하는 신호) —
+// submitScore는 승리 시에만 호출되므로 패배(지뢰를 밟음)를 GamePage가 알 수 있는 유일한 통로다.
+const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void; onGameEnd?: () => void }>()
 const startedAt = Date.now()
 const elapsedSeconds = ref(0)
 let tickTimer: ReturnType<typeof setInterval> | null = null
@@ -129,6 +131,7 @@ watch(() => state.value.status, (next, prev) => {
       tickTimer = null
     }
     elapsedSeconds.value = Math.floor((Date.now() - startedAt) / 1000)
+    props.onGameEnd?.()
   }
   if (next === 'won') {
     playSuccess()

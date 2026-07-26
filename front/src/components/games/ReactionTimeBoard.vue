@@ -39,7 +39,9 @@ import {useGameSound} from '../../composables/useGameSound'
 
 // 053: "다시 도전"은 GamePage의 restartKey를 거치지 않고 이 컴포넌트 내부 start()만 다시 부른다
 // (재마운트되지 않음) — 그래서 시도마다 매번 submitScore를 호출한다(1회성 마운트 가드를 두지 않음).
-const props = defineProps<{ submitScore?: (score: number) => void }>()
+// 174: onGameEnd는 결과가 나온 시점(phase==='result')에만 submitScore와 함께 호출한다 — false-start는
+// 결과 화면(GameResultOverlay에 준하는 UI)이 아니라 즉시 재시도 가능한 상태라 순위표를 열 필요가 없다.
+const props = defineProps<{ submitScore?: (score: number) => void; onGameEnd?: () => void }>()
 
 const state = ref<ReactionState>({phase: 'idle', signalAt: null, elapsedMs: null})
 let timer: ReturnType<typeof setTimeout> | null = null
@@ -76,6 +78,7 @@ watch(() => state.value.phase, phase => {
   } else if (phase === 'result') {
     playSuccess()
     props.submitScore?.(Math.round(state.value.elapsedMs ?? 0))
+    props.onGameEnd?.()
   } else if (phase === 'false-start') {
     playFail()
   }

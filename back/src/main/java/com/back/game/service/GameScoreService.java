@@ -27,6 +27,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class GameScoreService {
 
+    // 174: 클라이언트가 보내는 limit을 그대로 신뢰하지 않는다 — 과도한 값으로 조회 범위가
+    // 무한정 커지는 것을 서버가 막는다. DashboardDateRange.clampDays와 동일한 방어 패턴.
+    private static final int LEADERBOARD_MAX_LIMIT = 100;
+
     private final GameScoreRepository gameScoreRepository;
     private final UserRepository userRepository;
     private final GameSessionTokenService sessionTokenService;
@@ -59,10 +63,11 @@ public class GameScoreService {
     public GameLeaderboardResponse getLeaderboard(String gameId, Long viewerUserId, int limit) {
         GameDefinition definition = requireGame(gameId);
         boolean desc = definition.higherIsBetter();
+        int cappedLimit = Math.min(limit, LEADERBOARD_MAX_LIMIT);
 
         List<GameScore> rows = desc
-                ? gameScoreRepository.findByGameIdOrderByScoreDesc(gameId, PageRequest.of(0, limit))
-                : gameScoreRepository.findByGameIdOrderByScoreAsc(gameId, PageRequest.of(0, limit));
+                ? gameScoreRepository.findByGameIdOrderByScoreDesc(gameId, PageRequest.of(0, cappedLimit))
+                : gameScoreRepository.findByGameIdOrderByScoreAsc(gameId, PageRequest.of(0, cappedLimit));
 
         Map<Long, String> nicknames = nicknamesOf(rows);
         List<GameLeaderboardEntry> topScores = rows.stream()

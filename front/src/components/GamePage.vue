@@ -16,7 +16,7 @@
             class="flex items-center gap-1.5 rounded-full border border-border px-3 py-1 font-mono text-[12px] text-muted-foreground transition-colors hover:border-zone-accent/40 hover:text-zone-accent"
             data-testid="game-leaderboard-toggle"
             type="button"
-            @click="showLeaderboard = !showLeaderboard"
+            @click="toggleLeaderboard"
         >
           <Trophy aria-hidden="true" class="size-3.5"/>
           순위표
@@ -49,7 +49,7 @@
     <GameLeaderboardPanel v-if="gameId && showLeaderboard" ref="leaderboardPanelRef" :game-id="gameId"/>
 
     <div :key="restartKey" class="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-6">
-      <slot :restart="restart" :submit-score="submitScore"/>
+      <slot :restart="restart" :submit-score="submitScore" :on-game-end="onGameEnd"/>
     </div>
 
     <!-- 053: 게임 종료(submitScore 호출) 이후에만 뜨는 로그인 유인 문구. 비로그인 상태에서만 보인다 —
@@ -89,6 +89,21 @@ const showLeaderboard = ref(false)
 const loginHintVisible = ref(false)
 const leaderboardPanelRef = ref<InstanceType<typeof GameLeaderboardPanel> | null>(null)
 
+// 174: 자동으로 열린 순위표를 사용자가 직접 닫으면, 이 GamePage 인스턴스가 살아있는 동안
+// (재시작을 반복해도) 더는 자동으로 다시 열지 않는다 — 매 판마다 팝업이 뜨면 방해가 되므로
+// "한 번 닫으면 그 이후는 수동 토글로만" 원칙을 둔다(166: 방해 최소화 원칙과 동일).
+// 수동 토글 버튼 자체는 이 플래그와 무관하게 항상 살아있다.
+// hasAutoOpened로 "자동으로 열렸던 적이 있는지"를 따로 추적한다 — 게임 도중 사용자가 순위표를
+// 스스로 열어봤다가 닫는 것까지 억제 대상으로 삼으면 안 된다(그러면 정작 게임이 끝났을 때 한 번도
+// 자동으로 안 뜨는 문제가 생긴다). 억제는 "자동으로 뜬 걸 닫았을 때"만 걸린다.
+const autoOpenSuppressed = ref(false)
+let hasAutoOpened = false
+
+function toggleLeaderboard() {
+  showLeaderboard.value = !showLeaderboard.value
+  if (!showLeaderboard.value && hasAutoOpened) autoOpenSuppressed.value = true
+}
+
 // 게임 시작(최초 마운트·재시작)마다 서버 세션 토큰을 새로 받는다 — 점수 제출 시 서버가 이 토큰의
 // 발급 시각으로부터 "최소 플레이 시간"을 검증한다(GameScoreService, 053). 발급 실패는 조용히
 // 무시한다 — 세션 없이도 게임 자체(표시)는 항상 정상 동작해야 하고, 제출 시점에 토큰이 없으면
@@ -109,6 +124,19 @@ function restart() {
   restartKey.value++
   loginHintVisible.value = false
   refreshSession()
+}
+
+// 174: 게임 결과 오버레이(GameResultOverlay)가 뜨는 시점(승/패/무승부 불문)에 각 보드 컴포넌트가
+// 호출한다 — submitScore와는 독립적인 신호다. 대부분의 게임은 결과가 하나뿐이라 submitScore와 항상
+// 같이 호출되지만, 지뢰찾기(패배)처럼 "오버레이는 뜨지만 제출할 점수는 없는" 결과도 있어서(순위표에
+// 의미 없는 결과는 제출하지 않는다는 기존 결정, 각 보드 파일 주석 참조) submitScore 하나로는 모든
+// 종료 시점을 포착할 수 없다.
+function onGameEnd() {
+  if (!props.gameId) return
+  if (!autoOpenSuppressed.value) {
+    showLeaderboard.value = true
+    hasAutoOpened = true
+  }
 }
 
 // 게임이 끝났을 때 각 보드 컴포넌트가 자신의 도메인 고유 점수 값(2048 점수, 반응속도 ms, 시도 횟수 등)

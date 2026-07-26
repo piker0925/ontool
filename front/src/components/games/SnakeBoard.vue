@@ -37,7 +37,8 @@ import {useGameSound} from '../../composables/useGameSound'
 import GameResultOverlay from '../GameResultOverlay.vue'
 import GameStat from '../GameStat.vue'
 
-const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void }>()
+// 174: onGameEnd는 결과 오버레이가 뜨는 시점(스네이크는 게임오버 하나뿐)에 submitScore와 함께 호출된다.
+const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void; onGameEnd?: () => void }>()
 
 const {playSuccess, playFail} = useGameSound()
 
@@ -161,6 +162,7 @@ watch(() => state.value.status, status => {
   if (status === 'over') {
     playFail()
     props.submitScore?.(state.value.score)
+    props.onGameEnd?.()
   }
 })
 

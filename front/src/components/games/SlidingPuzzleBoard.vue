@@ -36,7 +36,8 @@ import GameStat from '../GameStat.vue'
 
 const SIZE = 4
 
-const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void }>()
+// 174: onGameEnd는 완성 시점(슬라이딩퍼즐은 완성 하나뿐)에 submitScore와 함께 호출된다.
+const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void; onGameEnd?: () => void }>()
 
 const board = ref(shuffle(SIZE))
 const moveCount = ref(0)
@@ -54,6 +55,7 @@ function onTileClick(i: number) {
   if (isSolved(next)) {
     playSuccess()
     props.submitScore?.(moveCount.value)
+    props.onGameEnd?.()
   } else {
     playClick()
   }

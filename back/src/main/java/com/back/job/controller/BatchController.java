@@ -10,6 +10,9 @@ import com.back.job.repository.BatchStats;
 import com.back.job.service.BatchZipNamer;
 import com.back.job.service.JobService;
 import com.back.job.service.ZipEntryNamer;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -30,13 +33,15 @@ import java.util.zip.ZipOutputStream;
 @RestController
 @RequestMapping("/api/v1/batches")
 @RequiredArgsConstructor
+@Tag(name = "배치 (Batch)", description = "여러 파일을 한 번에 처리하는 배치 작업의 진행률 조회·결과 ZIP 다운로드 API")
 public class BatchController {
 
     private final JobService jobService;
     private final FileStorage fileStorage;
 
+    @Operation(summary = "배치 진행률 조회", description = "배치에 속한 전체 Job 개수, 완료 개수, 실패 개수를 조회합니다.")
     @GetMapping("/{id}")
-    public BatchProgressResponse getProgress(@PathVariable String id) {
+    public BatchProgressResponse getProgress(@Parameter(description = "조회할 배치의 ID") @PathVariable String id) {
         BatchStats stats = jobService.getBatchStats(id);
         if (stats.getTotal() == 0) {
             throw new AppException(ErrorCode.JOB_NOT_FOUND);
@@ -44,8 +49,9 @@ public class BatchController {
         return new BatchProgressResponse(id, stats.getTotal(), stats.getDoneCount(), stats.getFailCount());
     }
 
+    @Operation(summary = "배치 결과 ZIP 다운로드", description = "완료(DONE)된 Job들의 결과 파일을 하나의 ZIP으로 묶어 스트리밍 다운로드합니다. 아직 완료되지 않았거나 실패한 Job은 제외됩니다.")
     @GetMapping("/{id}/result")
-    public ResponseEntity<StreamingResponseBody> getResult(@PathVariable String id) {
+    public ResponseEntity<StreamingResponseBody> getResult(@Parameter(description = "다운로드할 배치의 ID") @PathVariable String id) {
         List<Job> doneJobs = jobService.getBatchJobs(id).stream()
                 .filter(j -> j.getStatus() == JobStatus.DONE && j.getResultKey() != null)
                 .toList();

@@ -2,6 +2,9 @@ package com.back.comment.controller;
 
 import com.back.comment.dto.CommentReportRequest;
 import com.back.comment.service.CommentReportService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,13 +23,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/comments")
 @RequiredArgsConstructor
+@Tag(name = "댓글 (Comment)", description = "도구별 댓글 조회·작성·삭제·신고 API")
 public class CommentReportController {
 
     private final CommentReportService commentReportService;
 
+    @Operation(summary = "댓글 신고", description = "로그인한 회원이 부적절한 댓글을 사유와 함께 신고합니다. 로그인 필수 API입니다.")
     @PostMapping("/{id}/report")
     @ResponseStatus(HttpStatus.CREATED)
-    public void report(@PathVariable Long id,
+    public void report(@Parameter(description = "신고할 댓글 ID") @PathVariable Long id,
                         @Valid @RequestBody CommentReportRequest request,
                         @AuthenticationPrincipal Long userId) {
         commentReportService.report(id, userId, request.reason(), request.detail());

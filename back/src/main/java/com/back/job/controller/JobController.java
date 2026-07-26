@@ -7,6 +7,9 @@ import com.back.job.dto.JobStatusResponse;
 import com.back.job.entity.Job;
 import com.back.job.entity.JobStatus;
 import com.back.job.service.JobService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,13 +26,15 @@ import java.util.concurrent.Executors;
 @RestController
 @RequestMapping("/api/v1/jobs")
 @RequiredArgsConstructor
+@Tag(name = "작업 (Job)", description = "비동기 작업(Job) 상태 조회·결과 다운로드·실시간 진행 알림 API")
 public class JobController {
 
     private final JobService jobService;
     private final FileStorage fileStorage;
 
+    @Operation(summary = "Job 상태 조회", description = "Job ID로 현재 상태(PENDING/RUNNING/DONE/FAILED), 큐 순번, 진행률, 예상 소요 시간을 조회합니다.")
     @GetMapping("/{id}")
-    public JobStatusResponse getStatus(@PathVariable String id) {
+    public JobStatusResponse getStatus(@Parameter(description = "조회할 Job의 ID") @PathVariable String id) {
         Job job = jobService.get(id);
         return toStatus(job);
     }
@@ -44,8 +49,9 @@ public class JobController {
                 job.getExpiresAt());
     }
 
+    @Operation(summary = "Job 결과 조회", description = "완료된 Job의 결과를 조회합니다. 파일 결과는 다운로드 URL, 텍스트 결과는 본문으로 내려줍니다. 결과 파일이 TTL로 만료된 경우 URL은 비어있을 수 있습니다.")
     @GetMapping("/{id}/result")
-    public JobResultResponse getResult(@PathVariable String id) {
+    public JobResultResponse getResult(@Parameter(description = "조회할 Job의 ID") @PathVariable String id) {
         Job job = jobService.get(id);
         // 회원 Job은 만료 후에도 row가 보존된다(050) — resultKey는 남아있어도 파일은 TTL 청소로 이미 삭제됐으므로
         // 만료 시 URL은 내려주지 않는다. resultText는 파일이 아니라 DB 컬럼이라 만료와 무관하게 유효하다.
@@ -56,8 +62,9 @@ public class JobController {
         return new JobResultResponse(null, job.getResultText());
     }
 
+    @Operation(summary = "Job 상태 실시간 스트림(SSE)", description = "Server-Sent Events로 Job의 상태·진행률·큐 순번 변경을 실시간으로 푸시합니다. DONE 또는 FAILED가 되면 스트림을 종료합니다.")
     @GetMapping(value = "/{id}/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter stream(@PathVariable String id) {
+    public SseEmitter stream(@Parameter(description = "구독할 Job의 ID") @PathVariable String id) {
         SseEmitter emitter = new SseEmitter(300_000L);
 
         ExecutorService exec = Executors.newSingleThreadExecutor();

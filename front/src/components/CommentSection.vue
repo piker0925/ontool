@@ -221,7 +221,7 @@ async function submitComment() {
     if (e?.response?.data?.code === 'USER_SUSPENDED') {
       showFeedback('error', e.response.data.message)
     } else {
-      showFeedback('error', '댓글 등록에 실패했습니다.')
+      showFeedback('error', '댓글 등록에 실패했습니다 — 네트워크 연결을 확인하고 다시 시도해 주세요.')
     }
     console.error('Failed to submit comment', e)
   } finally {
@@ -236,7 +236,7 @@ async function confirmDeleteComment(id: number) {
     await loadComments()
   } catch (e) {
     console.error('Failed to delete comment', e)
-    showFeedback('error', '댓글 삭제에 실패했습니다.')
+    showFeedback('error', '댓글 삭제에 실패했습니다 — 네트워크 상태를 확인하거나 잠시 후 다시 시도해 주세요.')
   }
 }
 
@@ -263,9 +263,9 @@ async function submitReport(id: number) {
     closeReport()
   } catch (e: any) {
     if (e?.response?.status === 409) {
-      showFeedback('error', '이미 신고한 댓글입니다.')
+      showFeedback('error', '이미 신고한 댓글입니다 — 목록에서 처리 결과를 확인해 주세요.')
     } else {
-      showFeedback('error', '신고 접수에 실패했습니다.')
+      showFeedback('error', '신고 접수에 실패했습니다 — 잠시 후 다시 시도해 주세요.')
     }
     console.error('Failed to report comment', e)
   } finally {

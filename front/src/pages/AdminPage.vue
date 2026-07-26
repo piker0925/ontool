@@ -1131,7 +1131,7 @@ async function confirmDeleteUser() {
     showDeleteUserModal.value = false
     await loadUsers()
   } catch (e) {
-    alert('계정 삭제에 실패했습니다.')
+    alert('계정 삭제에 실패했습니다 — 네트워크 연결 및 관리자 권한을 확인한 뒤 다시 시도해 주세요.')
     console.error(e)
   } finally {
     isDeletingUser.value = false
@@ -1224,7 +1224,7 @@ async function updateReportStatus(id: number, status: string) {
     await apiClient.patch(`/admin/comment-reports/${id}/status`, {status}, {headers: {Authorization: authHeader}})
     await Promise.allSettled([loadCommentReports(), loadReportUserAggregates()])
   } catch (e) {
-    alert('상태 변경에 실패했습니다.')
+    alert('상태 변경에 실패했습니다 — 네트워크 연결을 확인한 뒤 다시 시도해 주세요.')
     console.error('Failed to update comment report status', e)
   }
 }
@@ -1245,7 +1245,7 @@ async function deleteComment(id: number, resolveReportId?: number) {
   try {
     await apiClient.delete(`/admin/comments/${id}`, {headers: {Authorization: authHeader}})
   } catch {
-    alert('삭제 실패')
+    alert('댓글 삭제에 실패했습니다 — 네트워크 연결을 확인한 뒤 다시 시도해 주세요.')
     return
   }
 

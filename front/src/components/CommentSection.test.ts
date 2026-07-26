@@ -88,7 +88,7 @@ describe('CommentSection 인라인 알림 배너 — aria-live', () => {
         await submitBtn?.trigger('click')
         await flushPromises()
 
-        expect(wrapper.text()).toContain('이미 신고한 댓글입니다.')
+        expect(wrapper.text()).toContain('이미 신고한 댓글입니다 — 목록에서 처리 결과를 확인해 주세요.')
         const banner = wrapper.find('[role="alert"]')
         expect(banner.exists()).toBe(true)
         expect(banner.attributes('aria-live')).toBe('assertive')
@@ -129,7 +129,7 @@ describe('CommentSection 댓글 등록 실패 — 056 정지 사유 표시', () 
         await submitBtn?.trigger('click')
         await flushPromises()
 
-        expect(wrapper.text()).toContain('댓글 등록에 실패했습니다.')
+        expect(wrapper.text()).toContain('댓글 등록에 실패했습니다 — 네트워크 연결을 확인하고 다시 시도해 주세요.')
         expect(wrapper.find('[role="alert"]').exists()).toBe(true)
     })
 

@@ -3,6 +3,8 @@ package com.back.job.controller;
 import com.back.global.exception.AppException;
 import com.back.global.exception.ErrorCode;
 import com.back.job.service.JobService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
@@ -18,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 @RestController
+@Tag(name = "파일 (File)", description = "Job 결과로 저장된 파일을 다운로드하는 API")
 public class FileController {
 
     private final Path uploadDir;
@@ -28,6 +31,7 @@ public class FileController {
         this.jobService = jobService;
     }
 
+    @Operation(summary = "결과 파일 다운로드", description = "Job/배치 처리 결과로 저장된 파일을 원본 파일명 기반의 다운로드 파일명으로 내려줍니다. 경로는 Job의 result key(jobId/result.ext 형태)입니다.")
     @GetMapping("/api/v1/files/**")
     public ResponseEntity<FileSystemResource> getFile(HttpServletRequest request) {
         String key = request.getRequestURI().substring("/api/v1/files/".length());

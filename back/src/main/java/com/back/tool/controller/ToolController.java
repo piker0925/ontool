@@ -17,6 +17,9 @@ import com.back.tool.model.ToolModule;
 import com.back.tool.model.ToolResult;
 import com.back.stats.service.ToolStatsService;
 import com.back.tool.service.ToolService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +38,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1")
+@Tag(name = "도구 (Tool)", description = "도구 모듈 목록 조회, 즉시 실행(Light)·업로드 후 비동기 실행(Heavy) 라우팅 API")
 public class ToolController {
 
     private final ToolService toolService;
@@ -69,6 +73,7 @@ public class ToolController {
         this.videoMaxRequestSizeBytes = videoMaxRequestSizeBytes;
     }
 
+    @Operation(summary = "도구 모듈 목록 조회", description = "등록된 전체 도구 모듈의 ID·이름·카테고리·Heavy 여부·업로드 용량 한도를 조회합니다.")
     @GetMapping("/modules")
     public List<ModuleResponse> listModules() {
         return toolService.listModules().stream()
@@ -82,8 +87,9 @@ public class ToolController {
                 .toList();
     }
 
+    @Operation(summary = "Light 모듈 즉시 실행", description = "파일 업로드가 필요 없는 Light 모듈을 큐 없이 즉시 실행하고 결과를 바로 응답합니다. Heavy 모듈을 호출하면 오류를 반환합니다.")
     @PostMapping("/tools/{moduleId}/run")
-    public RunResponse run(@PathVariable String moduleId,
+    public RunResponse run(@Parameter(description = "실행할 도구 모듈 ID") @PathVariable String moduleId,
                            @RequestBody Map<String, String> params) {
         ToolModule module = toolService.getModule(moduleId);
         if (module.isHeavy()) {
@@ -94,8 +100,9 @@ public class ToolController {
         return new RunResponse(result.textResult());
     }
 
+    @Operation(summary = "Heavy 모듈 파일 업로드·비동기 실행", description = "파일 업로드가 필요한 Heavy 모듈을 실행합니다. 단일 파일 또는 하나의 Job으로 합쳐 처리하는 모듈은 Job 하나를, 그 외 다중 파일은 파일당 Job 하나씩 묶은 배치를 생성합니다. 응답은 202 Accepted이며 이후 Job/배치 상태를 폴링하거나 SSE로 구독합니다.")
     @PostMapping("/tools/{moduleId}/upload")
-    public ResponseEntity<?> upload(@PathVariable String moduleId,
+    public ResponseEntity<?> upload(@Parameter(description = "실행할 도구 모듈 ID") @PathVariable String moduleId,
                                     @RequestPart(value = "files", required = false) List<MultipartFile> files,
                                     @RequestParam Map<String, String> params,
                                     @AuthenticationPrincipal Long userId,

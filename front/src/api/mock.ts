@@ -71,7 +71,7 @@ export const MOCK_MODULES: Module[] = [
         id: 'hangul-romanizer', name: '한글 이름 로마자 변환기', category: '텍스트', isHeavy: false, isFrontendOnly: true,
         description: '국립국어원 로마자 표기법 기준으로 한글 이름을 영문으로 변환',
         keywords: ['로마자', '영문 이름', 'romanization', '여권 영문 이름'],
-        zones: ['dev'],
+        zones: ['life'],
     },
     {
         id: 'special-char-picker', name: '특수문자·이모지 모음', category: '텍스트', isHeavy: false, isFrontendOnly: true,

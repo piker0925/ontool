@@ -2,6 +2,7 @@ import {describe, expect, it, vi} from 'vitest'
 import {ref} from 'vue'
 import {router} from './index'
 import {trackPageView} from '../config/analytics'
+import {__resetRouteLoadingBarForTest, useRouteLoadingBar} from '../composables/useRouteLoadingBar'
 
 vi.mock('../config/analytics', () => ({trackPageView: vi.fn()}))
 // '/' 라우트는 LandingPage를 동적 임포트하는데, 그 모듈이 useTheme을 임포트 시점에 실행한다.
@@ -66,5 +67,22 @@ describe('router', () => {
         await router.push('/life')
 
         expect(trackPageView).toHaveBeenCalledWith('/life')
+    })
+
+    describe('183: 상단 로딩 바 — router.beforeEach/afterEach 연동', () => {
+        it('리다이렉트 라우트(/tools/qr-code)를 거쳐도 로딩 바 상태가 어긋나지 않고 남아있지 않는다', async () => {
+            __resetRouteLoadingBarForTest()
+            const {isVisible} = useRouteLoadingBar()
+
+            await router.push('/tools/qr-code') // 내부적으로 /tools/code-gen?format=qr 로 리다이렉트
+            expect(router.currentRoute.value.path).toBe('/tools/code-gen')
+            expect(isVisible.value).toBe(false)
+
+            // 리다이렉트 이후에도 내부 상태가 정상이라면, 뒤이은 정상 네비게이션도 문제없이 끝나야 한다.
+            await router.push('/dev')
+            expect(isVisible.value).toBe(false)
+            await router.push('/files')
+            expect(isVisible.value).toBe(false)
+        })
     })
 })

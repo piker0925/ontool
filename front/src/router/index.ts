@@ -1,8 +1,9 @@
-import {createRouter, createWebHistory} from 'vue-router'
+import {createRouter, createWebHistory, isNavigationFailure, NavigationFailureType} from 'vue-router'
 import {BRAND} from '../config/brand'
 import {ZONES} from '../config/zones'
 import {MOCK_MODULES} from '../api/mock'
 import {trackPageView} from '../config/analytics'
+import {useRouteLoadingBar} from '../composables/useRouteLoadingBar'
 
 export const router = createRouter({
     history: createWebHistory(),
@@ -38,6 +39,19 @@ export const router = createRouter({
     ],
 })
 
+// 183: 라우트가 전부 동적 import(코드 스플리팅)라 청크 다운로드 중 아무 표시가 없던 문제 —
+// 네비게이션 시작~종료를 상단 프로그레스 바(useRouteLoadingBar)로 감싼다.
+const {start: startRouteLoadingBar, finish: finishRouteLoadingBar} = useRouteLoadingBar()
+
+router.beforeEach(() => {
+    startRouteLoadingBar()
+})
+
+router.onError(() => {
+    // 청크 로딩 실패(네트워크 오류 등)로 afterEach 없이 네비게이션이 끊길 수 있어 안전망으로 둔다.
+    finishRouteLoadingBar()
+})
+
 function setPageMeta(title: string, description: string) {
     document.title = `${title} · ${BRAND.siteName}`
     let meta = document.querySelector('meta[name="description"]')
@@ -49,7 +63,15 @@ function setPageMeta(title: string, description: string) {
     meta.setAttribute('content', description)
 }
 
-router.afterEach(to => {
+router.afterEach((to, _from, failure) => {
+    // 취소된 네비게이션(사용자가 로딩 중 다른 링크를 눌러 앞선 전환이 밀려난 경우)에서는 로딩 바의
+    // finish()를 부르면 안 된다 — 취소된 쪽의 afterEach는 자신의(이미 버려진) 청크 로딩이 실제로
+    // 끝날 때까지 늦게 도착할 수 있어(실측 확인, 183), 먼저 완료된 최신 네비게이션의 afterEach보다
+    // 뒤늦게 와서 바를 계속 붙잡아 둘 수 있다.
+    if (!isNavigationFailure(failure, NavigationFailureType.cancelled)) {
+        finishRouteLoadingBar()
+    }
+
     trackPageView(to.path)
 
     const zone = ZONES.find(z => z.route === to.path)

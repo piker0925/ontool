@@ -103,19 +103,25 @@ export function convertKeyboard(text: string, direction: 'ko-en' | 'en-ko'): str
     if (direction === 'ko-en') {
         return Array.from(text).map(ch => {
             const code = ch.charCodeAt(0)
-            if (code < SYLLABLE_BASE || code > 0xD7A3) return ch
-            const offset = code - SYLLABLE_BASE
-            const ci = Math.floor(offset / 28 / 21)
-            const vi = Math.floor((offset / 28) % 21)
-            const ji = offset % 28
-            return jamoToEn(CHOSUNG[ci]) +
-                jamoToEn(JUNGSUNG[vi]) +
-                (ji > 0 ? jamoToEn(JONGSUNG[ji]) : '')
+            if (code >= SYLLABLE_BASE && code <= 0xD7A3) {
+                const offset = code - SYLLABLE_BASE
+                const ci = Math.floor(offset / 28 / 21)
+                const vi = Math.floor((offset / 28) % 21)
+                const ji = offset % 28
+                return jamoToEn(CHOSUNG[ci]) +
+                    jamoToEn(JUNGSUNG[vi]) +
+                    (ji > 0 ? jamoToEn(JONGSUNG[ji]) : '')
+            }
+            // 완성형 음절이 아닌 낱자(ㄱ, ㅣ 등 호환용 자모, 복합 자모 포함) — 분해해서 인식
+            const jamoEn = jamoToEn(ch)
+            return jamoEn || ch
         }).join('')
     }
 
     // en-ko: state machine with jongsung support
-    const jamos = Array.from(text).map(c => EN_TO_JAMO[c] ?? c)
+    // 실제 두벌식 자판은 R/E/Q/T/W/O/P 7개 키만 Shift로 별도 글자(쌍자음·이중모음)를 낸다 —
+    // 그 외 키는 대문자로 들어와도 소문자와 같은 자모로 취급해야 한다.
+    const jamos = Array.from(text).map(c => EN_TO_JAMO[c] ?? EN_TO_JAMO[c.toLowerCase()] ?? c)
     const result: string[] = []
     let cho = ''
     let jung = ''

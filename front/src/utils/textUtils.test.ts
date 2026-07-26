@@ -64,6 +64,31 @@ describe('convertKeyboard', () => {
         // 모음 ㅜ가 오면 ㄺ의 마지막 자모(ㄱ)만 다음 음절 초성으로 이동하고 ㄹ은 받침으로 남아 "달구"
         expect(convertKeyboard('ekfrn', 'en-ko')).toBe('달구')
     })
+    it('영어 → 한글 대문자(Shift 전용 매핑 없는 키)도 소문자와 같은 자모로 변환', () => {
+        // A/S/D(대문자, 전용 쌍자음 없음)는 소문자 a/s/d와 같은 자모로 취급돼야 함 — 실제 두벌식
+        // 자판은 R/E/Q/T/W/O/P 7개 키만 Shift로 별도 글자(쌍자음·이중모음)를 낸다
+        expect(convertKeyboard('AK', 'en-ko')).toBe('마')
+        expect(convertKeyboard('AK', 'en-ko')).toBe(convertKeyboard('ak', 'en-ko'))
+        expect(convertKeyboard('SK', 'en-ko')).toBe('나')
+        expect(convertKeyboard('SK', 'en-ko')).toBe(convertKeyboard('sk', 'en-ko'))
+        expect(convertKeyboard('DK', 'en-ko')).toBe('아')
+        expect(convertKeyboard('DK', 'en-ko')).toBe(convertKeyboard('dk', 'en-ko'))
+    })
+    it('영어 → 한글 대문자 중 Shift 전용 매핑이 있는 키(쌍자음)는 그대로 사용', () => {
+        expect(convertKeyboard('Rk', 'en-ko')).toBe('까')
+    })
+    it('한글 → 영어 낱자(자음 단독) 인식 — 최소 3개', () => {
+        expect(convertKeyboard('ㄱ', 'ko-en')).toBe('r')
+        expect(convertKeyboard('ㄴ', 'ko-en')).toBe('s')
+        expect(convertKeyboard('ㅁ', 'ko-en')).toBe('a')
+    })
+    it('한글 → 영어 낱자(모음 단독) 인식 — 최소 2개', () => {
+        expect(convertKeyboard('ㅣ', 'ko-en')).toBe('l')
+        expect(convertKeyboard('ㅏ', 'ko-en')).toBe('k')
+    })
+    it('한글 → 영어 낱자(복합 받침 하나)도 분해해서 인식', () => {
+        expect(convertKeyboard('ㄳ', 'ko-en')).toBe('rt')
+    })
 })
 
 describe('countCharsDetailed', () => {

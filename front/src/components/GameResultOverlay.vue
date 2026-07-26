@@ -4,11 +4,19 @@
         v-if="show"
         :data-testid="testid ?? 'game-result-overlay'"
         aria-live="polite"
-        class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1.5 rounded-xl bg-background/85 text-center backdrop-blur-sm"
+        class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1.5 rounded-xl bg-background/85 text-center backdrop-blur-sm overflow-hidden"
         role="status"
     >
-      <p :class="toneClass" class="text-lg font-semibold">{{ title }}</p>
-      <div v-if="$slots.default" class="text-[13px] text-muted-foreground">
+      <!-- 승리 축하 파티클 애니메이션 -->
+      <div v-if="tone === 'win'" class="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        <span v-for="i in 10" :key="i" :style="{ '--i': i }" class="confetti-spark" />
+      </div>
+
+      <p :class="toneClass" class="text-lg font-semibold z-10 flex items-center gap-1.5">
+        <span v-if="tone === 'win'" class="inline-block animate-bounce">🏆</span>
+        {{ title }}
+      </p>
+      <div v-if="$slots.default" class="text-[13px] text-muted-foreground z-10">
         <slot/>
       </div>
 
@@ -16,7 +24,7 @@
            기존 버튼은 "게임 도중 언제든 재시작" 용도로 그대로 둔다(제거 아님, 의도된 중복). -->
       <button
           v-if="restart"
-          class="mt-1 flex items-center gap-1.5 rounded-full bg-foreground px-4 py-1.5 text-[13px] font-medium text-background transition-opacity hover:opacity-90"
+          class="mt-1 z-10 flex items-center gap-1.5 rounded-full bg-foreground px-4 py-1.5 text-[13px] font-medium text-background transition-opacity hover:opacity-90"
           data-testid="game-result-restart"
           type="button"
           @click="restart"
@@ -78,6 +86,31 @@ const toneClass = computed(() => ({
   .game-result-enter-from,
   .game-result-leave-to {
     transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .confetti-spark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: oklch(0.65 0.2 315);
+    animation: confetti-burst 0.7s ease-out forwards;
+    animation-delay: calc(var(--i) * 0.04s);
+  }
+
+  @keyframes confetti-burst {
+    0% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(calc(-50% + (var(--i) * 18px - 90px)), calc(-50% + (var(--i) * 14px - 70px))) scale(0.2);
+    }
   }
 }
 </style>

@@ -3,7 +3,11 @@
     <GameStat label="점수" testid="score" :value="score"/>
 
     <div class="relative">
-      <div class="grid grid-cols-4 gap-2 rounded-xl bg-muted/60 p-2" data-testid="board">
+      <div
+        :class="comboActive ? 'shadow-[0_0_25px_var(--zone-accent-fun)] border-zone-accent-fun/50' : 'border-transparent'"
+        class="grid grid-cols-4 gap-2 rounded-xl bg-muted/60 p-2 border transition-[box-shadow,border-color] duration-300"
+        data-testid="board"
+      >
         <template v-for="(row, r) in board" :key="r">
           <div
               v-for="(cell, c) in row"
@@ -112,6 +116,17 @@ function findNewTile(afterMerge: Board, afterRandom: Board): { r: number; c: num
 }
 
 // 키보드·터치 스와이프 공통 이동 처리 — 두 입력 방식이 같은 로직을 타도록 한곳에 모은다.
+const comboActive = ref(false)
+let comboTimer: ReturnType<typeof setTimeout> | null = null
+
+function triggerComboGlow() {
+  comboActive.value = true
+  if (comboTimer) clearTimeout(comboTimer)
+  comboTimer = setTimeout(() => {
+    comboActive.value = false
+  }, 400)
+}
+
 function applyDirection(direction: Direction) {
   if (gameOver.value) return
   const before = board.value
@@ -126,8 +141,12 @@ function applyDirection(direction: Direction) {
   moveTick.value++
   board.value = withRandom
 
-  if (result.scoreGained > 0) playSuccess()
-  else playClick()
+  if (result.scoreGained > 0) {
+    playSuccess()
+    triggerComboGlow()
+  } else {
+    playClick()
+  }
 }
 
 function onKeydown(e: KeyboardEvent) {

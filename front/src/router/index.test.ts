@@ -31,6 +31,13 @@ describe('router', () => {
         expect(resolved.matched[0]?.redirect).toBe('/tools/code-gen?format=code128')
     })
 
+    it('/tools/random-team-ladder 로 이동하면 실제로 /tools/random-team-split 에 도착한다 (구 URL 리다이렉트)', async () => {
+        await router.push('/tools/random-team-ladder')
+
+        expect(router.currentRoute.value.path).toBe('/tools/random-team-split')
+        expect(router.currentRoute.value.params.moduleId).toBe('random-team-split')
+    })
+
     it.each(['/dev', '/files', '/life', '/fun'])('%s 구역 라우트가 존재한다', (zonePath) => {
         const routes = router.getRoutes()
         expect(routes.some(r => r.path === zonePath)).toBe(true)

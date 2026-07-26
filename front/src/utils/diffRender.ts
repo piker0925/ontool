@@ -43,9 +43,20 @@ export interface DiffStats {
   similarity: number
 }
 
+/** Merged(합쳐보기) 모드의 조각 종류 */
+export type MergedSpanType = 'context' | 'add' | 'remove'
+
+/** Merged(합쳐보기) 모드 — 원본/변경본을 하나의 텍스트 흐름으로 합친 조각 */
+export interface MergedSpan {
+  text: string
+  type: MergedSpanType
+}
+
 export interface DiffRenderModel {
   rows: SideBySideRow[]
   inline: InlineLine[]
+  /** 원본·변경본을 한 텍스트 흐름으로 합친 word-level 조각 (합쳐보기 모드용) */
+  merged: MergedSpan[]
   stats: DiffStats
   identical: boolean
 }
@@ -65,21 +76,30 @@ export function splitDocLines(value: string): string[] {
   return lines
 }
 
-function wordSpans(oldLine: string, newLine: string): { left: WordSpan[]; right: WordSpan[] } {
+/**
+ * 한 쌍의 remove/add 라인에 대해 diffWords를 한 번만 호출하고, 그 결과를
+ * side-by-side용(left/right)과 merged(합쳐보기)용 표현으로 함께 파생시킨다.
+ * (diff 알고리즘을 다시 구현하지 않고, 이미 쓰는 diffWords 결과를 재사용)
+ */
+function computeWordDiff(oldLine: string, newLine: string): { left: WordSpan[]; right: WordSpan[]; merged: MergedSpan[] } {
   const parts = diffWords(oldLine, newLine)
   const left: WordSpan[] = []
   const right: WordSpan[] = []
+  const merged: MergedSpan[] = []
   for (const p of parts) {
     if (p.added) {
       right.push({text: p.value, changed: true})
+      merged.push({text: p.value, type: 'add'})
     } else if (p.removed) {
       left.push({text: p.value, changed: true})
+      merged.push({text: p.value, type: 'remove'})
     } else {
       left.push({text: p.value, changed: false})
       right.push({text: p.value, changed: false})
+      merged.push({text: p.value, type: 'context'})
     }
   }
-  return {left, right}
+  return {left, right, merged}
 }
 
 /**
@@ -99,6 +119,7 @@ export function buildDiffModel(
   const changes = diffLines(normOriginal, normRevised)
   const rows: SideBySideRow[] = []
   const inline: InlineLine[] = []
+  const merged: MergedSpan[] = []
 
   let oldLn = 1
   let newLn = 1
@@ -119,6 +140,7 @@ export function buildDiffModel(
           blockIndex: null,
         })
         inline.push({type: 'context', oldLineNum: oldLn, newLineNum: newLn, text, spans: null, blockIndex: null})
+        merged.push({text: text + '\n', type: 'context'})
         oldLn++
         newLn++
         contextLines++
@@ -146,6 +168,7 @@ export function buildDiffModel(
     const max = Math.max(removed.length, added.length)
     const leftSpansArr: (WordSpan[] | null)[] = []
     const rightSpansArr: (WordSpan[] | null)[] = []
+    const mergedArr: (MergedSpan[] | null)[] = []
 
     for (let k = 0; k < max; k++) {
       const canWordDiff =
@@ -154,12 +177,28 @@ export function buildDiffModel(
         removed[k].length <= maxWordDiffLineLength &&
         added[k].length <= maxWordDiffLineLength
       if (canWordDiff) {
-        const s = wordSpans(removed[k], added[k])
+        const s = computeWordDiff(removed[k], added[k])
         leftSpansArr.push(s.left)
         rightSpansArr.push(s.right)
+        mergedArr.push(s.merged)
       } else {
         leftSpansArr.push(null)
         rightSpansArr.push(null)
+        mergedArr.push(null)
+      }
+    }
+
+    // Merged(합쳐보기): 쌍이 되는 라인은 word-level로 교차, 그 외는 라인 전체를 remove/add로 표시
+    for (let k = 0; k < max; k++) {
+      const hasLeft = k < removed.length
+      const hasRight = k < added.length
+      const wordLevel = mergedArr[k]
+      if (hasLeft && hasRight && wordLevel) {
+        merged.push(...wordLevel)
+        merged.push({text: '\n', type: 'context'})
+      } else {
+        if (hasLeft) merged.push({text: removed[k] + '\n', type: 'remove'})
+        if (hasRight) merged.push({text: added[k] + '\n', type: 'add'})
       }
     }
 
@@ -206,6 +245,7 @@ export function buildDiffModel(
   return {
     rows,
     inline,
+    merged,
     stats: {addedLines, removedLines, blocks, similarity},
     identical: blocks === 0,
   }

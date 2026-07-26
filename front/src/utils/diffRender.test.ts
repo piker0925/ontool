@@ -180,6 +180,108 @@ describe('buildDiffModel — 변경 블록 인덱스와 라인 번호 연속성'
   })
 })
 
+describe('buildDiffModel — merged(합쳐보기) 뷰', () => {
+  it('동일 입력이면 전부 context, 줄바꿈 포함 원문 그대로 재구성된다', () => {
+    const m = buildDiffModel('foo\nbar', 'foo\nbar')
+    expect(m.merged.every((s) => s.type === 'context')).toBe(true)
+    expect(m.merged.map((s) => s.text).join('')).toBe('foo\nbar\n')
+  })
+
+  it('추가만 있는 경우 — context 뒤에 add 전용 라인이 붙는다', () => {
+    const m = buildDiffModel('a\nb', 'a\nb\nc\nd')
+    expect(m.merged).toEqual([
+      {text: 'a\n', type: 'context'},
+      {text: 'b\n', type: 'context'},
+      {text: 'c\n', type: 'add'},
+      {text: 'd\n', type: 'add'},
+    ])
+  })
+
+  it('삭제만 있는 경우 — remove 전용 라인이 표시된다', () => {
+    const m = buildDiffModel('keep\ngone', 'keep')
+    expect(m.merged).toEqual([
+      {text: 'keep\n', type: 'context'},
+      {text: 'gone\n', type: 'remove'},
+    ])
+  })
+
+  it('쌍이 되는 변경 라인은 단어 단위로 context/remove/add가 원래 순서대로 인터리브된다', () => {
+    const m = buildDiffModel('hello cruel world', 'hello kind world')
+    // diffWords가 만드는 자연스러운 교차 순서: 공통 → 삭제 → 추가 → 공통
+    expect(m.merged).toEqual([
+      {text: 'hello ', type: 'context'},
+      {text: 'cruel', type: 'remove'},
+      {text: 'kind', type: 'add'},
+      {text: ' world', type: 'context'},
+      {text: '\n', type: 'context'},
+    ])
+
+    // 라운드트립: context+remove 조각을 이으면 정규화된 원본, context+add 조각을 이으면 정규화된 변경본
+    const reconstructedOld = m.merged
+      .filter((s) => s.type === 'context' || s.type === 'remove')
+      .map((s) => s.text)
+      .join('')
+    const reconstructedNew = m.merged
+      .filter((s) => s.type === 'context' || s.type === 'add')
+      .map((s) => s.text)
+      .join('')
+    expect(reconstructedOld).toBe(splitDocLines('hello cruel world').map((l) => l + '\n').join(''))
+    expect(reconstructedNew).toBe(splitDocLines('hello kind world').map((l) => l + '\n').join(''))
+
+    // remove/add 조각의 텍스트가 실제로 다름을 확인 (아무 것도 안 하는 구현 방지)
+    const removedText = m.merged.filter((s) => s.type === 'remove').map((s) => s.text).join('')
+    const addedText = m.merged.filter((s) => s.type === 'add').map((s) => s.text).join('')
+    expect(removedText).toBe('cruel')
+    expect(addedText).toBe('kind')
+    expect(removedText).not.toBe(addedText)
+  })
+
+  it('wordDiff=false면 변경 라인 쌍도 word-level 대신 라인 전체 remove+add로 표시된다', () => {
+    const m = buildDiffModel('hello cruel world', 'hello kind world', {wordDiff: false})
+    expect(m.merged).toEqual([
+      {text: 'hello cruel world\n', type: 'remove'},
+      {text: 'hello kind world\n', type: 'add'},
+    ])
+  })
+
+  it('maxWordDiffLineLength를 넘는 라인도 라인 전체 remove+add로 fallback', () => {
+    const longOld = 'x'.repeat(20) + ' old'
+    const longNew = 'x'.repeat(20) + ' new'
+    const m = buildDiffModel(longOld, longNew, {maxWordDiffLineLength: 10})
+    expect(m.merged).toEqual([
+      {text: longOld + '\n', type: 'remove'},
+      {text: longNew + '\n', type: 'add'},
+    ])
+  })
+
+  it('쌍 개수를 넘는 라인(추가가 더 많음)은 초과분이 word-level 없이 add로 붙는다', () => {
+    const m = buildDiffModel('old line', 'new line\nextra line')
+    expect(m.merged.at(-1)).toEqual({text: 'extra line\n', type: 'add'})
+    expect(m.merged.some((s) => s.type === 'remove' && s.text.includes('old'))).toBe(true)
+  })
+
+  it('여러 블록이 떨어져 있어도 순서대로 합쳐진다', () => {
+    const original = 'a\nb\nc\nd\ne'
+    const revised = 'a\nB\nc\nd\nE'
+    const m = buildDiffModel(original, revised)
+    const reconstructedOld = m.merged
+      .filter((s) => s.type === 'context' || s.type === 'remove')
+      .map((s) => s.text)
+      .join('')
+    const reconstructedNew = m.merged
+      .filter((s) => s.type === 'context' || s.type === 'add')
+      .map((s) => s.text)
+      .join('')
+    expect(reconstructedOld).toBe('a\nb\nc\nd\ne\n')
+    expect(reconstructedNew).toBe('a\nB\nc\nd\nE\n')
+  })
+
+  it('빈 입력 둘 다 빈 문자열이면 merged도 빈 배열', () => {
+    const m = buildDiffModel('', '')
+    expect(m.merged).toEqual([])
+  })
+})
+
 describe('buildDiffModel — 빈 입력 경계', () => {
   it('둘 다 빈 문자열이면 identical, 행 없음', () => {
     const m = buildDiffModel('', '')

@@ -1,8 +1,9 @@
-import {createRouter, createWebHistory} from 'vue-router'
+import {createRouter, createWebHistory, isNavigationFailure, NavigationFailureType} from 'vue-router'
 import {BRAND} from '../config/brand'
 import {ZONES} from '../config/zones'
 import {MOCK_MODULES} from '../api/mock'
 import {trackPageView} from '../config/analytics'
+import {useRouteLoadingBar} from '../composables/useRouteLoadingBar'
 
 export const router = createRouter({
     history: createWebHistory(),
@@ -39,6 +40,19 @@ export const router = createRouter({
     ],
 })
 
+// 183: 라우트가 전부 동적 import(코드 스플리팅)라 청크 다운로드 중 아무 표시가 없던 문제 —
+// 네비게이션 시작~종료를 상단 프로그레스 바(useRouteLoadingBar)로 감싼다.
+const {start: startRouteLoadingBar, finish: finishRouteLoadingBar} = useRouteLoadingBar()
+
+router.beforeEach(() => {
+    startRouteLoadingBar()
+})
+
+router.onError(() => {
+    // 청크 로딩 실패(네트워크 오류 등)로 afterEach 없이 네비게이션이 끊길 수 있어 안전망으로 둔다.
+    finishRouteLoadingBar()
+})
+
 function setPageMeta(title: string, description: string) {
     document.title = `${title} · ${BRAND.siteName}`
     let meta = document.querySelector('meta[name="description"]')
@@ -50,7 +64,15 @@ function setPageMeta(title: string, description: string) {
     meta.setAttribute('content', description)
 }
 
-router.afterEach(to => {
+router.afterEach((to, _from, failure) => {
+    // 취소된 네비게이션(사용자가 로딩 중 다른 링크를 눌러 앞선 전환이 밀려난 경우)은 실제로 렌더되지
+    // 않은 라우트다 — 로딩 바 finish()뿐 아니라 페이지뷰 집계·문서 메타 갱신도 함께 건너뛴다.
+    // 건너뛰지 않으면 사용자 눈에 보이지도 않은 페이지가 조회수로 잡히고, 취소된 쪽의 늦은 afterEach가
+    // (자신의 버려진 청크 로딩이 끝날 때까지 지연될 수 있어, 실측 확인·183) 이미 새로 렌더된 페이지의
+    // title/description을 뒤늦게 자기 것으로 덮어써 버리는 문제도 함께 생긴다.
+    if (isNavigationFailure(failure, NavigationFailureType.cancelled)) return
+
+    finishRouteLoadingBar()
     trackPageView(to.path)
 
     const zone = ZONES.find(z => z.route === to.path)

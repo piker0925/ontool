@@ -103,6 +103,14 @@
             >
               인라인
             </button>
+            <button
+                :class="mode === 'merged' ? 'bg-zone-accent-life text-white' : 'text-muted-foreground hover:bg-muted hover:text-foreground'"
+                class="px-2.5 py-1 text-[11px] font-medium transition-colors"
+                type="button"
+                @click="mode = 'merged'"
+            >
+              합쳐보기
+            </button>
           </div>
         </div>
       </div>
@@ -160,7 +168,7 @@
         </div>
 
         <!-- Inline -->
-        <div v-else-if="model" class="overflow-x-auto">
+        <div v-else-if="model && mode === 'inline'" class="overflow-x-auto">
           <div class="min-w-[480px] font-mono text-[12px] leading-relaxed">
             <div
                 v-for="(line, i) in renderInline"
@@ -194,6 +202,20 @@
             </p>
           </div>
         </div>
+
+        <!-- 합쳐보기(Merged): 원본·변경본을 하나의 텍스트 흐름으로 합쳐 표시 -->
+        <div v-else-if="model && mode === 'merged'" class="overflow-x-auto">
+          <div class="min-w-[320px] whitespace-pre-wrap break-all rounded-lg bg-muted/30 p-3 font-mono text-[12px] leading-relaxed">
+            <span
+                v-for="(s, j) in renderMerged"
+                :key="j"
+                :class="mergedSpanClass(s.type)"
+            >{{ s.text }}</span>
+            <p v-if="mergedTruncated" class="mt-2 px-1 text-[11px] text-muted-foreground">
+              성능을 위해 일부만 표시합니다
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -201,11 +223,11 @@
 
 <script lang="ts" setup>
 import {computed, onBeforeUnmount, ref, watch} from 'vue'
-import {buildDiffModel, type DiffLineType, type DiffRenderModel} from '../../utils/diffRender'
+import {buildDiffModel, type DiffLineType, type DiffRenderModel, type MergedSpanType} from '../../utils/diffRender'
 
 const left = ref('')
 const right = ref('')
-const mode = ref<'side' | 'inline'>('side')
+const mode = ref<'side' | 'inline' | 'merged'>('side')
 const model = ref<DiffRenderModel | null>(null)
 const pending = ref(false)
 const currentBlock = ref(0)
@@ -221,6 +243,8 @@ const renderRows = computed(() => (model.value ? model.value.rows.slice(0, MAX_R
 const rowsTruncated = computed(() => !!model.value && model.value.rows.length > MAX_RENDER_ROWS)
 const renderInline = computed(() => (model.value ? model.value.inline.slice(0, MAX_RENDER_ROWS) : []))
 const inlineTruncated = computed(() => !!model.value && model.value.inline.length > MAX_RENDER_ROWS)
+const renderMerged = computed(() => (model.value ? model.value.merged.slice(0, MAX_RENDER_ROWS) : []))
+const mergedTruncated = computed(() => !!model.value && model.value.merged.length > MAX_RENDER_ROWS)
 
 function lineClass(type: DiffLineType): string {
   switch (type) {
@@ -230,6 +254,18 @@ function lineClass(type: DiffLineType): string {
       return 'bg-rose-500/15'
     case 'empty':
       return 'bg-muted/40'
+    default:
+      return ''
+  }
+}
+
+/** 합쳐보기 조각 스타일: 삭제=취소선+옅은 빨강, 추가=밑줄+옅은 초록 */
+function mergedSpanClass(type: MergedSpanType): string {
+  switch (type) {
+    case 'add':
+      return 'rounded-[2px] bg-emerald-500/20 text-emerald-700 underline decoration-emerald-600/70 dark:bg-emerald-500/25 dark:text-emerald-300 dark:decoration-emerald-400/70'
+    case 'remove':
+      return 'rounded-[2px] bg-rose-500/20 text-rose-700 line-through decoration-rose-600/70 dark:bg-rose-500/25 dark:text-rose-300 dark:decoration-rose-400/70'
     default:
       return ''
   }

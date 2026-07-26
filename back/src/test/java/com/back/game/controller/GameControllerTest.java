@@ -124,6 +124,36 @@ class GameControllerTest extends AbstractMySQLIntegrationTest {
     }
 
     @Test
+    void 점수_제출_응답에_이번_판_순위가_포함된다() throws Exception {
+        // game-2048(higherIsBetter=true) — 서로 다른 유저 3명이 순서대로 10 → 30 → 20을 제출한다.
+        // "이번 제출 순위"는 내 역대 최고 기록이 아니라 방금 저장된 그 점수 하나의 순위여야 한다.
+        User user1 = saveUser("r1", "랭커1");
+        User user2 = saveUser("r2", "랭커2");
+        User user3 = saveUser("r3", "랭커3");
+
+        // 첫 제출 — 아직 아무도 없으므로 1등
+        submitAndExpectRank(user1, "game-2048", 10, 1);
+        // 10보다 높은 30 제출 — 지금까지 중 최고이므로 1등
+        submitAndExpectRank(user2, "game-2048", 30, 1);
+        // 30보다는 낮고 10보다는 높은 20 제출 — 30 하나만 더 좋으므로 2등
+        submitAndExpectRank(user3, "game-2048", 20, 2);
+    }
+
+    private void submitAndExpectRank(User user, String gameId, int score, long expectedRank) throws Exception {
+        String accessToken = jwtProvider.issueAccessToken(user.getId());
+        String sessionToken = startSession(gameId);
+        Thread.sleep(600);
+
+        mockMvc.perform(post("/api/v1/games/" + gameId + "/scores")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType("application/json")
+                        .content(scoreBody(score, sessionToken)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.score").value(score))
+                .andExpect(jsonPath("$.rank").value(expectedRank));
+    }
+
+    @Test
     void 반응속도_게임은_80ms_미만_점수를_거부한다() throws Exception {
         User user = saveUser("s4", "유저4");
         String accessToken = jwtProvider.issueAccessToken(user.getId());

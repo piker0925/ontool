@@ -8,6 +8,8 @@ export interface GameScoreResponse {
     score: number
     durationMs: number
     createdAt: string
+    /** 이번에 제출한 점수 그 자체의 순위(1부터) — 리더보드 응답의 myRank(역대 최고 기록 기준)와 다르다. */
+    rank: number
 }
 
 export interface GameLeaderboardEntry {

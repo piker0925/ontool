@@ -128,7 +128,7 @@ describe('GamePage', () => {
     it('로그인 상태에서 게임이 끝나면 발급받은 세션 토큰으로 점수를 제출한다', async () => {
         accessToken.value = 'a-token'
         user.value = {id: 1, provider: 'GOOGLE', nickname: '테스터', email: null, createdAt: '2026-01-01T00:00:00', status: 'ACTIVE'}
-        mockSubmitScore.mockResolvedValue({id: 1, gameId: 'game-2048', score: 42, durationMs: 1000, createdAt: ''})
+        mockSubmitScore.mockResolvedValue({id: 1, gameId: 'game-2048', score: 42, durationMs: 1000, createdAt: '', rank: 3})
 
         const wrapper = mount(GamePage, {
             props: {title: '2048', gameId: 'game-2048'},
@@ -141,6 +141,30 @@ describe('GamePage', () => {
 
         expect(mockSubmitScore).toHaveBeenCalledWith('game-2048', 42, 'session-token')
         expect(wrapper.find('[data-testid="game-login-hint"]').exists()).toBe(false)
+    })
+
+    it('점수 제출 응답의 순위를 순위표 패널에 이번 판 순위로 전달하고, 재시작하면 초기화한다', async () => {
+        accessToken.value = 'a-token'
+        user.value = {id: 1, provider: 'GOOGLE', nickname: '테스터', email: null, createdAt: '2026-01-01T00:00:00', status: 'ACTIVE'}
+        mockSubmitScore.mockResolvedValue({id: 1, gameId: 'game-2048', score: 42, durationMs: 1000, createdAt: '', rank: 5})
+
+        const wrapper = mount(GamePage, {
+            props: {title: '2048', gameId: 'game-2048'},
+            slots: {default: (scope: any) => h(GameEndStubGame, scope)},
+        })
+        await flushPromises()
+
+        // submitScore + onGameEnd를 함께 호출 — onGameEnd가 174의 자동 표시 로직을 트리거해
+        // 순위표 패널이 열린다(ScoringStubGame은 onGameEnd가 없어 패널이 안 열림).
+        await wrapper.find('[data-testid="finish"]').trigger('click')
+        await flushPromises()
+        const panel = wrapper.findComponent({name: 'GameLeaderboardPanel'})
+        expect(panel.props('lastRoundRank')).toBe(5)
+
+        await wrapper.find('[data-testid="game-restart"]').trigger('click')
+        await flushPromises()
+
+        expect(wrapper.findComponent({name: 'GameLeaderboardPanel'}).props('lastRoundRank')).toBeNull()
     })
 
     it('비로그인 상태에서 게임이 끝나면 점수를 제출하지 않고 로그인 유도 문구를 보여준다', async () => {

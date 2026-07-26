@@ -56,7 +56,8 @@ public class GameScoreService {
         assertPlausible(definition, score, durationMs);
 
         GameScore saved = gameScoreRepository.save(new GameScore(gameId, userId, score, (int) durationMs));
-        return GameScoreResponse.from(saved);
+        long rank = rankOf(gameId, score, definition.higherIsBetter());
+        return GameScoreResponse.from(saved, rank);
     }
 
     @Transactional(readOnly = true)
@@ -100,9 +101,15 @@ public class GameScoreService {
     private Long myRank(String gameId, Long userId, boolean desc) {
         Integer best = myBest(gameId, userId, desc);
         if (best == null) return null;
+        return rankOf(gameId, best, desc);
+    }
+
+    // 특정 점수 하나의 순위(1부터 시작) — "이 점수보다 좋은 기록이 몇 개인지 + 1". myRank(내 역대
+    // 최고 기록 순위)와 submitScore가 돌려주는 이번 제출 순위 둘 다 이 계산을 그대로 재사용한다.
+    private long rankOf(String gameId, int score, boolean desc) {
         long better = desc
-                ? gameScoreRepository.countBetterDesc(gameId, best)
-                : gameScoreRepository.countBetterAsc(gameId, best);
+                ? gameScoreRepository.countBetterDesc(gameId, score)
+                : gameScoreRepository.countBetterAsc(gameId, score);
         return better + 1;
     }
 

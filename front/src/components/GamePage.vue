@@ -46,7 +46,12 @@
       <div aria-hidden="true" class="hidden sm:block"></div>
     </div>
 
-    <GameLeaderboardPanel v-if="gameId && showLeaderboard" ref="leaderboardPanelRef" :game-id="gameId"/>
+    <GameLeaderboardPanel
+        v-if="gameId && showLeaderboard"
+        ref="leaderboardPanelRef"
+        :game-id="gameId"
+        :last-round-rank="lastRoundRank"
+    />
 
     <div :key="restartKey" class="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-6">
       <slot :restart="restart" :submit-score="submitScore" :on-game-end="onGameEnd"/>
@@ -74,7 +79,7 @@ import {useAuth} from '../composables/useAuth'
 import {startGameSession, submitGameScore} from '../api/games'
 import GameLeaderboardPanel from './GameLeaderboardPanel.vue'
 
-// gameId는 GameCatalog(백엔드)에 등록된 게임(053의 8개 + 121의 8개, 총 16개)에서만 넘어온다 —
+// gameId는 GameCatalog(백엔드)에 등록된 게임(총 14개)에서만 넘어온다 —
 // 뽀모도로처럼 점수 개념이 없는 FULL_SHELL_COMPONENTS 입주 모듈은 gameId 없이 GamePage를 쓰고,
 // 그 경우 순위표·제출 로직 전체가 조용히 비활성화된다.
 const props = defineProps<{ title: string; description?: string; gameId?: string }>()
@@ -88,6 +93,9 @@ const restartKey = ref(0)
 const showLeaderboard = ref(false)
 const loginHintVisible = ref(false)
 const leaderboardPanelRef = ref<InstanceType<typeof GameLeaderboardPanel> | null>(null)
+// 방금 제출한 점수 그 자체의 순위 — GameLeaderboardPanel의 myRank(역대 최고 기록 기준)와 별개로
+// "이번 판은 몇 등이었는지"를 보여주기 위함(174 이후 사용자 피드백: 최고 기록만 보이면 헷갈림).
+const lastRoundRank = ref<number | null>(null)
 
 // 174: 자동으로 열린 순위표를 사용자가 직접 닫으면, 이 GamePage 인스턴스가 살아있는 동안
 // (재시작을 반복해도) 더는 자동으로 다시 열지 않는다 — 매 판마다 팝업이 뜨면 방해가 되므로
@@ -123,6 +131,7 @@ refreshSession()
 function restart() {
   restartKey.value++
   loginHintVisible.value = false
+  lastRoundRank.value = null
   refreshSession()
 }
 
@@ -146,7 +155,8 @@ async function submitScore(score: number) {
   loginHintVisible.value = true
   if (!isLoggedIn.value || !sessionToken) return
   try {
-    await submitGameScore(props.gameId, score, sessionToken)
+    const result = await submitGameScore(props.gameId, score, sessionToken)
+    lastRoundRank.value = result?.rank ?? null
     toast.success('순위표에 등록됐어요')
     leaderboardPanelRef.value?.reload()
   } catch (e: unknown) {

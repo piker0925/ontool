@@ -497,6 +497,18 @@ export const MOCK_MODULES: Module[] = [
         keywords: ['밸런스 게임', 'balance game', '양자택일'],
         zones: ['life'],
     },
+    {
+        id: 'mbti-compatibility', name: 'MBTI 궁합 계산기', category: '재미', isHeavy: false, isFrontendOnly: true,
+        description: '두 MBTI의 연애·우정·직장 궁합 점수와 설명, 최고·최악 궁합 랭킹까지',
+        keywords: ['MBTI 궁합', 'mbti compatibility', '궁합 계산기', 'MBTI 랭킹'],
+        zones: ['life'],
+    },
+    {
+        id: 'mbti-match-card', name: 'MBTI 매칭 카드', category: '재미', isHeavy: false, isFrontendOnly: true,
+        description: '16가지 MBTI 유형에 어울리는 동물·음식·색깔·직업 매칭 카드',
+        keywords: ['MBTI 매칭', 'mbti match card', 'MBTI 카드'],
+        zones: ['life'],
+    },
 
     // 미니게임 (프론트 전용, 상태는 컴포넌트 내부 — 서버 저장 없음, v3 이전 범위. ADR-0026)
     // component 로더는 여기 두지 않는다 — config/shellComponents.ts와 그 주석 참고.

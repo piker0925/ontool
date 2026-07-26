@@ -140,40 +140,6 @@
     --zone-accent: oklch(0.75 0.14 315);
 }
 
-/*
- * Simon 게임 전용 9색 팔레트 (DESIGN.md §2, §6, 172에서 4색→9색 확장)
- * — Tailwind 기본 팔레트(red-700/blue-700/yellow-600/emerald-700 등) 원색 대신
- *   채도를 낮춰 조색한 값. 라이트/다크 배경 양쪽에서 무난히 보이도록 테마 구분 없이 고정값을 쓴다
- *   (게임 셸은 다른 게임 컴포넌트와 마찬가지로 --zone-accent 강제 대상이 아님 — ADR-0026).
- * — 9색 모두 색상환(hue)을 최대한 고르게(약 30~40도 간격) 벌려 인접한 버튼끼리 헷갈리지 않도록
- *   했다. 기존 4색(red 25 / yellow 85 / green 152 / blue 258)은 그대로 두고 빈 구간에
- *   orange 55 / lime 118 / teal 205 / violet 300 / magenta 342를 추가했다.
- *   색만으로 구분하기 어려운 사용자를 위해 SimonBoard.vue에서 버튼마다 다른 음높이도 함께 준다.
- */
-:root {
-    --simon-red: oklch(0.52 0.16 25);
-    --simon-red-active: oklch(0.70 0.15 25);
-    --simon-orange: oklch(0.60 0.15 55);
-    --simon-orange-active: oklch(0.80 0.14 55);
-    --simon-yellow: oklch(0.62 0.13 85);
-    --simon-yellow-active: oklch(0.82 0.14 90);
-    /* 라임은 노랑·초록 사이라 특히 붙어 보이기 쉬워 명도를 둘보다 확실히 높게 잡아 구분한다 */
-    --simon-lime: oklch(0.70 0.14 118);
-    --simon-lime-active: oklch(0.87 0.13 118);
-    /* 초록은 명도를 빨강보다 눈에 띄게 올리고 채도도 원본(emerald-700 C0.118)보다 낮춰
-       적록색약에서도 빨강과 구분되도록 함(code-review 지적 반영) */
-    --simon-green: oklch(0.60 0.11 152);
-    --simon-green-active: oklch(0.80 0.12 152);
-    --simon-teal: oklch(0.55 0.10 205);
-    --simon-teal-active: oklch(0.75 0.11 205);
-    --simon-blue: oklch(0.50 0.16 258);
-    --simon-blue-active: oklch(0.70 0.14 258);
-    --simon-violet: oklch(0.55 0.14 300);
-    --simon-violet-active: oklch(0.75 0.13 300);
-    --simon-magenta: oklch(0.58 0.16 342);
-    --simon-magenta-active: oklch(0.78 0.15 342);
-}
-
 html, body {
     height: 100%;
 }
@@ -231,24 +197,6 @@ html, body {
     --color-zone-accent-files: var(--zone-accent-files);
     --color-zone-accent-life: var(--zone-accent-life);
     --color-zone-accent-fun: var(--zone-accent-fun);
-    --color-simon-red: var(--simon-red);
-    --color-simon-red-active: var(--simon-red-active);
-    --color-simon-orange: var(--simon-orange);
-    --color-simon-orange-active: var(--simon-orange-active);
-    --color-simon-yellow: var(--simon-yellow);
-    --color-simon-yellow-active: var(--simon-yellow-active);
-    --color-simon-lime: var(--simon-lime);
-    --color-simon-lime-active: var(--simon-lime-active);
-    --color-simon-green: var(--simon-green);
-    --color-simon-green-active: var(--simon-green-active);
-    --color-simon-teal: var(--simon-teal);
-    --color-simon-teal-active: var(--simon-teal-active);
-    --color-simon-blue: var(--simon-blue);
-    --color-simon-blue-active: var(--simon-blue-active);
-    --color-simon-violet: var(--simon-violet);
-    --color-simon-violet-active: var(--simon-violet-active);
-    --color-simon-magenta: var(--simon-magenta);
-    --color-simon-magenta-active: var(--simon-magenta-active);
     --color-popover-foreground: var(--popover-foreground);
     --color-popover: var(--popover);
     --color-card-foreground: var(--card-foreground);

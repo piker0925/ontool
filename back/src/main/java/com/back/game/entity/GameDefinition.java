@@ -6,7 +6,7 @@ package com.back.game.entity;
  * 두지 않고 이 설정만 갈아끼우면 새 게임을 추가할 수 있게 하기 위함.
  *
  * @param id             프론트 카탈로그 모듈 id와 동일 (예: "game-2048")
- * @param higherIsBetter true면 점수 내림차순이 좋은 순위(2048·스네이크·사이먼),
+ * @param higherIsBetter true면 점수 내림차순이 좋은 순위(2048·스네이크),
  *                       false면 오름차순이 좋은 순위(반응속도 ms·지뢰찾기 클리어시간 ms·
  *                       카드짝맞추기 시도횟수·숫자야구 시도횟수·틱택토 승리까지 둔 수)
  * @param minDurationMs  세션 토큰 발급~제출 사이 최소 경과 시간(ms). 이보다 짧으면 최소

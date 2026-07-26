@@ -544,11 +544,6 @@ export const MOCK_MODULES: Module[] = [
         kind: 'game', zones: ['fun'],
     },
     {
-        id: 'game-simon', name: '사이먼', category: '게임', isHeavy: false, isFrontendOnly: true,
-        description: '색상 순서를 기억해 그대로 따라 클릭하는 순서 기억 게임',
-        kind: 'game', zones: ['fun'],
-    },
-    {
         id: 'game-baseball', name: '숫자야구', category: '게임', isHeavy: false, isFrontendOnly: true,
         description: '중복 없는 숫자를 스트라이크·볼 힌트로 추리하는 게임',
         kind: 'game', zones: ['fun'],

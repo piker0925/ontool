@@ -32,8 +32,7 @@ describe('formatGameScore', () => {
         expect(formatGameScore('game-sliding-puzzle', 37)).toBe('37번')
     })
 
-    it('사이먼은 라운드, 카드짝맞추기·숫자야구는 시도 횟수(번) 단위를 쓴다', () => {
-        expect(formatGameScore('game-simon', 7)).toBe('7라운드')
+    it('카드짝맞추기·숫자야구는 시도 횟수(번) 단위를 쓴다', () => {
         expect(formatGameScore('game-memory-cards', 12)).toBe('12번')
         expect(formatGameScore('game-baseball', 5)).toBe('5번')
     })

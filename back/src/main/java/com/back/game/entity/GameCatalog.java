@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * 15개 게임의 채점 규칙 레지스트리(053, 121). 프론트 shellComponents.ts / mock.ts 카탈로그의
+ * 14개 게임의 채점 규칙 레지스트리(053, 121). 프론트 shellComponents.ts / mock.ts 카탈로그의
  * 게임 moduleId와 정확히 일치해야 한다. minDurationMs는 각 게임을 "정상적으로 최소 1판" 진행하는 데
  * 걸리는 시간을 넉넉히 낮춰 잡았다 — 실제 플레이를 막지 않으면서 즉시 제출(위조/재생 공격)만 거른다.
  */
@@ -19,10 +19,6 @@ public final class GameCatalog {
             Map.entry("game-reaction-time", new GameDefinition("game-reaction-time", false, 900, 80, null)),
             // 최소 한 칸을 열어야 승패가 갈림
             Map.entry("game-minesweeper", new GameDefinition("game-minesweeper", false, 300, null, null)),
-            // 첫 라운드 시퀀스 재생을 봐야 입력 가능. 172부터 라운드별 속도 스케줄(초반 라운드는
-            // 기본 속도인 SHOW_MS=500+GAP_MS=200=700ms보다 느리게, 예: 1라운드는 약 1450ms)을
-            // 적용해 실제 최소 소요 시간은 더 길어졌으므로 600ms 하한은 여전히 안전하게 낮은 값이다
-            Map.entry("game-simon", new GameDefinition("game-simon", true, 600, null, null)),
             // 카드 짝 확인에 RESOLVE_DELAY_MS(700ms) 이상 소요
             Map.entry("game-memory-cards", new GameDefinition("game-memory-cards", false, 600, null, null)),
             // 최소 한 번 추측 제출

@@ -1,5 +1,5 @@
 // 174: 게임 리더보드 점수는 게임마다 저장 단위와 의미가 다르다(2048=점수, 반응속도=ms,
-// 지뢰찾기=클리어까지 걸린 ms, 사이먼=라운드 등 — 각 보드 컴포넌트의 submitScore 호출부 주석 참조).
+// 지뢰찾기=클리어까지 걸린 ms 등 — 각 보드 컴포넌트의 submitScore 호출부 주석 참조).
 // GameCatalog(백엔드)는 순위 정렬 방향·부정행위 검증 규칙만 갖고 있고 "화면에 어떻게 보여줄지"는
 // 순수 표시 관심사라 프론트에만 둔다(ADR-0020의 프론트 전용 계산 분리 원칙과 동일한 이유).
 //
@@ -20,7 +20,6 @@ const GAME_SCORE_FORMATTERS: Record<string, (score: number) => string> = {
 
     'game-reaction-time': score => `${score.toLocaleString()}ms`,
     'game-minesweeper': score => `${Math.round(score / 1000).toLocaleString()}초`,
-    'game-simon': score => `${score.toLocaleString()}라운드`,
 
     // 횟수형(적을수록 좋은 시도/이동 횟수) — 카드짝맞추기·숫자야구(053), 워터소트·슬라이딩퍼즐(121)
     'game-memory-cards': score => `${score.toLocaleString()}번`,

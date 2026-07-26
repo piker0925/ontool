@@ -1,5 +1,13 @@
 import {describe, expect, it} from 'vitest'
-import {createSimonGame, getSimonTiming, press, SIMON_BASE_GAP_MS, SIMON_BASE_SHOW_MS, SIMON_COLOR_COUNT} from './simon'
+import {
+    createSimonGame,
+    getSequenceLengthForRound,
+    getSimonTiming,
+    press,
+    SIMON_BASE_GAP_MS,
+    SIMON_BASE_SHOW_MS,
+    SIMON_COLOR_COUNT,
+} from './simon'
 
 describe('createSimonGame', () => {
     it('길이 1짜리 시퀀스로 시작하고 입력은 비어 있다', () => {
@@ -26,8 +34,11 @@ describe('createSimonGame — 색 개수 파라미터화', () => {
     })
 
     it('press로 다음 라운드에 추가되는 색도 생성 시 지정한 colorCount를 벗어나지 않는다', () => {
-        const state9 = createSimonGame(() => 0, 9) // sequence: [0], colorCount 9
-        const next9 = press(state9, 0, () => 0.99) // 새 색 = floor(0.99*9) = 8
+        // colorCount 9는 라운드 1→2 구간이 완화 스케줄(172)이라 길이가 늘지 않는다.
+        // 실제로 길이가 느는 라운드(2→3)까지 진행해서 새로 뽑힌 색이 colorCount 범위 안인지 확인한다.
+        let state9 = createSimonGame(() => 0, 9) // sequence: [0], colorCount 9, round 1
+        state9 = press(state9, 0, () => 0.99) // round 2, 완화 구간이라 길이 유지 [0]
+        const next9 = press(state9, 0, () => 0.99) // round 3, 길이 증가 — 새 색 = floor(0.99*9) = 8
         expect(next9.sequence).toEqual([0, 8])
         expect(next9.colorCount).toBe(9)
 
@@ -121,5 +132,83 @@ describe('getSimonTiming — 라운드별 재생 속도 스케줄', () => {
     it('0 이하의 라운드 값은 1라운드와 동일하게 취급한다(방어적 clamp)', () => {
         expect(getSimonTiming(0)).toEqual(getSimonTiming(1))
         expect(getSimonTiming(-5)).toEqual(getSimonTiming(1))
+    })
+})
+
+describe('getSequenceLengthForRound — 라운드별 시퀀스 길이 증가 스케줄(172)', () => {
+    it('4색 이하(구버전 호환)는 기존과 동일하게 매 라운드 정확히 1개씩 늘어난다', () => {
+        for (let round = 1; round <= 10; round++) {
+            expect(getSequenceLengthForRound(round, 4)).toBe(round)
+        }
+    })
+
+    it('9색(현재 기본값)은 초반 라운드에서 2라운드에 1개씩만 늘어 4색보다 완만하다', () => {
+        // 같은 라운드 수를 클리어했을 때 9색 쪽 시퀀스가 4색 쪽보다 짧아야(=쉬워야) 한다
+        expect(getSequenceLengthForRound(2, 9)).toBeLessThan(getSequenceLengthForRound(2, 4))
+        expect(getSequenceLengthForRound(4, 9)).toBeLessThan(getSequenceLengthForRound(4, 4))
+        expect(getSequenceLengthForRound(6, 9)).toBeLessThan(getSequenceLengthForRound(6, 4))
+
+        // 구체적으로 라운드 1~6 동안 2라운드당 1개씩만 증가한다
+        expect(getSequenceLengthForRound(1, 9)).toBe(1)
+        expect(getSequenceLengthForRound(2, 9)).toBe(1)
+        expect(getSequenceLengthForRound(3, 9)).toBe(2)
+        expect(getSequenceLengthForRound(4, 9)).toBe(2)
+        expect(getSequenceLengthForRound(5, 9)).toBe(3)
+        expect(getSequenceLengthForRound(6, 9)).toBe(3)
+    })
+
+    it('완화 구간이 끝난 이후(9색)에는 다시 매 라운드 1개씩 정상 속도로 늘어난다', () => {
+        const r6 = getSequenceLengthForRound(6, 9)
+        const r7 = getSequenceLengthForRound(7, 9)
+        const r8 = getSequenceLengthForRound(8, 9)
+        const r9 = getSequenceLengthForRound(9, 9)
+
+        expect(r7 - r6).toBe(1)
+        expect(r8 - r7).toBe(1)
+        expect(r9 - r8).toBe(1)
+    })
+
+    it('시퀀스 길이는 라운드에 대해 단조 비감소(never decreasing)한다', () => {
+        let prev = getSequenceLengthForRound(1, 9)
+        for (let round = 2; round <= 15; round++) {
+            const current = getSequenceLengthForRound(round, 9)
+            expect(current).toBeGreaterThanOrEqual(prev)
+            prev = current
+        }
+    })
+
+    it('0 이하의 라운드 값은 1라운드와 동일하게 취급한다(방어적 clamp)', () => {
+        expect(getSequenceLengthForRound(0, 9)).toBe(getSequenceLengthForRound(1, 9))
+        expect(getSequenceLengthForRound(-3, 9)).toBe(getSequenceLengthForRound(1, 9))
+    })
+})
+
+describe('press — 9색 기준 완화된 성장 스케줄이 실제로 적용된다', () => {
+    it('완화 구간(2라운드) 안에서는 라운드를 클리어해도 시퀀스 길이가 늘지 않을 수 있다', () => {
+        // colorCount=9, round 1 → round 2로 넘어가는 구간은 완화 구간(길이 1 유지)
+        const state = createSimonGame(() => 0, 9) // sequence: [0], round 1
+        const next = press(state, 0, () => 0.5) // round 2로 진행 시도
+        expect(next.status).toBe('playing')
+        expect(next.round).toBe(2)
+        expect(next.sequence.length).toBe(1) // 완화 구간이라 길이 유지
+        expect(next.sequence).toEqual([0])
+    })
+
+    it('완화 구간을 넘어서면(라운드 3) 시퀀스 길이가 늘어난다', () => {
+        let state = createSimonGame(() => 0, 9) // [0], round 1
+        state = press(state, 0, () => 0.5) // round 2, 길이 유지 [0]
+        expect(state.sequence.length).toBe(1)
+
+        state = press(state, 0, () => 0.5) // round 3, 길이 증가
+        expect(state.status).toBe('playing')
+        expect(state.round).toBe(3)
+        expect(state.sequence.length).toBe(2)
+    })
+
+    it('4색으로 플레이하면(구버전 호환) 완화 없이 매 라운드 길이가 늘어난다', () => {
+        const state = createSimonGame(() => 0, 4) // [0], round 1
+        const next = press(state, 0, () => 0.5)
+        expect(next.round).toBe(2)
+        expect(next.sequence.length).toBe(2)
     })
 })

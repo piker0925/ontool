@@ -107,7 +107,7 @@ function onColorClick(color: number) {
     pressedIndex.value = -1
   }, 150)
 
-  const prevLength = state.value.sequence.length
+  const prevRound = state.value.round
   state.value = press(state.value, color)
   if (state.value.status === 'over') {
     phase.value = 'over'
@@ -117,7 +117,10 @@ function onColorClick(color: number) {
   }
 
   playClick(COLORS[color].freq)
-  if (state.value.sequence.length > prevLength) {
+  // round(클리어 횟수)로 라운드 완료 여부를 판단한다 — 172의 완화 스케줄 구간에서는
+  // 라운드를 클리어해도 시퀀스 길이가 그대로일 수 있어(sequence.length 비교로는 놓친다)
+  // round 증가 여부로 판단해야 완화 구간에서도 정상적으로 다음 라운드로 넘어간다.
+  if (state.value.round > prevRound) {
     playSuccess()
     playSequence(state.value.sequence)
   }

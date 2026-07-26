@@ -47,8 +47,7 @@
            class="rounded-xl border bg-card p-3"
            data-testid="team-group">
         <div class="mb-2 flex items-center gap-2">
-          <span :class="[teamColor(i).bg, teamColor(i).text]"
-                class="flex size-6 items-center justify-center rounded-full text-[11px] font-bold">{{ i + 1 }}</span>
+          <span :class="teamColor(i).bg" class="size-2.5 rounded-full"/>
           <p class="text-[12px] font-semibold text-foreground">팀 {{ i + 1 }}</p>
           <span class="ml-auto font-mono text-[11px] text-muted-foreground">{{ team.length }}명</span>
         </div>

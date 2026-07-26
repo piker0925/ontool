@@ -108,19 +108,24 @@ class GameControllerTest extends AbstractMySQLIntegrationTest {
 
         Thread.sleep(450);
 
-        mockMvc.perform(post("/api/v1/games/game-baseball/scores")
+        MvcResult submitResult = mockMvc.perform(post("/api/v1/games/game-baseball/scores")
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType("application/json")
                         .content(scoreBody(1, sessionToken)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.score").value(1))
-                .andExpect(jsonPath("$.gameId").value("game-baseball"));
+                .andExpect(jsonPath("$.gameId").value("game-baseball"))
+                .andReturn();
+        long submittedId = objectMapper.readTree(submitResult.getResponse().getContentAsString()).get("id").asLong();
 
         mockMvc.perform(get("/api/v1/games/game-baseball/leaderboard"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.topScores.length()").value(1))
                 .andExpect(jsonPath("$.topScores[0].nickname").value("유저3"))
-                .andExpect(jsonPath("$.topScores[0].score").value(1));
+                .andExpect(jsonPath("$.topScores[0].score").value(1))
+                // 리더보드 항목의 id가 제출 응답의 id와 정확히 같아야, 프론트가 "방금 제출한 그
+                // 기록"을 동점자와 헷갈리지 않고 목록에서 정확히 짚어낼 수 있다.
+                .andExpect(jsonPath("$.topScores[0].id").value(submittedId));
     }
 
     @Test

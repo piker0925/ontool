@@ -10,9 +10,10 @@
         <li
             v-for="(entry, i) in visibleEntries"
             :key="`${entry.userId}-${entry.createdAt}`"
+            :data-mine="isMine(entry)"
+            :data-testid="isJustSubmitted(entry) ? 'leaderboard-just-submitted' : undefined"
             class="flex items-center gap-2 rounded-md px-2 py-1 text-[13px]"
-            :class="isMine(entry) ? 'bg-zone-accent/10' : ''"
-            :data-testid="isMine(entry) ? 'leaderboard-my-entry' : undefined"
+            :class="isJustSubmitted(entry) ? 'bg-zone-accent/10' : ''"
         >
           <span class="flex w-5 shrink-0 items-center justify-center">
             <Trophy v-if="rankOf(i) <= 3" :class="medalClass(rankOf(i))" aria-hidden="true" class="size-4" data-testid="leaderboard-trophy"/>
@@ -69,7 +70,7 @@ import {fetchGameLeaderboard, type GameLeaderboardEntry} from '../api/games'
 import {useAuth} from '../composables/useAuth'
 import {formatGameScore} from '../config/gameScoreFormat'
 
-const props = defineProps<{ gameId: string }>()
+const props = defineProps<{ gameId: string; lastSubmittedId?: number | null }>()
 const {isLoggedIn, user} = useAuth()
 
 // 174: 서버 오프셋 페이징 없이 최대 100등을 한 번에 받아 화면에서 10개씩 잘라 보여준다 —
@@ -98,10 +99,18 @@ function rankOf(i: number) {
   return (expanded.value ? page.value * PAGE_SIZE : 0) + i + 1
 }
 
-/** 1~3등 포디움 틴트 대신, 지금 보고 있는 사람 본인의 행만 강조한다(174 이후 사용자 피드백 —
- * "1·2·3등 색칠은 트로피로 이미 표현되니 중복, 대신 내 기록을 바로 찾게 해달라"). */
+// 두 가지를 서로 다른 신호로 구분한다(사용자 피드백) — "내 기록"은 같은 사람이 여러 개 가질 수
+// 있어 배경색을 쓰면 화면이 온통 물드는 문제가 있었다(같은 계정으로 상위 3등을 다 차지한 경우
+// 실제로 확인됨). 그래서 배경(강한 신호)은 "방금 그 기록" 딱 하나에만, 이름 강조(약한 신호)는
+// "내 기록 전부"에 붙인다.
+/** 지금 보고 있는 사람 본인이 세운 기록인지 — 여러 행에 걸쳐 나타날 수 있다(이름만 강조). */
 function isMine(entry: GameLeaderboardEntry) {
   return user.value != null && entry.userId === user.value.id
+}
+
+/** 방금 이번 판에 제출한 그 기록 자체인지 — 항상 목록에 0개 또는 1개뿐(배경으로 강조). */
+function isJustSubmitted(entry: GameLeaderboardEntry) {
+  return props.lastSubmittedId != null && entry.id === props.lastSubmittedId
 }
 
 const MEDAL_CLASSES: Record<number, string> = {

@@ -13,6 +13,8 @@ export interface GameScoreResponse {
 }
 
 export interface GameLeaderboardEntry {
+    /** 이 기록(GameScore 행) 자체의 식별자 — "방금 제출한 그 기록"을 동점자와 구분해 짚어낼 때 쓴다. */
+    id: number
     userId: number
     nickname: string | null
     score: number

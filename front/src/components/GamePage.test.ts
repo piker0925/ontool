@@ -161,11 +161,14 @@ describe('GamePage', () => {
         const banner = wrapper.find('[data-testid="game-last-round-rank"]')
         expect(banner.exists()).toBe(true)
         expect(banner.text()).toContain('5')
+        // 순위표 패널에는 "방금 그 기록"을 배경으로 짚어낼 수 있도록 제출된 기록의 id를 넘겨준다.
+        expect(wrapper.findComponent({name: 'GameLeaderboardPanel'}).props('lastSubmittedId')).toBe(1)
 
         await wrapper.find('[data-testid="game-restart"]').trigger('click')
         await flushPromises()
 
         expect(wrapper.find('[data-testid="game-last-round-rank"]').exists()).toBe(false)
+        expect(wrapper.findComponent({name: 'GameLeaderboardPanel'}).props('lastSubmittedId')).toBeNull()
     })
 
     it('비로그인 상태에서 게임이 끝나면 점수를 제출하지 않고 로그인 유도 문구를 보여준다', async () => {

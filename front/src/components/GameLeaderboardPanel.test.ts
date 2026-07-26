@@ -20,8 +20,8 @@ describe('GameLeaderboardPanel', () => {
     it('마운트 시 상위 기록을 순위대로 표시한다', async () => {
         mockFetch.mockResolvedValue({
             topScores: [
-                {userId: 1, nickname: '1등', score: 100, durationMs: 5000, createdAt: '2026-07-25T00:00:00'},
-                {userId: 2, nickname: '2등', score: 80, durationMs: 5000, createdAt: '2026-07-25T00:00:00'},
+                {id: 1, userId: 1, nickname: '1등', score: 100, durationMs: 5000, createdAt: '2026-07-25T00:00:00'},
+                {id: 2, userId: 2, nickname: '2등', score: 80, durationMs: 5000, createdAt: '2026-07-25T00:00:00'},
             ],
             myBest: null,
             myRank: null,
@@ -52,7 +52,7 @@ describe('GameLeaderboardPanel', () => {
 
     it('로그인 사용자는 내 순위가 함께 표시된다', async () => {
         mockFetch.mockResolvedValue({
-            topScores: [{userId: 9, nickname: '1등', score: 999, durationMs: 1000, createdAt: '2026-07-25T00:00:00'}],
+            topScores: [{id: 9, userId: 9, nickname: '1등', score: 999, durationMs: 1000, createdAt: '2026-07-25T00:00:00'}],
             myBest: 42,
             myRank: 7,
         })
@@ -78,6 +78,7 @@ describe('GameLeaderboardPanel', () => {
     describe('174: 페이징(10개씩, 최대 100등)', () => {
         function entriesOf(count: number) {
             return Array.from({length: count}, (_, i) => ({
+                id: i + 1,
                 userId: i + 1,
                 nickname: `${i + 1}등`,
                 score: 1000 - i,
@@ -184,6 +185,7 @@ describe('GameLeaderboardPanel', () => {
     describe('1~3등 트로피 표시', () => {
         function entriesOf(count: number) {
             return Array.from({length: count}, (_, i) => ({
+                id: i + 1,
                 userId: i + 1,
                 nickname: `${i + 1}등`,
                 score: 1000 - i,
@@ -227,9 +229,10 @@ describe('GameLeaderboardPanel', () => {
         })
     })
 
-    describe('내 기록 강조 표시', () => {
+    describe('내 기록 강조(이름) vs 방금 그 기록 강조(배경) — 서로 다른 신호', () => {
         function entriesOf(count: number) {
             return Array.from({length: count}, (_, i) => ({
+                id: i + 1,
                 userId: i + 1,
                 nickname: `${i + 1}등`,
                 score: 1000 - i,
@@ -238,7 +241,7 @@ describe('GameLeaderboardPanel', () => {
             }))
         }
 
-        it('로그인한 내 userId와 같은 행에만 배경·닉네임 강조가 붙고, 1~3등이라도 내가 아니면 안 붙는다', async () => {
+        it('로그인한 내 userId와 같은 행은 이름만 강조되고(배경 없음), 1~3등이라도 내가 아니면 강조 안 된다', async () => {
             mockFetch.mockResolvedValue({topScores: entriesOf(5), myBest: null, myRank: null})
             user.value = {id: 2, provider: 'GOOGLE', nickname: '2등', email: null, createdAt: '2026-01-01T00:00:00', status: 'ACTIVE'}
 
@@ -246,15 +249,16 @@ describe('GameLeaderboardPanel', () => {
             await flushPromises()
 
             const rows = wrapper.findAll('[data-testid="leaderboard-entries"] li')
-            // userId=2(2번째 행, 1~3등 포디움 안에 있음)만 강조돼야 한다
-            expect(rows[0].find('[data-testid="leaderboard-my-entry"]').exists()).toBe(false) // 1등(userId=1)은 내가 아님
-            expect(rows[1].attributes('data-testid')).toBe('leaderboard-my-entry') // 2등(userId=2)이 나
-            expect(rows[1].classes()).toContain('bg-zone-accent/10')
-            expect(rows[2].attributes('data-testid')).toBeUndefined() // 3등(userId=3)도 내가 아님, 포디움이라도 강조 없음
-            expect(rows[2].classes()).not.toContain('bg-zone-accent/10')
+            expect(rows[0].attributes('data-mine')).toBe('false') // 1등(userId=1)은 내가 아님
+            expect(rows[1].attributes('data-mine')).toBe('true') // 2등(userId=2)이 나
+            // 방금 제출한 기록(lastSubmittedId)이 없으므로 배경 강조는 아무 행에도 없어야 한다 —
+            // "내 기록"과 "방금 그 기록"은 서로 다른 신호라는 걸 여기서 확인한다.
+            expect(rows[1].classes()).not.toContain('bg-zone-accent/10')
+            expect(rows[1].find('span.font-semibold.text-zone-accent').text()).toBe('2등')
+            expect(rows[2].attributes('data-mine')).toBe('false') // 3등(userId=3)도 내가 아님, 포디움이라도 강조 없음
         })
 
-        it('전체 순위 보기로 펼쳐서 4등 밖에 내가 있어도 그 행이 강조된다', async () => {
+        it('전체 순위 보기로 펼쳐서 4등 밖에 내가 있어도 그 행의 이름이 강조된다', async () => {
             mockFetch.mockResolvedValue({topScores: entriesOf(10), myBest: null, myRank: null})
             user.value = {id: 7, provider: 'GOOGLE', nickname: '7등', email: null, createdAt: '2026-01-01T00:00:00', status: 'ACTIVE'}
 
@@ -263,25 +267,62 @@ describe('GameLeaderboardPanel', () => {
             await wrapper.find('[data-testid="leaderboard-expand-toggle"]').trigger('click')
 
             const rows = wrapper.findAll('[data-testid="leaderboard-entries"] li')
-            expect(rows[6].attributes('data-testid')).toBe('leaderboard-my-entry') // 0-index 6 = 7등(userId=7)
-            expect(rows[6].text()).toContain('7등')
+            expect(rows[6].attributes('data-mine')).toBe('true') // 0-index 6 = 7등(userId=7)
+            expect(rows[6].find('span.font-semibold.text-zone-accent').text()).toBe('7등')
         })
 
-        it('비로그인이면 아무 행도 강조되지 않는다', async () => {
+        it('lastSubmittedId와 일치하는 그 한 행에만 배경이 강조된다 — 같은 사람이 상위 3등을 다 차지해도 나머지엔 안 붙는다', async () => {
+            // 3개 전부 같은 유저(userId=1)의 기록 — "내 기록"만으로 배경을 칠하면 3줄이 다
+            // 물들어버리는 문제를 재현한다. lastSubmittedId=2(두 번째 기록)만 배경이 있어야 한다.
+            mockFetch.mockResolvedValue({
+                topScores: [
+                    {id: 1, userId: 1, nickname: '나', score: 100, durationMs: 1000, createdAt: '2026-07-25T00:00:00'},
+                    {id: 2, userId: 1, nickname: '나', score: 90, durationMs: 1000, createdAt: '2026-07-25T00:01:00'},
+                    {id: 3, userId: 1, nickname: '나', score: 80, durationMs: 1000, createdAt: '2026-07-25T00:02:00'},
+                ],
+                myBest: null,
+                myRank: null,
+            })
+            user.value = {id: 1, provider: 'GOOGLE', nickname: '나', email: null, createdAt: '2026-01-01T00:00:00', status: 'ACTIVE'}
+
+            const wrapper = mount(GameLeaderboardPanel, {props: {gameId: 'game-2048', lastSubmittedId: 2}})
+            await flushPromises()
+
+            const rows = wrapper.findAll('[data-testid="leaderboard-entries"] li')
+            // 셋 다 "내 기록"이라 data-mine=true, 이름은 셋 다 강조되지만
+            expect(rows.map(r => r.attributes('data-mine'))).toEqual(['true', 'true', 'true'])
+            // 배경(bg-zone-accent/10)은 id=2인 두 번째 행에만 있어야 한다
+            expect(rows[0].classes()).not.toContain('bg-zone-accent/10')
+            expect(rows[1].classes()).toContain('bg-zone-accent/10')
+            expect(rows[1].attributes('data-testid')).toBe('leaderboard-just-submitted')
+            expect(rows[2].classes()).not.toContain('bg-zone-accent/10')
+        })
+
+        it('lastSubmittedId가 없으면(아직 이번 세션에 제출한 적 없음) 배경 강조가 전혀 없다', async () => {
+            mockFetch.mockResolvedValue({topScores: entriesOf(3), myBest: null, myRank: null})
+            user.value = {id: 1, provider: 'GOOGLE', nickname: '1등', email: null, createdAt: '2026-01-01T00:00:00', status: 'ACTIVE'}
+
+            const wrapper = mount(GameLeaderboardPanel, {props: {gameId: 'game-2048'}})
+            await flushPromises()
+
+            expect(wrapper.find('[data-testid="leaderboard-just-submitted"]').exists()).toBe(false)
+        })
+
+        it('비로그인이면 이름 강조가 없다', async () => {
             mockFetch.mockResolvedValue({topScores: entriesOf(3), myBest: null, myRank: null})
             user.value = null
 
             const wrapper = mount(GameLeaderboardPanel, {props: {gameId: 'game-2048'}})
             await flushPromises()
 
-            expect(wrapper.find('[data-testid="leaderboard-my-entry"]').exists()).toBe(false)
+            expect(wrapper.find('span.font-semibold.text-zone-accent').exists()).toBe(false)
         })
     })
 
     describe('174: 게임별 점수 단위', () => {
         it('반응속도는 ms 단위로 표시된다', async () => {
             mockFetch.mockResolvedValue({
-                topScores: [{userId: 1, nickname: '1등', score: 234, durationMs: 1000, createdAt: '2026-07-25T00:00:00'}],
+                topScores: [{id: 1, userId: 1, nickname: '1등', score: 234, durationMs: 1000, createdAt: '2026-07-25T00:00:00'}],
                 myBest: null,
                 myRank: null,
             })
@@ -294,7 +335,7 @@ describe('GameLeaderboardPanel', () => {
 
         it('지뢰찾기는 ms로 저장된 점수를 초 단위로 환산해 표시한다', async () => {
             mockFetch.mockResolvedValue({
-                topScores: [{userId: 1, nickname: '1등', score: 45500, durationMs: 45500, createdAt: '2026-07-25T00:00:00'}],
+                topScores: [{id: 1, userId: 1, nickname: '1등', score: 45500, durationMs: 45500, createdAt: '2026-07-25T00:00:00'}],
                 myBest: null,
                 myRank: null,
             })
@@ -309,7 +350,7 @@ describe('GameLeaderboardPanel', () => {
 
         it('숫자야구는 시도 횟수(번) 단위로 표시된다', async () => {
             mockFetch.mockResolvedValue({
-                topScores: [{userId: 1, nickname: '1등', score: 3, durationMs: 1000, createdAt: '2026-07-25T00:00:00'}],
+                topScores: [{id: 1, userId: 1, nickname: '1등', score: 3, durationMs: 1000, createdAt: '2026-07-25T00:00:00'}],
                 myBest: null,
                 myRank: null,
             })
@@ -322,7 +363,7 @@ describe('GameLeaderboardPanel', () => {
 
         it('워터소트는 이동 횟수(번) 단위로, 타워쌓기는 점수형(점) 단위로 표시된다', async () => {
             mockFetch.mockResolvedValue({
-                topScores: [{userId: 1, nickname: '1등', score: 9, durationMs: 1000, createdAt: '2026-07-25T00:00:00'}],
+                topScores: [{id: 1, userId: 1, nickname: '1등', score: 9, durationMs: 1000, createdAt: '2026-07-25T00:00:00'}],
                 myBest: null,
                 myRank: null,
             })

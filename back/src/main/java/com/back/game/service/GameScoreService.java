@@ -72,7 +72,7 @@ public class GameScoreService {
 
         Map<Long, String> nicknames = nicknamesOf(rows);
         List<GameLeaderboardEntry> topScores = rows.stream()
-                .map(r -> new GameLeaderboardEntry(r.getUserId(), nicknames.get(r.getUserId()),
+                .map(r -> new GameLeaderboardEntry(r.getId(), r.getUserId(), nicknames.get(r.getUserId()),
                         r.getScore(), r.getDurationMs(), r.getCreatedAt()))
                 .toList();
 

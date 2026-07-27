@@ -1,0 +1,1 @@
+ADMISSION_SUMMARY mode=disk moduleId=image-resize rejectedAtIndex=2 rejectedHttpStatus=507

@@ -1,0 +1,42 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: scenario3-admission-threshold.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 1 max VUs, 10m30s max duration (incl. graceful stop):
+              * default: 1 iterations shared among 1 VUs (maxDuration: 10m0s, gracefulStop: 30s)
+
+time="2026-07-26T17:03:56+09:00" level=info msg="ATTEMPT_CSV_HEADER request_index,pending_before,http_status" source=console
+time="2026-07-26T17:03:57+09:00" level=info msg="ATTEMPT_CSV 1,0,202" source=console
+time="2026-07-26T17:03:57+09:00" level=info msg="ATTEMPT_CSV 2,1,507" source=console
+time="2026-07-26T17:03:57+09:00" level=info msg="ADMISSION_SUMMARY mode=disk moduleId=image-resize rejectedAtIndex=2 rejectedHttpStatus=507" source=console
+
+
+  █ TOTAL RESULTS 
+
+    HTTP
+    http_req_duration..............: avg=75.99ms  min=18.68ms  med=75.99ms  max=133.31ms p(90)=121.84ms p(95)=127.58ms
+      { expected_response:true }...: avg=133.31ms min=133.31ms med=133.31ms max=133.31ms p(90)=133.31ms p(95)=133.31ms
+    http_req_failed................: 50.00% 1 out of 2
+    http_reqs......................: 2      12.560368/s
+
+    EXECUTION
+    iteration_duration.............: avg=158.72ms min=158.72ms med=158.72ms max=158.72ms p(90)=158.72ms p(95)=158.72ms
+    iterations.....................: 1      6.280184/s
+
+    NETWORK
+    data_received..................: 976 B  6.1 kB/s
+    data_sent......................: 450 kB 2.8 MB/s
+
+
+
+
+running (00m00.2s), 0/1 VUs, 1 complete and 0 interrupted iterations
+default ✓ [ 100% ] 1 VUs  00m00.2s/10m0s  1/1 shared iters

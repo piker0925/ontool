@@ -1,0 +1,52 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: scenario3-admission-threshold.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 1 max VUs, 10m30s max duration (incl. graceful stop):
+              * default: 1 iterations shared among 1 VUs (maxDuration: 10m0s, gracefulStop: 30s)
+
+time="2026-07-26T17:03:29+09:00" level=info msg="ATTEMPT_CSV_HEADER request_index,pending_before,http_status" source=console
+time="2026-07-26T17:03:29+09:00" level=info msg="ATTEMPT_CSV 1,0,202" source=console
+time="2026-07-26T17:03:29+09:00" level=info msg="ATTEMPT_CSV 2,1,202" source=console
+time="2026-07-26T17:03:29+09:00" level=info msg="ATTEMPT_CSV 3,2,202" source=console
+time="2026-07-26T17:03:29+09:00" level=info msg="ATTEMPT_CSV 4,3,202" source=console
+time="2026-07-26T17:03:29+09:00" level=info msg="ATTEMPT_CSV 5,4,202" source=console
+time="2026-07-26T17:03:29+09:00" level=info msg="ATTEMPT_CSV 6,5,202" source=console
+time="2026-07-26T17:03:29+09:00" level=info msg="ATTEMPT_CSV 7,6,202" source=console
+time="2026-07-26T17:03:29+09:00" level=info msg="ATTEMPT_CSV 8,7,202" source=console
+time="2026-07-26T17:03:29+09:00" level=info msg="ATTEMPT_CSV 9,8,202" source=console
+time="2026-07-26T17:03:29+09:00" level=info msg="ATTEMPT_CSV 10,9,202" source=console
+time="2026-07-26T17:03:29+09:00" level=info msg="ATTEMPT_CSV 11,10,202" source=console
+time="2026-07-26T17:03:29+09:00" level=info msg="ATTEMPT_CSV 12,11,503" source=console
+time="2026-07-26T17:03:29+09:00" level=info msg="ADMISSION_SUMMARY mode=queue moduleId=video-to-gif rejectedAtIndex=12 rejectedHttpStatus=503" source=console
+
+
+  █ TOTAL RESULTS 
+
+    HTTP
+    http_req_duration..............: avg=19.9ms   min=6.97ms   med=17.39ms  max=42.27ms  p(90)=26.8ms   p(95)=33.91ms 
+      { expected_response:true }...: avg=21.08ms  min=15.53ms  med=18.01ms  max=42.27ms  p(90)=27.06ms  p(95)=34.67ms 
+    http_req_failed................: 8.33%  1 out of 12
+    http_reqs......................: 12     48.862322/s
+
+    EXECUTION
+    iteration_duration.............: avg=245.45ms min=245.45ms med=245.45ms max=245.45ms p(90)=245.45ms p(95)=245.45ms
+    iterations.....................: 1      4.07186/s
+
+    NETWORK
+    data_received..................: 5.7 kB 23 kB/s
+    data_sent......................: 143 kB 582 kB/s
+
+
+
+
+running (00m00.2s), 0/1 VUs, 1 complete and 0 interrupted iterations
+default ✓ [ 100% ] 1 VUs  00m00.2s/10m0s  1/1 shared iters

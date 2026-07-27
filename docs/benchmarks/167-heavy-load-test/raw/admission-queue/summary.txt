@@ -1,0 +1,1 @@
+ADMISSION_SUMMARY mode=queue moduleId=video-to-gif rejectedAtIndex=12 rejectedHttpStatus=503

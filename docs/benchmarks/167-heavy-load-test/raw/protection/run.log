@@ -1,0 +1,64 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: scenario4-protection-under-load.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 1 max VUs, 10m30s max duration (incl. graceful stop):
+              * default: 1 iterations shared among 1 VUs (maxDuration: 10m0s, gracefulStop: 30s)
+
+time="2026-07-26T17:15:17+09:00" level=info msg="FLOOD_CSV 1,202" source=console
+time="2026-07-26T17:15:17+09:00" level=info msg="FLOOD_CSV 2,202" source=console
+time="2026-07-26T17:15:17+09:00" level=info msg="FLOOD_CSV 3,202" source=console
+time="2026-07-26T17:15:17+09:00" level=info msg="FLOOD_CSV 4,202" source=console
+time="2026-07-26T17:15:17+09:00" level=info msg="FLOOD_CSV 5,202" source=console
+time="2026-07-26T17:15:17+09:00" level=info msg="FLOOD_CSV 6,202" source=console
+time="2026-07-26T17:15:17+09:00" level=info msg="FLOOD_CSV 7,202" source=console
+time="2026-07-26T17:15:17+09:00" level=info msg="FLOOD_CSV 8,202" source=console
+time="2026-07-26T17:15:17+09:00" level=info msg="FLOOD_CSV 9,202" source=console
+time="2026-07-26T17:15:17+09:00" level=info msg="FLOOD_CSV 10,202" source=console
+time="2026-07-26T17:15:17+09:00" level=info msg="FLOOD_CSV 11,202" source=console
+time="2026-07-26T17:15:17+09:00" level=info msg="FLOOD_CSV 12,503" source=console
+time="2026-07-26T17:15:17+09:00" level=info msg="FLOOD_SUMMARY rejectedAtIndex=12" source=console
+time="2026-07-26T17:15:17+09:00" level=info msg="CONCURRENT_SUMMARY victimStatus=202 victimAccepted=true probeStatus=503 probeStillRejected=true" source=console
+
+running (00m01.0s), 1/1 VUs, 0 complete and 0 interrupted iterations
+default   [   0% ] 1 VUs  00m01.0s/10m0s  0/1 shared iters
+
+running (00m02.0s), 1/1 VUs, 0 complete and 0 interrupted iterations
+default   [   0% ] 1 VUs  00m02.0s/10m0s  0/1 shared iters
+time="2026-07-26T17:15:20+09:00" level=info msg="VICTIM_SUMMARY submitStatus=202 outcome=DONE elapsedMs=2555" source=console
+
+
+  █ TOTAL RESULTS 
+
+    CUSTOM
+    victim_completion_time.........: avg=2.55s   min=2.55s  med=2.55s   max=2.55s  p(90)=2.55s   p(95)=2.55s  
+
+    HTTP
+    http_req_duration..............: avg=20.05ms min=7.4ms  med=20.07ms max=39.6ms p(90)=31.8ms  p(95)=33.81ms
+      { expected_response:true }...: avg=21.15ms min=8.71ms med=21.35ms max=39.6ms p(90)=31.93ms p(95)=34.01ms
+    http_req_failed................: 8.69%  2 out of 23
+    http_reqs......................: 23     8.003101/s
+
+    EXECUTION
+    iteration_duration.............: avg=2.87s   min=2.87s  med=2.87s   max=2.87s  p(90)=2.87s   p(95)=2.87s  
+    iterations.....................: 1      0.347961/s
+    vus............................: 1      min=1       max=1
+    vus_max........................: 1      min=1       max=1
+
+    NETWORK
+    data_received..................: 11 kB  4.0 kB/s
+    data_sent......................: 381 kB 133 kB/s
+
+
+
+
+running (00m02.9s), 0/1 VUs, 1 complete and 0 interrupted iterations
+default ✓ [ 100% ] 1 VUs  00m02.9s/10m0s  1/1 shared iters

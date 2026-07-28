@@ -65,7 +65,6 @@ export const FRONTEND_TOOL_COMPONENTS: Record<string, FrontendToolEntry> = {
     'random-palette': {load: () => import('../components/tools/RandomPaletteTool.vue'), layout: 'narrow'},
     'roulette-wheel': {load: () => import('../components/tools/RouletteWheelTool.vue'), layout: 'narrow'},
     'order-picker': {load: () => import('../components/tools/OrderPickerTool.vue'), layout: 'narrow'},
-    'pinball-drop': {load: () => import('../components/tools/PinballDropTool.vue'), layout: 'narrow'},
     'balance-game': {load: () => import('../components/tools/BalanceGameTool.vue'), layout: 'narrow'},
     'mbti-compatibility': {load: () => import('../components/tools/MbtiCompatibilityTool.vue'), layout: 'narrow'},
     'mbti-match-card': {load: () => import('../components/tools/MbtiMatchCardTool.vue'), layout: 'narrow'},

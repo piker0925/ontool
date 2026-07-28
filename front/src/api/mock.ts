@@ -492,12 +492,6 @@ export const MOCK_MODULES: Module[] = [
         zones: ['life'],
     },
     {
-        id: 'pinball-drop', name: '핀볼 추첨기', category: '재미', isHeavy: false, isFrontendOnly: true,
-        description: '참가자마다 구슬 하나씩 동시에 장애물 코스에 투입해 완주 순서로 전체 순위를 정하는 추첨기(마블 룰렛)',
-        keywords: ['핀볼', '마블 룰렛', 'marble roulette', '구슬 뽑기', '구슬 경주', '순위 추첨'],
-        zones: ['life'],
-    },
-    {
         id: 'balance-game', name: '밸런스 게임', category: '재미', isHeavy: false, isFrontendOnly: true,
         description: '둘 중 하나만 고를 수 있다면? 양자택일 질문 게임',
         keywords: ['밸런스 게임', 'balance game', '양자택일'],

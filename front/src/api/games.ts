@@ -45,3 +45,63 @@ export async function fetchGameLeaderboard(gameId: string, limit = 10): Promise<
     const {data} = await apiClient.get<GameLeaderboardResponse>(`/api/v1/games/${gameId}/leaderboard`, {params: {limit}})
     return data
 }
+
+// 193: 멀티플레이 방(Room) API. 백엔드 com.back.game.dto.Room* 응답 형태를 그대로 미러링한다.
+
+export interface RoomParticipant {
+    id: string
+    nickname: string
+}
+
+export interface RoomCreateResponse {
+    code: string
+}
+
+export interface RoomJoinResponse {
+    code: string
+    participantId: string
+    nickname: string
+    roomSessionToken: string
+    participants: RoomParticipant[]
+}
+
+/** 방 생성. 로그인 여부와 무관하게 호출 가능(IP 기준 레이트리밋만 적용). */
+export async function createRoom(gameId: string): Promise<RoomCreateResponse> {
+    const {data} = await apiClient.post<RoomCreateResponse>(`/api/v1/games/${gameId}/rooms`)
+    return data
+}
+
+/** 코드로 방 입장. nickname은 게스트일 때만 반영되고, 로그인 유저는 서버가 실제 계정 닉네임으로 강제한다. */
+export async function joinRoom(gameId: string, code: string, nickname?: string): Promise<RoomJoinResponse> {
+    const {data} = await apiClient.post<RoomJoinResponse>(`/api/v1/games/${gameId}/rooms/${code}/join`, {nickname})
+    return data
+}
+
+export interface RoomStartResponse {
+    goAt: string
+}
+
+/** 라운드 시작. 방장(가장 먼저 입장한 참가자)만 성공하며, 성공하면 방 전체에 GO 신호가 브로드캐스트된다. */
+export async function startRoom(gameId: string, code: string, participantId: string, roomSessionToken: string): Promise<RoomStartResponse> {
+    const {data} = await apiClient.post<RoomStartResponse>(`/api/v1/games/${gameId}/rooms/${code}/start`, {participantId, roomSessionToken})
+    return data
+}
+
+/** 재대결. 방을 새로 만들지 않고 같은 참가자 구성으로 다음 라운드를 시작한다(이전 클릭·결과 초기화). */
+export async function nextRoom(gameId: string, code: string, participantId: string, roomSessionToken: string): Promise<RoomStartResponse> {
+    const {data} = await apiClient.post<RoomStartResponse>(`/api/v1/games/${gameId}/rooms/${code}/next-round`, {participantId, roomSessionToken})
+    return data
+}
+
+export interface RoomRoundResultEntry {
+    participantId: string
+    nickname: string
+    rank: number
+    falseStart: boolean
+}
+
+/** 클릭 제출. 서버가 기록한 도착 시각으로 순위를 매기며(클라이언트 자체 신고 불신), 제출마다 갱신된 순위를 돌려준다. */
+export async function submitRoomClick(gameId: string, code: string, participantId: string, roomSessionToken: string): Promise<RoomRoundResultEntry[]> {
+    const {data} = await apiClient.post<RoomRoundResultEntry[]>(`/api/v1/games/${gameId}/rooms/${code}/click`, {participantId, roomSessionToken})
+    return data
+}

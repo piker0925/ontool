@@ -30,7 +30,12 @@ public enum ErrorCode {
     USER_SUSPENDED(HttpStatus.FORBIDDEN, "정지된 계정은 댓글을 작성할 수 없습니다."),
     GAME_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 게임입니다."),
     GAME_SESSION_INVALID(HttpStatus.BAD_REQUEST, "게임 세션이 유효하지 않습니다. 게임을 다시 시작해 주세요."),
-    GAME_SCORE_IMPLAUSIBLE(HttpStatus.BAD_REQUEST, "제출한 점수가 비정상적으로 감지되어 등록할 수 없습니다.");
+    GAME_SCORE_IMPLAUSIBLE(HttpStatus.BAD_REQUEST, "제출한 점수가 비정상적으로 감지되어 등록할 수 없습니다."),
+    ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 방입니다."),
+    ROOM_FULL(HttpStatus.CONFLICT, "방 정원이 가득 찼습니다."),
+    ROOM_NOT_HOST(HttpStatus.FORBIDDEN, "방장만 라운드를 시작할 수 있습니다."),
+    ROOM_ALREADY_STARTED(HttpStatus.CONFLICT, "이미 시작된 방입니다."),
+    ROOM_NOT_STARTED(HttpStatus.CONFLICT, "아직 시작되지 않은 방입니다.");
 
     private final HttpStatus status;
     private final String message;

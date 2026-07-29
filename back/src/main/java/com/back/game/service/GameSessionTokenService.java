@@ -37,6 +37,8 @@ public class GameSessionTokenService {
     private static final long SESSION_MAX_AGE_SECONDS = 30 * 60;
     private static final String CLAIM_GAME_ID = "gameId";
     private static final String CLAIM_ISSUED_AT_MS = "iatMs";
+    private static final String CLAIM_ROOM_ID = "roomId";
+    private static final String CLAIM_PARTICIPANT_ID = "participantId";
 
     private final SecretKey key;
 
@@ -53,6 +55,33 @@ public class GameSessionTokenService {
                 .expiration(Date.from(now.plusSeconds(SESSION_MAX_AGE_SECONDS)))
                 .signWith(key)
                 .compact();
+    }
+
+    // 193: 방 참가자 인가용 확장 — gameId만이 아니라 roomId+participantId까지 서명에 담아,
+    // "이 토큰이 진짜 이 방의 이 참가자 것"임을 검증할 수 있게 한다. 로그인 여부와 무관하게 작동한다.
+    public String issueForRoom(String gameId, String roomId, String participantId) {
+        Instant now = Instant.now();
+        return Jwts.builder()
+                .claim(CLAIM_GAME_ID, gameId)
+                .claim(CLAIM_ROOM_ID, roomId)
+                .claim(CLAIM_PARTICIPANT_ID, participantId)
+                .claim(CLAIM_ISSUED_AT_MS, now.toEpochMilli())
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusSeconds(SESSION_MAX_AGE_SECONDS)))
+                .signWith(key)
+                .compact();
+    }
+
+    /** 서명·만료·gameId+roomId+participantId 일치를 모두 검증한다. 통과하면 true. */
+    public boolean verifyForRoom(String token, String gameId, String roomId, String participantId) {
+        try {
+            Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
+            return gameId.equals(claims.get(CLAIM_GAME_ID, String.class))
+                    && roomId.equals(claims.get(CLAIM_ROOM_ID, String.class))
+                    && participantId.equals(claims.get(CLAIM_PARTICIPANT_ID, String.class));
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
     }
 
     /** 서명·만료·gameId 일치를 모두 검증한 뒤, 통과하면 밀리초 정밀도의 발급 시각을 반환한다. */

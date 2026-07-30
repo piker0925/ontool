@@ -46,6 +46,12 @@ public class RoomController {
         return roomService.createRoom(gameId);
     }
 
+    @Operation(summary = "대기중인 방 목록", description = "코드 입력 없이 고를 수 있도록, 아직 시작하지 않고 정원도 안 찬 공개방 목록을 반환합니다.")
+    @GetMapping
+    public List<com.back.game.dto.RoomSummaryResponse> list(@Parameter(description = "게임 ID") @PathVariable String gameId) {
+        return roomService.listRooms(gameId);
+    }
+
     @Operation(summary = "방 입장", description = "코드로 방에 입장합니다. 로그인 없이도 가능하며, 비로그인 참가자는 요청에 담긴 닉네임을 사용합니다.")
     @PostMapping("/{code}/join")
     @ResponseStatus(HttpStatus.CREATED)
@@ -79,6 +85,38 @@ public class RoomController {
                                              @Parameter(description = "방 코드") @PathVariable String code,
                                              @RequestBody @Valid RoomClickRequest request) {
         return roomService.submitClick(gameId, code, request.participantId(), request.roomSessionToken());
+    }
+
+    @Operation(summary = "코드레인 단어 선점", description = "Dev Code Rain Typing 5인 뺏어치기 단어 제출. 선점 및 콤보 공격 결과가 방 전체에 SSE로 푸시됩니다.")
+    @PostMapping("/{code}/claim-word")
+    public com.back.game.dto.RoomCodeRainClaimResponse claimWord(@Parameter(description = "게임 ID") @PathVariable String gameId,
+                                                                 @Parameter(description = "방 코드") @PathVariable String code,
+                                                                 @RequestBody @Valid com.back.game.dto.RoomClaimWordRequest request) {
+        return roomService.claimCodeRainWord(gameId, code, request.participantId(), request.roomSessionToken(), request.wordId(), request.wordText());
+    }
+
+    @Operation(summary = "테트리스 라인 삭제 제출", description = "2줄 이상 클리어 시 방해 블록(Garbage Line) 공격을 방 전체에 SSE로 푸시합니다.")
+    @PostMapping("/{code}/clear-lines")
+    public com.back.game.dto.RoomTetrisGarbageAttackResponse clearLines(@Parameter(description = "게임 ID") @PathVariable String gameId,
+                                                                         @Parameter(description = "방 코드") @PathVariable String code,
+                                                                         @RequestBody @Valid com.back.game.dto.RoomTetrisClearRequest request) {
+        return roomService.clearTetrisLines(gameId, code, request.participantId(), request.roomSessionToken(), request.clearedLineCount());
+    }
+
+    @Operation(summary = "오목 착수 제출", description = "15x15 오목판 턴제 착수 제출. 턴 타이머 및 착수 결과가 방 전체에 SSE로 푸시됩니다.")
+    @PostMapping("/{code}/place-stone")
+    public com.back.game.dto.RoomOmokMoveResponse placeStone(@Parameter(description = "게임 ID") @PathVariable String gameId,
+                                                             @Parameter(description = "방 코드") @PathVariable String code,
+                                                             @RequestBody @Valid com.back.game.dto.RoomOmokPlaceRequest request) {
+        return roomService.placeOmokStone(gameId, code, request.participantId(), request.roomSessionToken(), request.x(), request.y());
+    }
+
+    @Operation(summary = "공룡 게임 실시간 진행 상황 제출", description = "공룡 위치/점수/생존 여부를 제출하여 방 전체 참가자에게 SSE로 실시간 중계합니다.")
+    @PostMapping("/{code}/dino-progress")
+    public com.back.game.dto.RoomDinoProgressResponse reportDinoProgress(@Parameter(description = "게임 ID") @PathVariable String gameId,
+                                                                         @Parameter(description = "방 코드") @PathVariable String code,
+                                                                         @RequestBody @Valid com.back.game.dto.RoomDinoProgressRequest request) {
+        return roomService.reportDinoProgress(gameId, code, request);
     }
 
     @Operation(summary = "방 로비 실시간 스트림(SSE)", description = "참가자 입장 등 방 상태 변화를 실시간으로 푸시합니다.")

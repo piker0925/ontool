@@ -21,6 +21,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -332,6 +333,32 @@ class RoomControllerTest extends AbstractMySQLIntegrationTest {
                         .content(startBody(host.get("participantId").asText(), host.get("roomSessionToken").asText())))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("ROOM_NOT_STARTED"));
+    }
+
+    @Test
+    void 방_목록을_조회하면_대기중인_방이_인원수와_함께_보인다() throws Exception {
+        String code = createRoom("10.2.0.1");
+        joinAndGetJson(code, "10.2.0.1", "방장");
+
+        mockMvc.perform(get("/api/v1/games/game-reaction-time/rooms"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.code == '" + code + "')].participantCount").value(1))
+                .andExpect(jsonPath("$[?(@.code == '" + code + "')].maxParticipants").value(8));
+    }
+
+    @Test
+    void 다른_게임_경로로_조회하면_그_게임의_방만_보인다() throws Exception {
+        String reactionCode = createRoom("10.2.0.2");
+        MvcResult omokResult = mockMvc.perform(post("/api/v1/games/game-omok/rooms")
+                        .header("X-Real-IP", "10.2.0.3"))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String omokCode = objectMapper.readTree(omokResult.getResponse().getContentAsString()).get("code").asText();
+
+        mockMvc.perform(get("/api/v1/games/game-reaction-time/rooms"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.code == '" + reactionCode + "')]").exists())
+                .andExpect(jsonPath("$[?(@.code == '" + omokCode + "')]").doesNotExist());
     }
 
     private void startRoom(String code, JsonNode host) throws Exception {

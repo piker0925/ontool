@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -22,9 +23,17 @@ public class RoomRegistry {
 
     private final Map<String, Room> rooms = new ConcurrentHashMap<>();
 
-    public Room create() {
+    public Room getRoom(String code) {
+        Room room = rooms.get(code);
+        if (room == null) {
+            throw new AppException(ErrorCode.ROOM_NOT_FOUND);
+        }
+        return room;
+    }
+
+    public Room create(String gameId) {
         String code = generateUnusedCode();
-        Room room = new Room(code);
+        Room room = new Room(code, gameId);
         rooms.put(code, room);
         return room;
     }
@@ -61,6 +70,29 @@ public class RoomRegistry {
             throw new AppException(ErrorCode.ROOM_NOT_FOUND);
         }
         return room.nextRound(participantId);
+    }
+
+    public com.back.game.dto.RoomCodeRainClaimResponse claimCodeRainWord(String code, String participantId, long wordId, String wordText) {
+        Room room = rooms.get(code);
+        if (room == null) {
+            throw new AppException(ErrorCode.ROOM_NOT_FOUND);
+        }
+        return room.claimCodeRainWord(participantId, wordId, wordText);
+    }
+
+    public com.back.game.dto.RoomOmokMoveResponse placeOmokStone(String code, String participantId, int x, int y) {
+        Room room = rooms.get(code);
+        if (room == null) {
+            throw new AppException(ErrorCode.ROOM_NOT_FOUND);
+        }
+        return room.placeOmokStone(participantId, x, y);
+    }
+
+    /** 참가 가능한(같은 게임·시작 전·정원 미달) 방 목록 — 공개방 목록 조회용. */
+    public List<Room> listWaitingRooms(String gameId) {
+        return rooms.values().stream()
+                .filter(room -> room.gameId().equals(gameId) && !room.isStarted() && !room.isFull())
+                .toList();
     }
 
     /** 유휴 방(참가자 유무와 무관하게 마지막 활동으로부터 timeout 경과)을 정리하고 제거한 개수를 반환한다. */

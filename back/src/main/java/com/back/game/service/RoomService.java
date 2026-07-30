@@ -36,8 +36,16 @@ public class RoomService {
 
     public RoomCreateResponse createRoom(String gameId) {
         requireGame(gameId);
-        Room room = roomRegistry.create();
+        Room room = roomRegistry.create(gameId);
         return new RoomCreateResponse(room.code());
+    }
+
+    // 코드 입력 없이 대기중인 공개방 중에서 골라 참가하는 목록 화면용.
+    public List<com.back.game.dto.RoomSummaryResponse> listRooms(String gameId) {
+        requireGame(gameId);
+        return roomRegistry.listWaitingRooms(gameId).stream()
+                .map(com.back.game.dto.RoomSummaryResponse::from)
+                .toList();
     }
 
     // 로그인 유저는 실제 계정 닉네임으로 강제된다 — requestedNickname은 게스트일 때만 반영된다
@@ -93,6 +101,72 @@ public class RoomService {
         recordWinIfRoundComplete(gameId, room, ranked, byId);
         roomBroadcaster.broadcast(code, "round-result", results);
         return results;
+    }
+
+    public com.back.game.dto.RoomCodeRainClaimResponse claimCodeRainWord(String gameId, String code, String participantId, String roomSessionToken, long wordId, String wordText) {
+        if (!sessionTokenService.verifyForRoom(roomSessionToken, gameId, code, participantId)) {
+            throw new AppException(ErrorCode.GAME_SESSION_INVALID);
+        }
+        com.back.game.dto.RoomCodeRainClaimResponse response = roomRegistry.claimCodeRainWord(code, participantId, wordId, wordText);
+        roomBroadcaster.broadcast(code, "code-rain-claimed", response);
+        if (response.attackTriggered()) {
+            roomBroadcaster.broadcast(code, "code-rain-attack", response);
+        }
+        return response;
+    }
+
+    public com.back.game.dto.RoomTetrisGarbageAttackResponse clearTetrisLines(String gameId, String code, String participantId, String roomSessionToken, int clearedLineCount) {
+        if (!sessionTokenService.verifyForRoom(roomSessionToken, gameId, code, participantId)) {
+            throw new AppException(ErrorCode.GAME_SESSION_INVALID);
+        }
+        Room room = roomRegistry.getRoom(code);
+        Participant participant = room.participants().stream()
+                .filter(p -> p.id().equals(participantId))
+                .findFirst()
+                .orElseThrow(() -> new AppException(ErrorCode.ROOM_NOT_FOUND));
+
+        int garbageLinesAdded = Math.max(0, clearedLineCount - 1);
+        var response = new com.back.game.dto.RoomTetrisGarbageAttackResponse(
+                participantId, participant.nickname(), garbageLinesAdded
+        );
+
+        if (garbageLinesAdded > 0) {
+            roomBroadcaster.broadcast(code, "tetris-garbage-attack", response);
+        }
+        return response;
+    }
+
+    public com.back.game.dto.RoomOmokMoveResponse placeOmokStone(String gameId, String code, String participantId, String roomSessionToken, int x, int y) {
+        if (!sessionTokenService.verifyForRoom(roomSessionToken, gameId, code, participantId)) {
+            throw new AppException(ErrorCode.GAME_SESSION_INVALID);
+        }
+        com.back.game.dto.RoomOmokMoveResponse response = roomRegistry.placeOmokStone(code, participantId, x, y);
+        roomBroadcaster.broadcast(code, "omok-stone-placed", response);
+        return response;
+    }
+
+    public com.back.game.dto.RoomDinoProgressResponse reportDinoProgress(String gameId, String code, com.back.game.dto.RoomDinoProgressRequest request) {
+        if (!sessionTokenService.verifyForRoom(request.roomSessionToken(), gameId, code, request.participantId())) {
+            throw new AppException(ErrorCode.GAME_SESSION_INVALID);
+        }
+        Room room = roomRegistry.getRoom(code);
+        Participant participant = room.participants().stream()
+                .filter(p -> p.id().equals(request.participantId()))
+                .findFirst()
+                .orElseThrow(() -> new AppException(ErrorCode.ROOM_NOT_FOUND));
+
+        var response = new com.back.game.dto.RoomDinoProgressResponse(
+                request.participantId(),
+                participant.nickname(),
+                request.score(),
+                request.isAlive(),
+                request.dinoY(),
+                request.isJumping(),
+                request.isDucking()
+        );
+
+        roomBroadcaster.broadcast(code, "dino-progress", response);
+        return response;
     }
 
     private void recordWinIfRoundComplete(String gameId, Room room, List<RankedParticipant> ranked, Map<String, Participant> byId) {

@@ -57,6 +57,17 @@ class GameCatalogTest {
     }
 
     @Test
+    void 코드_레인_타이핑_게임은_맞춘_단어_개수가_높을수록_좋은_점수로_등록돼_있다() {
+        Optional<GameDefinition> definition = GameCatalog.find("game-code-rain-typing");
+
+        assertThat(definition).isPresent();
+        assertThat(definition.get().higherIsBetter()).isTrue();
+        assertThat(definition.get().minDurationMs()).isGreaterThan(0);
+        // 아무것도 못 맞춰도 0점은 실제로 나올 수 있는 값이라 minScore로 거를 필요가 없다.
+        assertThat(definition.get().minScore()).isNull();
+    }
+
+    @Test
     void 기존_8개_게임_등록은_121_작업으로_바뀌지_않았다() {
         assertThat(GameCatalog.find("game-2048")).isPresent();
         assertThat(GameCatalog.find("game-2048").get().higherIsBetter()).isTrue();

@@ -21,20 +21,31 @@ public class Room {
     private static final int MAX_PARTICIPANTS = 8;
 
     private final String code;
+    private final String gameId;
     private final List<Participant> participants = new CopyOnWriteArrayList<>();
     private volatile boolean started = false;
     private volatile Instant goAt;
     private final Map<String, Instant> clicks = new ConcurrentHashMap<>();
+    private final Map<String, Integer> codeRainScores = new ConcurrentHashMap<>();
+    private final Map<String, Integer> codeRainCombos = new ConcurrentHashMap<>();
+    private final java.util.Set<Long> claimedWordIds = ConcurrentHashMap.newKeySet();
+    private final int[][] omokBoard = new int[15][15];
+    private volatile int omokTurnIndex = 0;
     private final AtomicBoolean winRecorded = new AtomicBoolean(false);
     private volatile Instant lastActivityAt;
 
-    public Room(String code) {
+    public Room(String code, String gameId) {
         this.code = code;
+        this.gameId = gameId;
         this.lastActivityAt = Instant.now(); // 생성 자체도 활동으로 친다 — 갓 만든 빈 방을 바로 지우지 않기 위함
     }
 
     public String code() {
         return code;
+    }
+
+    public String gameId() {
+        return gameId;
     }
 
     public List<Participant> participants() {
@@ -74,6 +85,14 @@ public class Room {
         return started;
     }
 
+    public boolean isFull() {
+        return participants.size() >= MAX_PARTICIPANTS;
+    }
+
+    public int maxParticipants() {
+        return MAX_PARTICIPANTS;
+    }
+
     // 방을 새로 만들지 않고 같은 참가자 구성으로 재대결한다 — started는 계속 true로 두고
     // (신규 입장은 계속 막힌 채) 라운드별 상태(클릭·승리기록·GO 시각)만 초기화한다.
     public Instant nextRound(String participantId) {
@@ -84,10 +103,95 @@ public class Room {
             throw new AppException(ErrorCode.ROOM_NOT_STARTED);
         }
         clicks.clear();
+        codeRainScores.clear();
+        codeRainCombos.clear();
+        claimedWordIds.clear();
         winRecorded.set(false);
         goAt = Instant.now();
         lastActivityAt = goAt;
         return goAt;
+    }
+
+    public com.back.game.dto.RoomCodeRainClaimResponse claimCodeRainWord(String participantId, long wordId, String wordText) {
+        if (!started) {
+            throw new AppException(ErrorCode.ROOM_NOT_STARTED);
+        }
+        Participant participant = participants.stream()
+                .filter(p -> p.id().equals(participantId))
+                .findFirst()
+                .orElseThrow(() -> new AppException(ErrorCode.ROOM_NOT_FOUND));
+
+        if (!claimedWordIds.add(wordId)) {
+            // 이미 다른 사람이 뺏어침
+            int currentScore = codeRainScores.getOrDefault(participantId, 0);
+            int currentCombo = codeRainCombos.getOrDefault(participantId, 0);
+            return new com.back.game.dto.RoomCodeRainClaimResponse(
+                    participantId, participant.nickname(), wordId, wordText, currentScore, currentCombo, false, null
+            );
+        }
+
+        int score = codeRainScores.merge(participantId, 100, Integer::sum);
+        int combo = codeRainCombos.merge(participantId, 1, Integer::sum);
+        boolean attackTriggered = (combo > 0 && combo % 3 == 0);
+        String attackWord = attackTriggered ? "CRITICAL BUG!" : null;
+        lastActivityAt = Instant.now();
+
+        return new com.back.game.dto.RoomCodeRainClaimResponse(
+                participantId, participant.nickname(), wordId, wordText, score, combo, attackTriggered, attackWord
+        );
+    }
+
+    public synchronized com.back.game.dto.RoomOmokMoveResponse placeOmokStone(String participantId, int x, int y) {
+        if (!started) {
+            throw new AppException(ErrorCode.ROOM_NOT_STARTED);
+        }
+        if (participants.isEmpty()) {
+            throw new AppException(ErrorCode.ROOM_NOT_FOUND);
+        }
+        int currentTurnIndex = omokTurnIndex % participants.size();
+        Participant turnParticipant = participants.get(currentTurnIndex);
+        if (!turnParticipant.id().equals(participantId)) {
+            throw new AppException(ErrorCode.ROOM_NOT_HOST); // Not your turn
+        }
+
+        if (x < 0 || x >= 15 || y < 0 || y >= 15 || omokBoard[y][x] != 0) {
+            throw new AppException(ErrorCode.ROOM_NOT_FOUND); // Invalid move
+        }
+
+        int stone = (omokTurnIndex % 2 == 0) ? 1 : 2;
+        omokBoard[y][x] = stone;
+
+        boolean won = checkOmokWin(x, y, stone);
+        String winnerId = won ? participantId : null;
+
+        omokTurnIndex++;
+        String nextTurnId = participants.get(omokTurnIndex % participants.size()).id();
+        lastActivityAt = Instant.now();
+
+        return new com.back.game.dto.RoomOmokMoveResponse(
+                participantId, turnParticipant.nickname(), x, y, nextTurnId, 15, winnerId
+        );
+    }
+
+    private boolean checkOmokWin(int x, int y, int stone) {
+        int[][] dirs = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
+        for (int[] d : dirs) {
+            int count = 1;
+            for (int step = 1; step < 5; step++) {
+                int nx = x + d[0] * step;
+                int ny = y + d[1] * step;
+                if (nx >= 0 && nx < 15 && ny >= 0 && ny < 15 && omokBoard[ny][nx] == stone) count++;
+                else break;
+            }
+            for (int step = 1; step < 5; step++) {
+                int nx = x - d[0] * step;
+                int ny = y - d[1] * step;
+                if (nx >= 0 && nx < 15 && ny >= 0 && ny < 15 && omokBoard[ny][nx] == stone) count++;
+                else break;
+            }
+            if (count >= 5) return true;
+        }
+        return false;
     }
 
     public Instant goAt() {

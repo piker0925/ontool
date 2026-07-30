@@ -22,7 +22,7 @@ public class RoomBroadcaster {
     private final Map<String, List<SseEmitter>> emittersByRoom = new ConcurrentHashMap<>();
 
     public SseEmitter subscribe(String roomCode) {
-        SseEmitter emitter = new SseEmitter(300_000L);
+        SseEmitter emitter = new SseEmitter(0L);
         List<SseEmitter> emitters = emittersByRoom.computeIfAbsent(roomCode, k -> new CopyOnWriteArrayList<>());
         emitters.add(emitter);
 

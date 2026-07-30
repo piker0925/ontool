@@ -1,7 +1,9 @@
 <template>
   <div class="flex flex-col items-center gap-4 py-6">
-    <GameStat v-if="state.status !== 'won'" testid="status" text="카드 두 장을 뒤집어 같은 짝을 찾아보세요" tone="neutral"/>
-    <GameStat label="시도 횟수" testid="moves" :value="moves"/>
+    <div class="flex items-center gap-2">
+      <GameStat v-if="state.status !== 'won'" testid="status" text="카드 두 장을 뒤집어 같은 짝을 찾아보세요" tone="neutral"/>
+      <GameStat label="시도" testid="moves" :value="moves"/>
+    </div>
 
     <div class="relative">
       <div class="grid grid-cols-4 gap-2" data-testid="board">
@@ -9,30 +11,28 @@
             v-for="card in state.cards"
             :key="card.id"
             :disabled="resolving"
-            class="card-flip-perspective size-16 rounded-lg"
+            class="card-flip-perspective size-16 rounded-xl"
             type="button"
             @click="onFlip(card.id)"
         >
-          <!-- 카드 앞뒤를 실제로 뒤집는 3D 트랜지션. :key를 카드 뒤집힘 여부로 바꾸지 않고
-               (엘리먼트를 리마운트하지 않고) transform만 바꿔 애니메이션하는 이유:
-               MemoryCardsGame.test.ts가 클릭 전에 잡아둔 wrapper 참조로 클릭 후 다시
-               .text()를 읽는데, 리마운트하면 그 참조가 끊어져 회귀가 난다. -->
           <div
               :class="isFaceUp(card) ? '[transform:rotateY(180deg)]' : ''"
               class="card-flip-inner relative size-full"
           >
-            <div class="card-face absolute inset-0 flex items-center justify-center rounded-lg border border-transparent bg-secondary transition-colors hover:bg-accent"/>
+            <!-- 카드 뒷면 -->
+            <div class="card-face absolute inset-0 flex items-center justify-center rounded-xl border border-border/50 bg-muted/40 backdrop-blur-sm transition-[background-color] hover:bg-muted/60"/>
+            <!-- 카드 앞면 -->
             <div
-                :class="card.matched ? 'ring-2 ring-zone-accent' : ''"
-                class="card-face card-face-front absolute inset-0 flex items-center justify-center rounded-lg border border-border bg-card text-xl font-bold"
+                :class="card.matched ? 'ring-2 ring-zone-accent/60 bg-zone-accent/15 shadow-[0_0_12px_color-mix(in_oklch,var(--zone-accent)_25%,transparent)]' : 'bg-card border-border'"
+                class="card-face card-face-front absolute inset-0 flex items-center justify-center rounded-xl border text-2xl font-bold shadow-sm"
             >
-              <span v-if="isFaceUp(card)">{{ card.value + 1 }}</span>
+              <span v-if="isFaceUp(card)">{{ randomIcons[card.value % randomIcons.length] }}</span>
             </div>
           </div>
         </button>
       </div>
 
-      <GameResultOverlay :restart="props.restart" :show="state.status === 'won'" testid="game-result-overlay" title="모든 쌍을 맞췄습니다!" tone="win">
+      <GameResultOverlay :restart="handleRestart" :show="state.status === 'won'" testid="game-result-overlay" title="모든 쌍을 맞췄습니다!" tone="win">
         <span data-testid="final-moves">{{ moves }}번 만에 맞췄습니다</span>
       </GameResultOverlay>
     </div>
@@ -48,6 +48,30 @@ import GameStat from '../GameStat.vue'
 
 const PAIR_COUNT = 8
 const RESOLVE_DELAY_MS = 700
+
+const ALL_ICONS = [
+  '⚡', '🎮', '🚀', '💎', '🧠', '🏆', '🔥', '💻',
+  '🐶', '🐱', '🦊', '🐸', '🐧', '🦁', '🐼', '🦋',
+  '🍕', '🍣', '🍩', '🍦', '🌮', '🍜', '🧁', '🍎',
+  '⚽', '🏀', '🎾', '🏈', '⚾', '🏐', '🎱', '🏓',
+  '🎨', '🎸', '✈️', '🎁', '🎈', '🔑', '🌈', '🌙',
+]
+
+function pickRandom8Icons(): string[] {
+  const shuffled = [...ALL_ICONS].sort(() => Math.random() - 0.5)
+  return shuffled.slice(0, PAIR_COUNT)
+}
+
+const randomIcons = ref<string[]>(pickRandom8Icons())
+
+function handleRestart() {
+  randomIcons.value = pickRandom8Icons()
+  state.value = createMemoryGame(PAIR_COUNT)
+  moves.value = 0
+  resolving.value = false
+  if (resolveTimer) clearTimeout(resolveTimer)
+  if (props.restart) props.restart()
+}
 
 // 174: onGameEnd는 결과 오버레이가 뜨는 시점(카드짝맞추기는 승리 하나뿐, 시간제한 없음)에
 // submitScore와 함께 호출된다.

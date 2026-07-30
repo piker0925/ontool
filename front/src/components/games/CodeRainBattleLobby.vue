@@ -4,6 +4,7 @@
       :code="code"
       :phase="shellPhase"
       :participants="lobby.participants.value"
+      :participant-id="lobby.participantId.value"
       :is-host="lobby.isHost.value"
       :error="lobby.error.value"
       :max-players="5"
@@ -13,7 +14,13 @@
       @join="onJoin"
       @start="onStart"
   >
-    <CodeRainTypingBoard :code="code ?? undefined" :is-multi="true" :participant-id="lobby.participantId.value || undefined" :room-session-token="lobby.roomSessionToken.value || undefined"/>
+    <CodeRainTypingBoard
+        :code="code ?? undefined"
+        :is-multi="true"
+        :participant-id="lobby.participantId.value || undefined"
+        :room-session-token="lobby.roomSessionToken.value || undefined"
+        :claimed-event="lobby.codeRainClaimedEvent.value || undefined"
+    />
   </BattleLobbyShell>
 </template>
 

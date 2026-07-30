@@ -99,7 +99,7 @@
 
 <script lang="ts" setup>
 import {nextTick, onUnmounted, ref, watch} from 'vue'
-import {BOARD_HEIGHT, createCodeRainState, startGameState, submitWord, tick} from '../../utils/codeRainTyping'
+import {BOARD_HEIGHT, createCodeRainState, createSeededRandom, hashStringToInt, startGameState, submitWord, tick} from '../../utils/codeRainTyping'
 import {CODE_RAIN_WORD_PACKS} from '../../data/codeRainWords'
 import {consumeGameRetry, requestGameRetry} from '../../utils/gameRetryState'
 import {useGameSound} from '../../composables/useGameSound'
@@ -119,6 +119,7 @@ const props = defineProps<{
   code?: string
   participantId?: string
   roomSessionToken?: string
+  claimedEvent?: { participantId: string; nickname: string; wordId: number; wordText: string }
 }>()
 
 const ALL_WORDS = CODE_RAIN_WORD_PACKS.flatMap(p => p.words)
@@ -128,6 +129,11 @@ const input = ref('')
 const wordInputRef = ref<HTMLInputElement | null>(null)
 const {playSuccess, playFail} = useGameSound()
 let intervalId: ReturnType<typeof setInterval> | null = null
+
+// 멀티일 때 방 코드 기반 결정론적 난수 생성기 사용 (모든 플레이어 동일 단어/위치/순서)
+const seededRandom = (props.isMulti && props.code)
+    ? createSeededRandom(hashStringToInt(props.code))
+    : Math.random
 
 const hitGlow = ref(false)
 const missGlow = ref(false)
@@ -142,6 +148,19 @@ interface ClaimPop {
 }
 const claimPops = ref<ClaimPop[]>([])
 let popNextId = 1
+
+watch(() => props.claimedEvent, (evt) => {
+  if (!evt || evt.participantId === props.participantId) return
+  // 다른 사람이 뺏어친 단어를 내 화면에서도 파괴하고 팝업 표시
+  const word = state.value.words.find(w => w.id === evt.wordId || w.text.toLowerCase() === evt.wordText.toLowerCase())
+  if (word) {
+    addClaimPop(`+100 ${evt.nickname}`, word.x, word.y)
+    state.value = {
+      ...state.value,
+      words: state.value.words.filter(w => w.id !== word.id)
+    }
+  }
+})
 
 if (props.isMulti || initialStatus === 'playing') {
   intervalId = setInterval(step, TICK_MS)
@@ -239,7 +258,7 @@ function step() {
     return
   }
   const beforeLives = state.value.lives
-  state.value = tick(state.value, TICK_MS, Math.random)
+  state.value = tick(state.value, TICK_MS, seededRandom)
   if (state.value.lives < beforeLives) {
     playFail()
     triggerGlow(missGlow)

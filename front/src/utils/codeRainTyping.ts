@@ -31,6 +31,28 @@ export const DEFAULT_TIME_LIMIT_SEC = 60
 const SPAWN_X_MIN_PERCENT = 8
 const SPAWN_X_MAX_PERCENT = 92
 
+// 문자열 방 코드를 32비트 정수 시드로 해시
+export function hashStringToInt(str: string): number {
+    let hash = 0
+    for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i)
+        hash |= 0
+    }
+    return Math.abs(hash) || 1
+}
+
+// Mulberry32 결정론적 PRNG (0~1 사이 난수 생성)
+export function createSeededRandom(seed: number): () => number {
+    let s = seed
+    return function () {
+        s |= 0
+        s = (s + 0x6d2b79f5) | 0
+        let t = Math.imul(s ^ (s >>> 15), 1 | s)
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+    }
+}
+
 const BASE_SPEED_PX_PER_SEC = 40
 const BASE_SPAWN_INTERVAL_MS = 1800
 const MIN_SPAWN_INTERVAL_MS = 500

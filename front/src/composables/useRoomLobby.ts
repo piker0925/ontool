@@ -9,6 +9,16 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
  * 서버가 참가자 입장을 SSE로 즉시 밀어준다(JobController의 폴링형 SSE와 달리 진짜 push) —
  * useHeavyJob.ts와 같은 EventSource 패턴을 따르되, 재연결 로직은 로비 생명주기가 짧아 생략한다.
  */
+export interface DinoParticipantProgress {
+    participantId: string
+    nickname: string
+    score: number
+    isAlive: boolean
+    dinoY: number
+    isJumping: boolean
+    isDucking: boolean
+}
+
 export function useRoomLobby() {
     const code = ref<string | null>(null)
     const participantId = ref<string | null>(null)
@@ -17,6 +27,7 @@ export function useRoomLobby() {
     const error = ref<string | null>(null)
     const round = ref<MultiplayerRoundState>({phase: 'lobby', goAt: null})
     const results = ref<RoomRoundResultEntry[]>([])
+    const dinoProgressMap = ref<Record<string, DinoParticipantProgress>>({})
 
     let eventSource: EventSource | null = null
 
@@ -40,11 +51,28 @@ export function useRoomLobby() {
             const next = handleRoundStarted(round.value, payload.goAt)
             if (next !== round.value) {
                 results.value = [] // 재대결 포함, 새 GO 시각을 받으면 이전 라운드 결과 화면을 지운다
+                dinoProgressMap.value = {}
             }
             round.value = next
         })
         es.addEventListener('round-result', (e: MessageEvent) => {
             results.value = JSON.parse(e.data)
+        })
+        es.addEventListener('dino-progress', (e: MessageEvent) => {
+            const raw: any = JSON.parse(e.data)
+            const normalized: DinoParticipantProgress = {
+                participantId: raw.participantId,
+                nickname: raw.nickname,
+                score: raw.score ?? 0,
+                isAlive: raw.isAlive ?? raw.alive ?? true,
+                dinoY: raw.dinoY ?? 0,
+                isJumping: raw.isJumping ?? raw.jumping ?? false,
+                isDucking: raw.isDucking ?? raw.ducking ?? false,
+            }
+            dinoProgressMap.value = {
+                ...dinoProgressMap.value,
+                [normalized.participantId]: normalized
+            }
         })
     }
 
@@ -92,5 +120,5 @@ export function useRoomLobby() {
         eventSource = null
     }
 
-    return {code, participantId, roomSessionToken, participants, error, round, results, isHost, hasSubmitted, create, join, startRound, submitClick, nextRound, stop}
+    return {code, participantId, roomSessionToken, participants, error, round, results, dinoProgressMap, isHost, hasSubmitted, create, join, startRound, submitClick, nextRound, stop}
 }

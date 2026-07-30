@@ -4,6 +4,7 @@ import {defineComponent, h, ref} from 'vue'
 import GamePage from './GamePage.vue'
 import {accessToken, user} from '@/composables/useAuth'
 import {startGameSession, submitGameScore} from '@/api/games'
+import {apiClient} from '@/api/client'
 
 vi.mock('@/api/games', () => ({
     startGameSession: vi.fn().mockResolvedValue('session-token'),
@@ -11,8 +12,15 @@ vi.mock('@/api/games', () => ({
     fetchGameLeaderboard: vi.fn().mockResolvedValue({topScores: [], myBest: null, myRank: null}),
 }))
 
+vi.mock('@/api/client', () => ({
+    apiClient: {get: vi.fn(), post: vi.fn(), delete: vi.fn()},
+}))
+
 const mockStartSession = startGameSession as ReturnType<typeof vi.fn>
 const mockSubmitScore = submitGameScore as ReturnType<typeof vi.fn>
+const mockGet = apiClient.get as ReturnType<typeof vi.fn>
+const mockPost = apiClient.post as ReturnType<typeof vi.fn>
+const mockDelete = apiClient.delete as ReturnType<typeof vi.fn>
 
 // 게임 내부 상태를 흉내내는 스텁: 버튼을 누르면 count가 증가한다.
 // GamePage가 재시작 시 slot 콘텐츠를 완전히 새로 마운트하는지(=상태 초기화) 확인하는 데 쓴다.
@@ -55,6 +63,12 @@ describe('GamePage', () => {
         mockStartSession.mockResolvedValue('session-token')
         accessToken.value = null
         user.value = null
+
+        mockGet.mockReset().mockResolvedValue({data: {moduleId: 'game-2048', useCount: 0, likeCount: 0}})
+        mockPost.mockReset().mockResolvedValue({data: {moduleId: 'game-2048', useCount: 0, likeCount: 1}})
+        mockDelete.mockReset().mockResolvedValue({data: {moduleId: 'game-2048', useCount: 0, likeCount: 0}})
+        localStorage.removeItem('devtoolbox-favorites')
+        localStorage.removeItem('devtoolbox-likes')
     })
 
     it('title과 description을 렌더링한다', () => {
@@ -240,6 +254,59 @@ describe('GamePage', () => {
         // slot으로 받은 restart()가 GamePage의 진짜 restart와 같은 함수라면, 헤더 버튼과
         // 동일하게 restartKey가 바뀌어 슬롯 전체가 재마운트되고 count가 0으로 되돌아간다.
         expect(wrapper.find('[data-testid="bump"]').text()).toBe('0')
+    })
+
+    describe('즐겨찾기·좋아요 (도구 페이지와 동일하게 게임에도 노출)', () => {
+        it('gameId가 있으면 즐겨찾기·좋아요 버튼이 보이고, 없으면 보이지 않는다', () => {
+            const withGame = mount(GamePage, {props: {title: '2048', gameId: 'game-2048'}})
+            expect(withGame.find('[data-testid="game-favorite-toggle"]').exists()).toBe(true)
+            expect(withGame.find('[data-testid="game-like-toggle"]').exists()).toBe(true)
+
+            const withoutGame = mount(GamePage, {props: {title: '뽀모도로'}})
+            expect(withoutGame.find('[data-testid="game-favorite-toggle"]').exists()).toBe(false)
+            expect(withoutGame.find('[data-testid="game-like-toggle"]').exists()).toBe(false)
+        })
+
+        it('즐겨찾기 버튼을 누르면 즐겨찾기 상태가 토글된다', async () => {
+            const wrapper = mount(GamePage, {props: {title: '2048', gameId: 'game-2048'}})
+            const favButton = wrapper.find('[data-testid="game-favorite-toggle"]')
+            const initialPressed = favButton.attributes('aria-pressed')
+
+            await favButton.trigger('click')
+            expect(wrapper.find('[data-testid="game-favorite-toggle"]').attributes('aria-pressed')).not.toBe(initialPressed)
+
+            // 복구 — 다른 테스트에 영향 주지 않게 원상태로.
+            await wrapper.find('[data-testid="game-favorite-toggle"]').trigger('click')
+        })
+
+        it('좋아요 버튼을 누르면 좋아요 API를 호출하고 카운트·상태가 반영된다', async () => {
+            const wrapper = mount(GamePage, {props: {title: '2048', gameId: 'game-2048'}})
+            await flushPromises() // 마운트 시 stats 조회 완료 대기
+
+            const likeButton = wrapper.find('[data-testid="game-like-toggle"]')
+            expect(likeButton.attributes('aria-pressed')).toBe('false')
+
+            await likeButton.trigger('click')
+            await flushPromises()
+
+            expect(mockPost).toHaveBeenCalledWith('/api/v1/tools/game-2048/like')
+            expect(wrapper.find('[data-testid="game-like-toggle"]').attributes('aria-pressed')).toBe('true')
+            expect(wrapper.find('[data-testid="game-like-toggle"]').text()).toContain('1')
+
+            // 복구 — 좋아요 취소까지 확인하며 원상태로.
+            await wrapper.find('[data-testid="game-like-toggle"]').trigger('click')
+            await flushPromises()
+            expect(mockDelete).toHaveBeenCalledWith('/api/v1/tools/game-2048/like')
+        })
+
+        it('마운트 시 도구 통계 조회 API로 좋아요 수를 가져온다', async () => {
+            mockGet.mockResolvedValueOnce({data: {moduleId: 'game-2048', useCount: 5, likeCount: 7}})
+            const wrapper = mount(GamePage, {props: {title: '2048', gameId: 'game-2048'}})
+            await flushPromises()
+
+            expect(mockGet).toHaveBeenCalledWith('/api/v1/tools/game-2048/stats')
+            expect(wrapper.find('[data-testid="game-like-toggle"]').text()).toContain('7')
+        })
     })
 
     describe('174: 게임 종료 시 순위표 자동 표시', () => {

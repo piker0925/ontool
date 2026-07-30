@@ -28,7 +28,7 @@
         class="mx-auto flex w-full max-w-[800px] flex-col items-center px-4 pb-4 text-center"
       >
         <h1 class="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl drop-shadow-sm">
-          {{ BRAND.slogan }}<span class="hero-cursor text-primary opacity-90" aria-hidden="true">_</span>
+          {{ BRAND.slogan }}<span class="hero-cursor ml-1.5 text-primary opacity-90" aria-hidden="true">_</span>
         </h1>
         <p class="mt-4 text-[17px] font-medium text-muted-foreground/90 max-w-[480px]">모든 필수 도구를 설치 없이 브라우저에서 바로 사용하세요.</p>
 

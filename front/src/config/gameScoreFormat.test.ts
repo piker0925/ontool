@@ -22,7 +22,6 @@ describe('formatGameScore', () => {
         expect(formatGameScore('game-tower-stack', 12)).toBe('12점')
         expect(formatGameScore('game-block-blast', 340)).toBe('340점')
         expect(formatGameScore('game-match3', 90)).toBe('90점')
-        expect(formatGameScore('game-breakout', 56)).toBe('56점')
         expect(formatGameScore('game-whack-a-mole', 18)).toBe('18점')
         expect(formatGameScore('game-obstacle-dodge', 240)).toBe('240점')
     })

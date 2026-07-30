@@ -77,7 +77,7 @@ describe.skipIf(!FFMPEG_OK)('오디오 변환 화질 실측 (이슈 110, 실제 
         // (SNR 자체의 절대적 해석은 README의 표·분석 참고)
         expect(snrDb).toBeGreaterThan(10)
         expect(snrDb).toBeLessThan(90) // 손실 코덱이므로 무손실 수준(90dB+)이 나오면 정렬 로직이 잘못된 것
-    })
+    }, 60_000) // lamejs CPU 인코딩은 부하 환경에서 10초를 넘을 수 있으므로 60초 허용
 
     it('WAV(무손실 재인코딩)는 16비트 양자화 오차 외 손실이 없다 — mp3 대비 SNR이 훨씬 높다', () => {
         const wav = encodeWav(master)

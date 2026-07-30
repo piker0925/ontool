@@ -14,9 +14,10 @@ const GAME_SCORE_FORMATTERS: Record<string, (score: number) => string> = {
     'game-tower-stack': score => `${score.toLocaleString()}점`,
     'game-block-blast': score => `${score.toLocaleString()}점`,
     'game-match3': score => `${score.toLocaleString()}점`,
-    'game-breakout': score => `${score.toLocaleString()}점`,
     'game-whack-a-mole': score => `${score.toLocaleString()}점`,
     'game-obstacle-dodge': score => `${score.toLocaleString()}점`,
+    // 198: 맞춘 단어 개수(누적, 높을수록 좋음)
+    'game-code-rain-typing': score => `${score.toLocaleString()}개`,
 
     'game-reaction-time': score => `${score.toLocaleString()}ms`,
     'game-minesweeper': score => `${Math.round(score / 1000).toLocaleString()}초`,

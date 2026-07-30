@@ -1,7 +1,7 @@
 import type {Component} from 'vue'
 import {
     AlignLeft, Calendar, FileStack, FileText, Gamepad2, Globe, HeartPulse, Image, Landmark,
-    Music, PartyPopper, Ruler, ShieldCheck, Terminal, Timer, Type, Video, Wallet, Wrench, Zap,
+    Music, PartyPopper, Puzzle, Rocket, Ruler, ShieldCheck, Terminal, Timer, Type, Video, Wallet, Wrench, Zap,
 } from 'lucide-vue-next'
 
 export interface CategoryConfig {
@@ -31,11 +31,15 @@ export const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
     '생산성': {icon: Timer as Component, bg: 'bg-teal-50', color: 'text-teal-600', thumbBg: 'bg-teal-600'},
     '재미': {icon: PartyPopper as Component, bg: 'bg-fuchsia-50', color: 'text-fuchsia-600', thumbBg: 'bg-fuchsia-600'},
     '게임': {icon: Gamepad2 as Component, bg: 'bg-fuchsia-50', color: 'text-fuchsia-600', thumbBg: 'bg-fuchsia-600'},
+    '실시간 액션': {icon: Rocket as Component, bg: 'bg-orange-50', color: 'text-orange-600', thumbBg: 'bg-orange-600'},
+    '싱글 아케이드': {icon: Gamepad2 as Component, bg: 'bg-fuchsia-50', color: 'text-fuchsia-600', thumbBg: 'bg-fuchsia-600'},
+    '퍼즐 & 보드': {icon: Puzzle as Component, bg: 'bg-blue-50', color: 'text-blue-600', thumbBg: 'bg-blue-600'},
 }
 
 export const CATEGORY_ORDER = [
     'PDF', '문서', '이미지', '영상', '오디오', '생성기', '보안·암호화', '포맷터', '텍스트', '네트워크', 'DevOps',
     '급여·근로', '금융', '날짜·나이', '건강', '단위·변환', '생산성', '재미', '게임',
+    '실시간 액션', '싱글 아케이드', '퍼즐 & 보드',
 ]
 
 // 매핑되지 않은 카테고리용 기본 설정

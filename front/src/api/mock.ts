@@ -480,6 +480,12 @@ export const MOCK_MODULES: Module[] = [
         zones: ['life'],
     },
     {
+        id: 'pinball-lottery', name: '핀볼 추첨기 (Pinball Lottery)', category: '재미', isHeavy: false, isFrontendOnly: true,
+        description: '위에서 떨어지는 2D 핀볼 물리 트랙으로 1등/꼴찌 당첨자를 결정하는 추첨기!',
+        keywords: ['핀볼', 'pinball', '추첨기', '핀볼 추첨기', 'lottery'],
+        zones: ['life'],
+    },
+    {
         id: 'roulette-wheel', name: '룰렛 돌림판', category: '재미', isHeavy: false, isFrontendOnly: true,
         description: '항목을 입력하고 돌림판을 돌려 하나를 무작위로 뽑는 추첨기',
         keywords: ['룰렛', 'roulette', '돌림판', '추첨기'],
@@ -510,78 +516,116 @@ export const MOCK_MODULES: Module[] = [
         zones: ['life'],
     },
 
-    // 미니게임 (프론트 전용, 상태는 컴포넌트 내부 — 서버 저장 없음, v3 이전 범위. ADR-0026)
-    // component 로더는 여기 두지 않는다 — config/shellComponents.ts와 그 주석 참고.
+    // ─── 실시간 액션 (멀티플레이 가능 게임) ───────────────────────────────────
     {
-        id: 'game-reaction-time', name: '반응속도 테스트', category: '게임', isHeavy: false, isFrontendOnly: true,
+        id: 'game-reaction-time', name: '반응속도 테스트', category: '실시간 액션', isHeavy: false, isFrontendOnly: true,
         description: '신호가 뜨면 최대한 빨리 클릭해 반응 속도를 측정',
         kind: 'game', zones: ['fun'],
     },
     {
-        id: 'game-2048', name: '2048', category: '게임', isHeavy: false, isFrontendOnly: true,
-        description: '같은 숫자 타일을 합쳐 2048을 만드는 퍼즐',
+        id: 'game-code-rain-typing', name: '코드 낙하 타이핑', category: '실시간 액션', isHeavy: false, isFrontendOnly: true,
+        description: '코드/CS 용어가 떨어지기 전에 정확히 입력해서 맞히는 타이핑 게임',
         kind: 'game', zones: ['fun'],
     },
     {
-        id: 'game-minesweeper', name: '지뢰찾기', category: '게임', isHeavy: false, isFrontendOnly: true,
-        description: '지뢰를 피해 안전한 칸을 모두 여는 클래식 퍼즐',
+        id: 'game-tetris', name: '테트리스', category: '실시간 액션', isHeavy: false, isFrontendOnly: true,
+        description: '블록을 맞춰 라인을 클리어하는 테트리스! 2줄 이상 클리어 시 방해 블록 공격!',
         kind: 'game', zones: ['fun'],
     },
     {
-        id: 'game-memory-cards', name: '카드 짝맞추기', category: '게임', isHeavy: false, isFrontendOnly: true,
-        description: '카드 두 장을 뒤집어 같은 짝을 찾는 기억력 게임',
+        id: 'game-dino-run', name: '구글 공룡 게임', category: '실시간 액션', isHeavy: false, isFrontendOnly: true,
+        description: '장애물을 피하며 오래 생존하는 2D 픽셀 공룡 달리기 게임!',
         kind: 'game', zones: ['fun'],
     },
     {
-        id: 'game-snake', name: '스네이크', category: '게임', isHeavy: false, isFrontendOnly: true,
+        id: 'game-flappy-bird', name: '플래비 버드', category: '실시간 액션', isHeavy: false, isFrontendOnly: true,
+        description: '파이프 사이를 아슬아슬하게 통과하는 2D 새 비행 멀티 게임!',
+        kind: 'game', zones: ['fun'],
+    },
+    {
+        id: 'game-tug-of-war', name: '10초 연타 배틀', category: '실시간 액션', isHeavy: false, isFrontendOnly: true,
+        description: '10초간 스페이스바와 마우스를 폭풍 연타하여 5인 참가자 중 최고 연타왕에 도전하는 5인 배틀!',
+        kind: 'game', zones: ['fun'],
+    },
+    {
+        id: 'game-grid-turf-war', name: '땅따먹기', category: '실시간 액션', isHeavy: false, isFrontendOnly: true,
+        description: '2D 격자 판에서 영토를 넓히고 상대 땅을 뺏는 5인 땅따먹기 대결 게임!',
+        kind: 'game', zones: ['fun'],
+    },
+
+    // ─── 싱글 아케이드 (1인 플레이 전용) ─────────────────────────────────────
+    {
+        id: 'game-suika-merge', name: '수박게임', category: '싱글 아케이드', isHeavy: false, isFrontendOnly: true,
+        description: '같은 과일끼리 합쳐서 더 큰 과일로 키우는 힐링 물리 퍼즐!',
+        kind: 'game', zones: ['fun'],
+    },
+
+    {
+        id: 'game-crossy-road', name: '길건너 친구들', category: '싱글 아케이드', isHeavy: false, isFrontendOnly: true,
+        description: '도로와 철길을 건너며 최대한 멀리 전진하는 길건너 아케이드 게임!',
+        kind: 'game', zones: ['fun'],
+    },
+
+    {
+        id: 'game-snake', name: '스네이크', category: '싱글 아케이드', isHeavy: false, isFrontendOnly: true,
         description: '방향키로 뱀을 조종해 먹이를 먹고 길이를 늘리는 클래식 게임',
         kind: 'game', zones: ['fun'],
     },
     {
-        id: 'game-baseball', name: '숫자야구', category: '게임', isHeavy: false, isFrontendOnly: true,
-        description: '중복 없는 숫자를 스트라이크·볼 힌트로 추리하는 게임',
-        kind: 'game', zones: ['fun'],
-    },
-    // 121: 캐주얼 게임 8종 추가(한글 단어맞추기는 166에서 드롭). 전부 백엔드 GameCatalog에
-    // 등록돼 리더보드(053)에 연동됨(game-id를 GamePage에 넘김 — 각 Game.vue 참고).
-    {
-        id: 'game-sliding-puzzle', name: '슬라이딩 퍼즐', category: '게임', isHeavy: false, isFrontendOnly: true,
-        description: '4x4 판에서 빈칸으로 타일을 밀어 1부터 15까지 순서대로 맞추는 퍼즐',
-        kind: 'game', zones: ['fun'],
-    },
-    {
-        id: 'game-whack-a-mole', name: '두더지잡기', category: '게임', isHeavy: false, isFrontendOnly: true,
-        description: '제한 시간 안에 무작위로 나타나는 두더지를 최대한 많이 클릭/탭하는 게임',
-        kind: 'game', zones: ['fun'],
-    },
-    {
-        id: 'game-tower-stack', name: '타워 쌓기', category: '게임', isHeavy: false, isFrontendOnly: true,
+        id: 'game-tower-stack', name: '타워 쌓기', category: '싱글 아케이드', isHeavy: false, isFrontendOnly: true,
         description: '좌우로 움직이는 블록을 타이밍에 맞춰 탭해서 쌓아 올리는 게임',
         kind: 'game', zones: ['fun'],
     },
     {
-        id: 'game-block-blast', name: '블록 블라스트', category: '게임', isHeavy: false, isFrontendOnly: true,
-        description: '블록을 그리드에 놓아 가로·세로 줄을 채우면 없애는 그리드 퍼즐',
+        id: 'game-whack-a-mole', name: '두더지잡기', category: '싱글 아케이드', isHeavy: false, isFrontendOnly: true,
+        description: '제한 시간 안에 무작위로 나타나는 두더지를 최대한 많이 클릭/탭하는 게임',
+        kind: 'game', zones: ['fun'],
+    },
+
+    // ─── 퍼즐 & 보드 (두뇌 집중형) ───────────────────────────────────────────
+    {
+        id: 'game-2048', name: '2048', category: '퍼즐 & 보드', isHeavy: false, isFrontendOnly: true,
+        description: '같은 숫자 타일을 합쳐 2048을 만드는 퍼즐',
         kind: 'game', zones: ['fun'],
     },
     {
-        id: 'game-match3', name: '매치3 퍼즐', category: '게임', isHeavy: false, isFrontendOnly: true,
-        description: '인접한 타일을 교환해 같은 종류 3개 이상을 맞춰 없애는 퍼즐',
+        id: 'game-minesweeper', name: '지뢰찾기', category: '퍼즐 & 보드', isHeavy: false, isFrontendOnly: true,
+        description: '지뢰를 피해 안전한 칸을 모두 여는 클래식 퍼즐',
         kind: 'game', zones: ['fun'],
     },
     {
-        id: 'game-breakout', name: '벽돌깨기', category: '게임', isHeavy: false, isFrontendOnly: true,
-        description: '패들로 공을 튕겨 위쪽 벽돌을 전부 깨는 고전 아케이드 게임',
+        id: 'game-memory-cards', name: '카드 짝맞추기', category: '퍼즐 & 보드', isHeavy: false, isFrontendOnly: true,
+        description: '카드 두 장을 뒤집어 같은 짝을 찾는 기억력 게임',
         kind: 'game', zones: ['fun'],
     },
     {
-        id: 'game-obstacle-dodge', name: '장애물 피하기', category: '게임', isHeavy: false, isFrontendOnly: true,
-        description: '탭이나 스페이스바로 점프해서 계속 나타나는 장애물을 피하는 플래피버드류 게임',
+        id: 'game-sliding-puzzle', name: '슬라이딩 퍼즐', category: '퍼즐 & 보드', isHeavy: false, isFrontendOnly: true,
+        description: '4x4 판에서 빈칸으로 타일을 밀어 1부터 15까지 순서대로 맞추는 퍼즐',
         kind: 'game', zones: ['fun'],
     },
     {
-        id: 'game-water-sort', name: '워터소트 퍼즐', category: '게임', isHeavy: false, isFrontendOnly: true,
-        description: '여러 시험관에 섞인 색깔을 같은 색끼리 모아 분리하는 퍼즐',
+        id: 'game-match3', name: '보석 짝 맞추기', category: '퍼즐 & 보드', isHeavy: false, isFrontendOnly: true,
+        description: '인접한 보석을 교환해 같은 종류 3개 이상을 맞춰 터뜨리는 퍼즐!',
+        kind: 'game', zones: ['fun'],
+    },
+    {
+        id: 'game-water-sort', name: '컬러 물약 정렬', category: '퍼즐 & 보드', isHeavy: false, isFrontendOnly: true,
+        description: '여러 시험관에 섞인 색깔 물약을 같은 색끼리 한 병에 모아 분리하는 퍼즐!',
+        kind: 'game', zones: ['fun'],
+    },
+    {
+        id: 'game-omok', name: '오목', category: '퍼즐 & 보드', isHeavy: false, isFrontendOnly: true,
+        description: '15x15 바둑판에서 먼저 5개의 돌을 연속으로 놓는 사람이 승리하는 오목 게임',
+        kind: 'game', zones: ['fun'],
+    },
+    {
+        id: 'game-baseball', name: '숫자야구', category: '퍼즐 & 보드', isHeavy: false, isFrontendOnly: true,
+        description: '중복 없는 숫자를 스트라이크·볼 힌트로 추리하는 게임',
+        kind: 'game', zones: ['fun'],
+    },
+    {
+        id: 'game-yacht-dice', name: '요트 다이스', category: '퍼즐 & 보드', isHeavy: false, isFrontendOnly: true,
+        description: '주사위 5개를 굴려 12가지 족보 조합을 맞춰 최고점을 겨루는 정통 요트 다이스 게임!',
         kind: 'game', zones: ['fun'],
     },
     // 게임은 아니지만 078의 상주형 게임 페이지 모델(GamePage)을 그대로 재사용한다 — kind는 'tool'(생략)로

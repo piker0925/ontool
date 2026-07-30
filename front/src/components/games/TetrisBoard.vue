@@ -48,7 +48,7 @@
           </template>
         </div>
 
-        <GameResultOverlay :restart="resetGame" :show="state.status === 'over'" testid="tetris-over" title="게임 오버!" tone="lose">
+        <GameResultOverlay v-if="!props.isMulti" :restart="resetGame" :show="state.status === 'over'" testid="tetris-over" title="게임 오버!" tone="lose">
           <span data-testid="final-score">{{ state.score }}점 ({{ state.linesCleared }}라인)</span>
         </GameResultOverlay>
       </div>

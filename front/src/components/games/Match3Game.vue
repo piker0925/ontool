@@ -1,5 +1,5 @@
 <template>
-  <GamePage description="인접한 타일을 교환해 같은 종류 3개 이상을 맞춰보세요" game-id="game-match3" title="매치3 퍼즐">
+  <GamePage description="인접한 타일을 교환해 같은 종류 3개 이상을 맞춰보세요" game-id="game-match3" title="보석 짝 맞추기">
     <template #default="{ submitScore, restart, onGameEnd }">
       <Match3Board :restart="restart" :submit-score="submitScore" :on-game-end="onGameEnd"/>
     </template>

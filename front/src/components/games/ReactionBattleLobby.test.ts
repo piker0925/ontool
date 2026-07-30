@@ -96,6 +96,37 @@ describe('ReactionBattleLobby — 방 생성', () => {
     })
 })
 
+describe('ReactionBattleLobby — 본인 표시', () => {
+    it('참가자 목록에서 본인 행에만 "나" 표시가 붙는다(게스트 랜덤 닉네임이라 participantId로 판별)', async () => {
+        mockCreateRoom.mockResolvedValue({code: '7777'})
+        mockJoinRoom.mockResolvedValue({
+            code: '7777',
+            participantId: 'p1',
+            nickname: '행복한 너구리',
+            roomSessionToken: 'room-token',
+            participants: [{id: 'p1', nickname: '행복한 너구리'}],
+        })
+
+        const wrapper = mount(ReactionBattleLobby, {props: {gameId: 'game-reaction-time'}})
+        await wrapper.find('[data-testid="battle-create"]').trigger('click')
+        await flushPromises()
+
+        const es = MockEventSource.instances[0]
+        es.emit('participant-joined', [
+            {id: 'p1', nickname: '행복한 너구리'},
+            {id: 'p2', nickname: '슬픈 코알라'},
+        ])
+        await flushPromises()
+
+        const rows = wrapper.findAll('[data-testid="battle-participants"] > div')
+        const myRow = rows.find(r => r.text().includes('행복한 너구리'))
+        const otherRow = rows.find(r => r.text().includes('슬픈 코알라'))
+
+        expect(myRow?.text()).toContain('나')
+        expect(otherRow?.text()).not.toContain('나')
+    })
+})
+
 describe('ReactionBattleLobby — 대기방 목록에서 참가', () => {
     it('대기중인 방 목록을 보여주고, 그중 하나를 클릭하면 그 방에 참가한다', async () => {
         mockListRooms.mockResolvedValue([{code: '4321', participantCount: 1, maxParticipants: 5}])
@@ -336,5 +367,40 @@ describe('ReactionBattleLobby — 재대결', () => {
 
         expect(wrapper.find('[data-testid="battle-result-row"]').exists()).toBe(false)
         expect(wrapper.find('[data-testid="battle-go"]').exists()).toBe(true)
+    })
+
+    it('미래의 goAt 시각을 전달받으면 신호 발생 전까지 "기다리세요…"를 보여준다', async () => {
+        vi.useFakeTimers()
+        const now = new Date('2026-07-31T10:00:00.000Z').getTime()
+        vi.setSystemTime(now)
+
+        mockCreateRoom.mockResolvedValue({code: '7777'})
+        mockJoinRoom.mockResolvedValue({
+            code: '7777',
+            participantId: 'p1',
+            nickname: '방장',
+            roomSessionToken: 'room-token',
+            participants: [{id: 'p1', nickname: '방장'}],
+        })
+
+        const wrapper = mount(ReactionBattleLobby, {props: {gameId: 'game-reaction-time'}})
+        await wrapper.find('[data-testid="battle-create"]').trigger('click')
+        await flushPromises()
+
+        const es = MockEventSource.instances[0]
+        // 2초 뒤 goAt
+        const futureGoAt = new Date(now + 2000).toISOString()
+        es.emit('round-started', {goAt: futureGoAt})
+        await flushPromises()
+
+        const battleGo = wrapper.find('[data-testid="battle-go"]')
+        expect(battleGo.text()).toContain('기다리세요…')
+
+        // 2초 경과
+        vi.advanceTimersByTime(2000)
+        await wrapper.vm.$nextTick()
+
+        expect(battleGo.text()).toContain('지금 클릭!')
+        vi.useRealTimers()
     })
 })

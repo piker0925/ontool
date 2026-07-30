@@ -2,6 +2,7 @@ package com.back.game.controller;
 
 import com.back.AbstractMySQLIntegrationTest;
 import com.back.game.repository.RoomWinRepository;
+import com.back.game.service.RoomRegistry;
 import com.back.global.security.jwt.JwtProvider;
 import com.back.user.entity.AuthProvider;
 import com.back.user.entity.User;
@@ -361,11 +362,15 @@ class RoomControllerTest extends AbstractMySQLIntegrationTest {
                 .andExpect(jsonPath("$[?(@.code == '" + omokCode + "')]").doesNotExist());
     }
 
+    @Autowired
+    RoomRegistry roomRegistry;
+
     private void startRoom(String code, JsonNode host) throws Exception {
         mockMvc.perform(post("/api/v1/games/game-reaction-time/rooms/" + code + "/start")
                         .contentType("application/json")
                         .content(startBody(host.get("participantId").asText(), host.get("roomSessionToken").asText())))
                 .andExpect(status().isOk());
+        roomRegistry.overrideGoAtForTest(code, java.time.Instant.now().minusSeconds(1));
     }
 
     private JsonNode joinLoggedInAndGetJson(String code, String accessToken) throws Exception {

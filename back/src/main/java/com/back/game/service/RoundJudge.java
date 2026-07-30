@@ -28,7 +28,9 @@ public final class RoundJudge {
         return java.util.stream.IntStream.range(0, sorted.size())
                 .mapToObj(i -> {
                     ClickEvent c = sorted.get(i);
-                    return new RankedParticipant(c.participantId(), i + 1, c.arrivedAt().isBefore(goAt));
+                    boolean falseStart = c.arrivedAt().isBefore(goAt);
+                    Long elapsedMs = falseStart ? null : java.time.Duration.between(goAt, c.arrivedAt()).toMillis();
+                    return new RankedParticipant(c.participantId(), i + 1, falseStart, elapsedMs);
                 })
                 .toList();
     }

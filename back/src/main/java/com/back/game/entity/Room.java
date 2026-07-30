@@ -17,6 +17,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class Room {
 
+    private static final java.security.SecureRandom RANDOM = new java.security.SecureRandom();
+
     // 정원 설정 UI는 만들지 않는다(제품 정책 아님) — 남용 방지용 순수 기술적 상한.
     private static final int MAX_PARTICIPANTS = 8;
 
@@ -63,6 +65,15 @@ public class Room {
         lastActivityAt = Instant.now();
     }
 
+    public void removeParticipant(String participantId) {
+        participants.removeIf(p -> p.id().equals(participantId));
+        lastActivityAt = Instant.now();
+    }
+
+    public boolean isEmpty() {
+        return participants.isEmpty();
+    }
+
     // 방장 = 가장 먼저 입장한 참가자. 별도 "방장" 필드를 두지 않고 참가자 목록의 순서 자체로 판정한다.
     public boolean isHost(String participantId) {
         return !participants.isEmpty() && participants.get(0).id().equals(participantId);
@@ -76,8 +87,9 @@ public class Room {
             throw new AppException(ErrorCode.ROOM_ALREADY_STARTED);
         }
         started = true;
-        goAt = Instant.now();
-        lastActivityAt = goAt;
+        long randomDelayMs = 3000L + 2000L + RANDOM.nextInt(3000);
+        goAt = Instant.now().plusMillis(randomDelayMs);
+        lastActivityAt = Instant.now();
         return goAt;
     }
 
@@ -107,8 +119,9 @@ public class Room {
         codeRainCombos.clear();
         claimedWordIds.clear();
         winRecorded.set(false);
-        goAt = Instant.now();
-        lastActivityAt = goAt;
+        long randomDelayMs = 3000L + 2000L + RANDOM.nextInt(3000);
+        goAt = Instant.now().plusMillis(randomDelayMs);
+        lastActivityAt = Instant.now();
         return goAt;
     }
 
@@ -196,6 +209,10 @@ public class Room {
 
     public Instant goAt() {
         return goAt;
+    }
+
+    public void overrideGoAtForTest(Instant instant) {
+        this.goAt = instant;
     }
 
     // 같은 참가자가 중복 제출해도 최초 도착 시각만 기록한다(putIfAbsent) — 재전송·더블클릭 방어.

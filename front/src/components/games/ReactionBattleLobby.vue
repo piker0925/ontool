@@ -1,118 +1,115 @@
 <template>
-  <div class="flex flex-col items-center gap-4 py-10">
-    <div v-if="!code" class="flex flex-col items-center gap-4">
-      <button
-          class="rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
-          data-testid="battle-create"
-          @click="onCreate"
-      >방 만들기
-      </button>
+  <BattleLobbyShell
+      :game-id="props.gameId"
+      :code="code"
+      :phase="shellPhase"
+      :participants="lobby.participants.value"
+      :is-host="lobby.isHost.value"
+      :error="lobby.error.value"
+      :max-players="5"
+      :countdown="countdown"
+      testid-prefix="battle"
+      @create="onCreate"
+      @join="onJoin"
+      @start="onStart"
+  >
+    <!-- 게임 중 화면 -->
+    <div v-if="shellPhase === 'playing'">
+      <!-- GO! 클릭 패널 -->
+      <div
+          v-if="!lobby.hasSubmitted.value"
+          class="flex h-60 w-full max-w-md cursor-pointer select-none items-center justify-center rounded-2xl border border-zone-accent/40 bg-zone-accent/10 backdrop-blur-md shadow-[0_0_40px_color-mix(in_oklch,var(--zone-accent)_30%,transparent)] transition-[transform,box-shadow] hover:-translate-y-1 hover:shadow-[0_0_55px_color-mix(in_oklch,var(--zone-accent)_45%,transparent)] active:scale-[0.98] mx-auto"
+          data-testid="battle-go"
+          @click="onClick"
+      >
+        <div class="flex flex-col items-center gap-2">
+          <span class="font-mono text-6xl font-black text-zone-accent drop-shadow-[0_0_20px_var(--zone-accent)]">GO!</span>
+          <span class="font-mono text-xs text-muted-foreground">신호를 보는 즉시 클릭하세요</span>
+        </div>
+      </div>
 
-      <div class="flex items-center gap-2">
-        <input
-            v-model="joinCodeInput"
-            class="w-24 rounded-md border border-input bg-transparent px-3 py-2 text-center text-sm"
-            data-testid="battle-join-code-input"
-            maxlength="4"
-            placeholder="코드 입력"
-        />
+      <!-- 결과 -->
+      <div v-else class="flex flex-col items-center gap-4 w-full max-w-sm mx-auto">
+        <p class="font-mono text-xs font-bold uppercase tracking-widest text-muted-foreground">결과</p>
+        <div class="flex w-full flex-col gap-2">
+          <div
+              v-for="r in lobby.results.value"
+              :key="r.participantId"
+              class="flex items-center gap-3 rounded-xl border px-4 py-2.5"
+              :class="r.rank === 1
+                ? 'border-amber-500/50 bg-amber-500/10'
+                : 'border-border/50 bg-muted/20'"
+              data-testid="battle-result-row"
+          >
+            <span class="font-mono text-sm font-bold" :class="r.rank === 1 ? 'text-amber-400' : 'text-muted-foreground'">
+              {{ r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : '' }}
+            </span>
+            <!-- 테스트 호환: 'N등 — 닉네임' 형식으로 텍스트 포함 -->
+            <span class="flex-1 text-sm font-medium text-foreground">{{ r.rank }}등 — {{ r.nickname }}</span>
+            <span v-if="r.falseStart" class="text-[10px] font-mono text-destructive border border-destructive/30 bg-destructive/10 px-2 py-0.5 rounded-full">부정 출발</span>
+          </div>
+        </div>
+        <p class="text-[11px] text-muted-foreground/70 text-center font-mono">참가자별 네트워크 지연이 순위에 영향을 줄 수 있습니다</p>
         <button
-            class="rounded-md border border-input px-4 py-2 text-sm font-medium hover:bg-accent"
-            data-testid="battle-join-submit"
-            @click="onJoin"
-        >입장
+            v-if="lobby.isHost.value"
+            class="flex items-center gap-2 rounded-2xl bg-zone-accent px-6 py-3 text-sm font-bold text-white shadow-[0_0_20px_color-mix(in_oklch,var(--zone-accent)_35%,transparent)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_0_30px_color-mix(in_oklch,var(--zone-accent)_50%,transparent)] active:scale-95"
+            data-testid="battle-next-round"
+            type="button"
+            @click="onNextRound"
+        >
+          <RotateCcw class="size-4"/>
+          다음 라운드
         </button>
       </div>
-
-      <p v-if="lobby.error.value" class="text-sm text-destructive" data-testid="battle-error">{{ lobby.error.value }}</p>
     </div>
-
-    <div v-else-if="lobby.round.value.phase === 'lobby'" class="flex flex-col items-center gap-3">
-      <p class="text-sm text-muted-foreground">방 코드</p>
-      <p class="font-mono text-3xl tracking-widest" data-testid="battle-code-display">{{ code }}</p>
-      <div class="flex flex-col items-center gap-1" data-testid="battle-participants">
-        <p v-for="p in lobby.participants.value" :key="p.id" class="text-sm text-foreground">{{ p.nickname }}</p>
-      </div>
-      <button
-          v-if="lobby.isHost.value"
-          class="rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
-          data-testid="battle-start"
-          @click="onStart"
-      >게임 시작
-      </button>
-      <p v-else class="text-sm text-muted-foreground">방장이 시작하기를 기다리는 중...</p>
-    </div>
-
-    <div
-        v-else-if="!lobby.hasSubmitted.value"
-        class="flex h-56 w-full max-w-md cursor-pointer select-none items-center justify-center rounded-xl bg-primary text-2xl font-bold text-primary-foreground"
-        data-testid="battle-go"
-        @click="onClick"
-    >GO!
-    </div>
-
-    <div v-else class="flex flex-col items-center gap-2">
-      <p v-for="r in lobby.results.value" :key="r.participantId" class="text-sm text-foreground" data-testid="battle-result-row">
-        {{ r.rank }}등 — {{ r.nickname }}{{ r.falseStart ? ' (부정 출발)' : '' }}
-      </p>
-      <p class="mt-2 text-xs text-muted-foreground">참가자별 네트워크 지연(핑) 차이가 순위에 영향을 줄 수 있습니다.</p>
-      <button
-          v-if="lobby.isHost.value"
-          class="mt-2 rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
-          data-testid="battle-next-round"
-          @click="onNextRound"
-      >다음 라운드
-      </button>
-    </div>
-  </div>
+  </BattleLobbyShell>
 </template>
 
 <script lang="ts" setup>
-import {computed, ref} from 'vue'
+import {computed, ref, watch} from 'vue'
+import {RotateCcw} from 'lucide-vue-next'
 import {useRoomLobby} from '../../composables/useRoomLobby'
 import {generateNickname} from '../../utils/randomNickname'
 import {accessToken} from '../../composables/useAuth'
+import BattleLobbyShell from './BattleLobbyShell.vue'
 
 const props = defineProps<{ gameId: string }>()
 
 const lobby = useRoomLobby()
-const joinCodeInput = ref('')
 const code = computed(() => lobby.code.value)
 
-// 로그인 유저는 서버가 실제 계정 닉네임으로 강제 대체하므로, 여기서 보내는 닉네임은
-// 게스트일 때만 실제로 쓰인다(193 결정 사항).
+// 카운트다운
+const countdown = ref(3)
+const shellPhase = computed(() => {
+  if (!code.value) return 'lobby' as const
+  const phase = lobby.round.value.phase
+  if (phase === 'lobby') return 'lobby' as const
+  if (phase === 'countdown') return 'countdown' as const
+  return 'playing' as const
+})
+
+watch(() => lobby.round.value.phase, (p) => {
+  if (p === 'countdown') {
+    countdown.value = 3
+    const t = setInterval(() => {
+      countdown.value--
+      if (countdown.value <= 0) clearInterval(t)
+    }, 1000)
+  }
+})
+
 function guestOrRealNickname() {
   return accessToken.value ? undefined : generateNickname()
 }
 
-// 실패 시 메시지는 lobby.error가 이미 들고 있다(useRoomLobby) — 여기서는 화면 이벤트 핸들러
-// 밖으로 미처리 rejection이 새어나가지 않게 잡아 버리기만 한다.
 async function onCreate() {
-  try {
-    await lobby.create(props.gameId, guestOrRealNickname())
-  } catch {
-    // no-op — lobby.error already holds the message
-  }
+  try { await lobby.create(props.gameId, guestOrRealNickname()) } catch { /* lobby.error */ }
 }
-
-async function onJoin() {
-  if (!joinCodeInput.value) return
-  try {
-    await lobby.join(props.gameId, joinCodeInput.value, guestOrRealNickname())
-  } catch {
-    // no-op — lobby.error already holds the message
-  }
+async function onJoin(inputCode: string) {
+  if (!inputCode) return
+  try { await lobby.join(props.gameId, inputCode, guestOrRealNickname()) } catch { /* lobby.error */ }
 }
-
-async function onStart() {
-  await lobby.startRound(props.gameId)
-}
-
-async function onClick() {
-  await lobby.submitClick(props.gameId)
-}
-
-async function onNextRound() {
-  await lobby.nextRound(props.gameId)
-}
+async function onStart() { await lobby.startRound(props.gameId) }
+async function onClick() { await lobby.submitClick(props.gameId) }
+async function onNextRound() { await lobby.nextRound(props.gameId) }
 </script>

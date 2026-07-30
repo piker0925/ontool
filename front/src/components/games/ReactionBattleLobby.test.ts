@@ -2,7 +2,7 @@ import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest'
 import {mount, flushPromises} from '@vue/test-utils'
 import ReactionBattleLobby from './ReactionBattleLobby.vue'
 import {accessToken} from '@/composables/useAuth'
-import {createRoom, joinRoom, nextRoom, submitRoomClick} from '@/api/games'
+import {createRoom, joinRoom, listRooms, nextRoom, submitRoomClick} from '@/api/games'
 
 vi.mock('@/api/games', () => ({
     createRoom: vi.fn(),
@@ -10,12 +10,14 @@ vi.mock('@/api/games', () => ({
     startRoom: vi.fn(),
     submitRoomClick: vi.fn(),
     nextRoom: vi.fn(),
+    listRooms: vi.fn(),
 }))
 
 const mockNextRoom = nextRoom as ReturnType<typeof vi.fn>
 const mockCreateRoom = createRoom as ReturnType<typeof vi.fn>
 const mockJoinRoom = joinRoom as ReturnType<typeof vi.fn>
 const mockSubmitRoomClick = submitRoomClick as ReturnType<typeof vi.fn>
+const mockListRooms = listRooms as ReturnType<typeof vi.fn>
 
 // jsdom엔 EventSource가 없어 최소 mock을 직접 둔다 — useHeavyJob.test.ts의 MockEventSource와 동일 패턴.
 class MockEventSource {
@@ -48,6 +50,7 @@ beforeEach(() => {
     MockEventSource.instances = []
     vi.stubGlobal('EventSource', MockEventSource)
     accessToken.value = null
+    mockListRooms.mockResolvedValue([])
 })
 
 afterEach(() => {
@@ -93,8 +96,9 @@ describe('ReactionBattleLobby — 방 생성', () => {
     })
 })
 
-describe('ReactionBattleLobby — 코드로 입장', () => {
-    it('코드를 입력해 입장하면 참가자 목록에 반영된다', async () => {
+describe('ReactionBattleLobby — 대기방 목록에서 참가', () => {
+    it('대기중인 방 목록을 보여주고, 그중 하나를 클릭하면 그 방에 참가한다', async () => {
+        mockListRooms.mockResolvedValue([{code: '4321', participantCount: 1, maxParticipants: 5}])
         mockJoinRoom.mockResolvedValue({
             code: '4321',
             participantId: 'p2',
@@ -104,21 +108,39 @@ describe('ReactionBattleLobby — 코드로 입장', () => {
         })
 
         const wrapper = mount(ReactionBattleLobby, {props: {gameId: 'game-reaction-time'}})
-        await wrapper.find('[data-testid="battle-join-code-input"]').setValue('4321')
-        await wrapper.find('[data-testid="battle-join-submit"]').trigger('click')
         await flushPromises()
 
+        expect(mockListRooms).toHaveBeenCalledWith('game-reaction-time')
+        const roomItem = wrapper.find('[data-testid="battle-room-item"]')
+        expect(roomItem.text()).toContain('1')
+        expect(roomItem.text()).toContain('5')
+
+        await roomItem.trigger('click')
+        await flushPromises()
+
+        expect(mockJoinRoom).toHaveBeenCalledWith('game-reaction-time', '4321', expect.any(String))
         expect(wrapper.find('[data-testid="battle-code-display"]').text()).toBe('4321')
         expect(wrapper.find('[data-testid="battle-participants"]').text()).toContain('방장')
         expect(wrapper.find('[data-testid="battle-participants"]').text()).toContain('나')
     })
 
-    it('입장에 실패하면 에러 메시지를 보여준다', async () => {
+    it('대기중인 방이 없으면 빈 상태 안내를 보여준다', async () => {
+        mockListRooms.mockResolvedValue([])
+
+        const wrapper = mount(ReactionBattleLobby, {props: {gameId: 'game-reaction-time'}})
+        await flushPromises()
+
+        expect(wrapper.find('[data-testid="battle-room-empty"]').exists()).toBe(true)
+        expect(wrapper.find('[data-testid="battle-room-item"]').exists()).toBe(false)
+    })
+
+    it('참가에 실패하면 에러 메시지를 보여준다', async () => {
+        mockListRooms.mockResolvedValue([{code: '0000', participantCount: 1, maxParticipants: 5}])
         mockJoinRoom.mockRejectedValue({response: {data: {message: '존재하지 않는 방입니다.'}}})
 
         const wrapper = mount(ReactionBattleLobby, {props: {gameId: 'game-reaction-time'}})
-        await wrapper.find('[data-testid="battle-join-code-input"]').setValue('0000')
-        await wrapper.find('[data-testid="battle-join-submit"]').trigger('click')
+        await flushPromises()
+        await wrapper.find('[data-testid="battle-room-item"]').trigger('click')
         await flushPromises()
 
         expect(wrapper.find('[data-testid="battle-error"]').text()).toBe('존재하지 않는 방입니다.')

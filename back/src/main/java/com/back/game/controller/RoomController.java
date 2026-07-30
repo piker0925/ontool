@@ -63,6 +63,17 @@ public class RoomController {
         return roomService.join(gameId, code, userId, requestedNickname);
     }
 
+    @Operation(summary = "방 퇴장", description = "방에서 나갑니다. 참가자 목록에서 지워지며, 참가자가 0명이 되면 방이 즉시 해제됩니다.")
+    @PostMapping(value = "/{code}/leave", consumes = {org.springframework.http.MediaType.APPLICATION_JSON_VALUE, org.springframework.http.MediaType.TEXT_PLAIN_VALUE, org.springframework.http.MediaType.ALL_VALUE})
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void leave(@Parameter(description = "게임 ID") @PathVariable String gameId,
+                      @Parameter(description = "방 코드") @PathVariable String code,
+                      @RequestBody(required = false) RoomStartRequest request) {
+        if (request != null) {
+            roomService.leave(gameId, code, request.participantId(), request.roomSessionToken());
+        }
+    }
+
     @Operation(summary = "라운드 시작", description = "방장만 시작할 수 있습니다. 성공하면 방에 연결된 모든 참가자에게 GO 신호를 브로드캐스트합니다.")
     @PostMapping("/{code}/start")
     public RoomStartResponse start(@Parameter(description = "게임 ID") @PathVariable String gameId,

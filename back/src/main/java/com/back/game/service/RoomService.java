@@ -63,6 +63,17 @@ public class RoomService {
         return new RoomJoinResponse(room.code(), participant.id(), participant.nickname(), roomSessionToken, participants);
     }
 
+    public void leave(String gameId, String code, String participantId, String roomSessionToken) {
+        if (!sessionTokenService.verifyForRoom(roomSessionToken, gameId, code, participantId)) {
+            return;
+        }
+        Room room = roomRegistry.leave(code, participantId);
+        if (room != null) {
+            List<RoomParticipantResponse> participants = room.participants().stream().map(RoomParticipantResponse::from).toList();
+            roomBroadcaster.broadcast(room.code(), "participant-joined", participants);
+        }
+    }
+
     // 방장 판정에 앞서 토큰부터 검증한다 — 남의 participantId를 대며 시작을 시도하는 걸 막는다.
     public RoomStartResponse startRound(String gameId, String code, String participantId, String roomSessionToken) {
         if (!sessionTokenService.verifyForRoom(roomSessionToken, gameId, code, participantId)) {

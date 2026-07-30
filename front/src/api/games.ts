@@ -77,6 +77,11 @@ export async function joinRoom(gameId: string, code: string, nickname?: string):
     return data
 }
 
+/** 방 퇴장. */
+export async function leaveRoom(gameId: string, code: string, participantId: string, roomSessionToken: string): Promise<void> {
+    await apiClient.post(`/api/v1/games/${gameId}/rooms/${code}/leave`, {participantId, roomSessionToken})
+}
+
 export interface RoomSummary {
     code: string
     participantCount: number
@@ -110,6 +115,7 @@ export interface RoomRoundResultEntry {
     nickname: string
     rank: number
     falseStart: boolean
+    elapsedMs?: number | null
 }
 
 /** 클릭 제출. 서버가 기록한 도착 시각으로 순위를 매기며(클라이언트 자체 신고 불신), 제출마다 갱신된 순위를 돌려준다. */

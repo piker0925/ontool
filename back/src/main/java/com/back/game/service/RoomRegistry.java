@@ -55,6 +55,13 @@ public class RoomRegistry {
         return room.startRound(participantId);
     }
 
+    public void overrideGoAtForTest(String code, Instant goAt) {
+        Room room = rooms.get(code);
+        if (room != null) {
+            room.overrideGoAtForTest(goAt);
+        }
+    }
+
     public Room recordClick(String code, String participantId, Instant arrivedAt) {
         Room room = rooms.get(code);
         if (room == null) {
@@ -86,6 +93,18 @@ public class RoomRegistry {
             throw new AppException(ErrorCode.ROOM_NOT_FOUND);
         }
         return room.placeOmokStone(participantId, x, y);
+    }
+
+    public Room leave(String code, String participantId) {
+        Room room = rooms.get(code);
+        if (room != null) {
+            room.removeParticipant(participantId);
+            if (room.isEmpty()) {
+                rooms.remove(code);
+                return null;
+            }
+        }
+        return room;
     }
 
     /** 참가 가능한(같은 게임·시작 전·정원 미달) 방 목록 — 공개방 목록 조회용. */

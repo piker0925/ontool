@@ -1,5 +1,5 @@
 import {computed, ref} from 'vue'
-import {createRoom, joinRoom, nextRoom, startRoom, submitRoomClick, type RoomParticipant, type RoomRoundResultEntry} from '../api/games'
+import {createRoom, joinRoom, leaveRoom, nextRoom, startRoom, submitRoomClick, type RoomParticipant, type RoomRoundResultEntry} from '../api/games'
 import {handleRoundStarted, type MultiplayerRoundState} from '../utils/multiplayerRound'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
@@ -28,6 +28,8 @@ export function useRoomLobby() {
     const round = ref<MultiplayerRoundState>({phase: 'lobby', goAt: null})
     const results = ref<RoomRoundResultEntry[]>([])
     const dinoProgressMap = ref<Record<string, DinoParticipantProgress>>({})
+    const codeRainClaimedEvent = ref<{ participantId: string; nickname: string; wordId: number; wordText: string } | null>(null)
+    const tetrisGarbageAttackEvent = ref<{ attackerParticipantId: string; attackerNickname: string; garbageLinesAdded: number } | null>(null)
 
     let eventSource: EventSource | null = null
 
@@ -74,6 +76,12 @@ export function useRoomLobby() {
                 [normalized.participantId]: normalized
             }
         })
+        es.addEventListener('code-rain-claimed', (e: MessageEvent) => {
+            codeRainClaimedEvent.value = JSON.parse(e.data)
+        })
+        es.addEventListener('tetris-garbage-attack', (e: MessageEvent) => {
+            tetrisGarbageAttackEvent.value = JSON.parse(e.data)
+        })
     }
 
     async function startRound(gameId: string) {
@@ -115,10 +123,36 @@ export function useRoomLobby() {
         }
     }
 
+    function leaveBeacon(gameId: string) {
+        if (code.value && participantId.value && roomSessionToken.value) {
+            const url = `${API_BASE}/api/v1/games/${gameId}/rooms/${code.value}/leave`
+            const payload = JSON.stringify({
+                participantId: participantId.value,
+                roomSessionToken: roomSessionToken.value
+            })
+            const blob = new Blob([payload], { type: 'application/json' })
+            if (navigator.sendBeacon) {
+                navigator.sendBeacon(url, blob)
+            }
+        }
+    }
+
+    async function leave(gameId: string) {
+        leaveBeacon(gameId)
+        stop()
+        code.value = null
+        participantId.value = null
+        roomSessionToken.value = null
+        participants.value = []
+        round.value = {phase: 'lobby', goAt: null}
+        results.value = []
+        dinoProgressMap.value = {}
+    }
+
     function stop() {
         eventSource?.close()
         eventSource = null
     }
 
-    return {code, participantId, roomSessionToken, participants, error, round, results, dinoProgressMap, isHost, hasSubmitted, create, join, startRound, submitClick, nextRound, stop}
+    return {code, participantId, roomSessionToken, participants, error, round, results, dinoProgressMap, codeRainClaimedEvent, tetrisGarbageAttackEvent, isHost, hasSubmitted, create, join, leave, leaveBeacon, startRound, submitClick, nextRound, stop}
 }

@@ -75,7 +75,17 @@
       <div v-else-if="phase === 'lobby'" key="lobby" class="flex w-full max-w-sm flex-col items-center gap-5">
 
         <!-- 방 코드 카드 -->
-        <div class="flex w-full flex-col items-center gap-2 rounded-2xl border border-border/60 bg-muted/20 p-5 backdrop-blur-md">
+        <div class="flex w-full flex-col items-center gap-2 rounded-2xl border border-border/60 bg-muted/20 p-5 backdrop-blur-md relative">
+          <button
+              class="absolute top-3 right-3 flex items-center gap-1 rounded-lg border border-border/40 bg-muted/30 px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
+              data-testid="battle-leave"
+              title="방 나가기"
+              type="button"
+              @click="$emit('leave')"
+          >
+            <LogOut class="size-3.5"/>
+            나가기
+          </button>
           <p class="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">방 코드 · Room Code</p>
           <div class="flex items-center gap-3">
             <span
@@ -106,7 +116,7 @@
                 :key="p?.id ?? `empty-${i}`"
                 class="flex items-center gap-3 rounded-xl border px-4 py-2.5 transition-[border-color,background-color]"
                 :class="p
-                  ? 'border-border/60 bg-muted/20 backdrop-blur-sm'
+                  ? (p.id === participantId ? 'border-zone-accent/60 bg-zone-accent/10 backdrop-blur-sm' : 'border-border/60 bg-muted/20 backdrop-blur-sm')
                   : 'border-dashed border-border/30 bg-transparent'"
             >
               <!-- 자리 번호 -->
@@ -123,6 +133,11 @@
                   class="flex-1 truncate text-sm font-medium"
                   :class="p ? 'text-foreground' : 'text-muted-foreground/30 italic text-xs'"
               >{{ p ? p.nickname : '대기 중...' }}</span>
+              <!-- 나 표시 — 게스트는 랜덤 닉네임이라 본인도 못 알아보므로 participantId로 판별한다 -->
+              <span
+                  v-if="p && p.id === participantId"
+                  class="shrink-0 rounded-full bg-zone-accent/20 border border-zone-accent/40 px-2 py-0.5 font-mono text-[9px] font-bold text-zone-accent"
+              >나</span>
               <!-- 방장 뱃지 -->
               <span
                   v-if="p && i === 0"
@@ -171,7 +186,7 @@
 
 <script lang="ts" setup>
 import {computed, onMounted, onUnmounted, ref, watch} from 'vue'
-import {AlertCircle, CheckCheck, Copy, Plus, Rocket, Users} from 'lucide-vue-next'
+import {AlertCircle, CheckCheck, Copy, LogOut, Plus, Rocket, Users} from 'lucide-vue-next'
 import {listRooms, type RoomSummary} from '../../api/games'
 
 interface Participant {
@@ -184,6 +199,7 @@ const props = withDefaults(defineProps<{
   code?: string | null
   phase?: 'lobby' | 'countdown' | 'playing'
   participants?: Participant[]
+  participantId?: string | null
   isHost?: boolean
   error?: string | null
   maxPlayers?: number
@@ -193,6 +209,7 @@ const props = withDefaults(defineProps<{
   code: null,
   phase: 'lobby',
   participants: () => [],
+  participantId: null,
   isHost: false,
   error: null,
   maxPlayers: 5,
@@ -203,6 +220,7 @@ defineEmits<{
   create: []
   join: [code: string]
   start: []
+  leave: []
 }>()
 
 const copied = ref(false)

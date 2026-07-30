@@ -251,4 +251,17 @@ class RoomRegistryTest {
 
         assertThat(registry.listWaitingRooms("game-reaction-time")).isEmpty();
     }
+
+    @Test
+    void 참가자가_퇴장해_0명이_되면_방이_즉시_해제된다() {
+        RoomRegistry registry = new RoomRegistry();
+        Room room = registry.create("game-reaction-time");
+        Participant host = new Participant("host", "방장", null);
+        registry.join(room.code(), host);
+
+        Room leftRoom = registry.leave(room.code(), host.id());
+
+        assertThat(leftRoom).isNull();
+        assertThat(registry.listWaitingRooms("game-reaction-time")).isEmpty();
+    }
 }

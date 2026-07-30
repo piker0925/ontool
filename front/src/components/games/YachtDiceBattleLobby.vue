@@ -4,6 +4,7 @@
       :code="code"
       :phase="shellPhase"
       :participants="lobby.participants.value"
+      :participant-id="lobby.participantId.value"
       :is-host="lobby.isHost.value"
       :error="lobby.error.value"
       :max-players="5"

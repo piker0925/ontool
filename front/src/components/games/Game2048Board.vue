@@ -2,6 +2,17 @@
   <div class="flex flex-col items-center gap-4 py-6" tabindex="0" @keydown="onKeydown" @touchend="onTouchEnd" @touchstart="onTouchStart">
     <GameStat label="점수" testid="score" :value="score"/>
 
+    <div class="flex items-center gap-2 mb-2">
+      <button
+          :class="infiniteMode ? 'bg-zone-accent text-background font-bold shadow-md' : 'bg-muted border border-border text-muted-foreground'"
+          class="px-3 py-1 rounded-full text-xs transition-colors"
+          type="button"
+          @click="infiniteMode = !infiniteMode"
+      >
+        ♾️ 무한 모드 (4096+) {{ infiniteMode ? 'ON' : 'OFF' }}
+      </button>
+    </div>
+
     <div class="relative">
       <div
         :class="comboActive ? 'shadow-[0_0_25px_var(--zone-accent-fun)] border-zone-accent-fun/50' : 'border-transparent'"
@@ -13,7 +24,7 @@
               v-for="(cell, c) in row"
               :key="`${r}-${c}-${moveTick}`"
               :class="[tileClass(cell), tileAnimClass(r, c)]"
-              class="flex size-16 items-center justify-center rounded-lg text-lg font-bold transition-colors"
+              class="flex size-16 items-center justify-center rounded-lg text-lg font-bold transition-[transform,background-color] duration-100 active:scale-95"
           >
             {{ cell || '' }}
           </div>
@@ -41,7 +52,8 @@ const props = defineProps<{ submitScore?: (score: number) => void; restart?: () 
 
 const board = ref<Board>(createEmptyBoard(4))
 const score = ref(0)
-const gameOver = computed(() => isGameOver(board.value))
+const infiniteMode = ref(false)
+const gameOver = computed(() => infiniteMode.value ? false : isGameOver(board.value))
 
 const {playClick, playSuccess, playFail} = useGameSound()
 

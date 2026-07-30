@@ -33,7 +33,7 @@
       <!-- Ready 대기 오버레이 (싱글 플레이 전용) -->
       <div v-if="state.status === 'ready'" class="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-background/85 backdrop-blur-sm p-4 text-center">
         <div class="space-y-1">
-          <h3 class="text-base font-bold">Paper.io 땅따먹기</h3>
+          <h3 class="text-base font-bold">땅따먹기</h3>
           <p class="text-xs text-muted-foreground">바깥으로 나가 꼬리를 그린 후 내 영토로 돌아와 땅을 점유하세요!</p>
           <p class="text-[11px] text-amber-400 font-mono">⚠️ 꼬리를 그리는 도중 상대가 내 꼬리를 끊으면 즉시 탈락합니다!</p>
         </div>

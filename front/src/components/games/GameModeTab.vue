@@ -18,17 +18,23 @@
 
       <!-- 배틀 탭 -->
       <button
-          :class="modelValue === 'battle'
-            ? 'bg-zone-accent text-white shadow-[0_0_12px_color-mix(in_oklch,var(--zone-accent)_40%,transparent)]'
-            : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'"
-          class="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold transition-[background-color,color,box-shadow] duration-150"
+          :disabled="disabledBattle"
+          :title="disabledBattle ? (disabledTooltip || '🚧 멀티 대결은 준비 중입니다.') : undefined"
+          :class="[
+            disabledBattle ? 'opacity-50 cursor-not-allowed text-muted-foreground' :
+            modelValue === 'battle'
+              ? 'bg-zone-accent text-white shadow-[0_0_12px_color-mix(in_oklch,var(--zone-accent)_40%,transparent)]'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
+          ]"
+          class="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold transition-[background-color,color,box-shadow] duration-150 relative"
           :data-testid="`${testidPrefix}-mode-toggle`"
           type="button"
-          @click="$emit('update:modelValue', 'battle')"
+          @click="!disabledBattle && $emit('update:modelValue', 'battle')"
       >
         <Swords class="size-3.5 shrink-0"/>
         {{ battleLabel }}
-        <span v-if="maxPlayers" class="font-mono text-[9px] opacity-70">{{ maxPlayers }}인</span>
+        <span v-if="disabledBattle" class="rounded bg-muted-foreground/20 px-1 py-0.5 text-[9px] font-bold text-muted-foreground">준비 중</span>
+        <span v-else-if="maxPlayers" class="font-mono text-[9px] opacity-70">{{ maxPlayers }}인</span>
       </button>
     </div>
   </div>
@@ -42,9 +48,12 @@ withDefaults(defineProps<{
   testidPrefix: string
   battleLabel?: string
   maxPlayers?: number
+  disabledBattle?: boolean
+  disabledTooltip?: string
 }>(), {
   battleLabel: '배틀 대결',
   maxPlayers: 5,
+  disabledBattle: false,
 })
 
 defineEmits<{

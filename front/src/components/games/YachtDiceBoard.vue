@@ -281,7 +281,7 @@ const displayDice = computed(() => {
 
 const displayKept = computed(() => {
   if (props.isMulti && !isMyTurn.value) {
-    return remoteKept.value
+    return [false, false, false, false, false]
   }
   return state.value.kept
 })
@@ -358,22 +358,18 @@ async function broadcastTurnState() {
   }
 }
 
-// 주사위 5개 배열 + 5개 고정 상태 -> 정수로 인코딩
-// dinoY = turnIdx * 1000000 + keptMask(0~31) * 100000 + diceNum(5자리)
+// 주사위 5개 배열 -> 정수로 인코딩 (dinoY = turnIdx * 1000000 + diceNum)
 function encodeDiceToDinoY(dice: number[], turnIdx: number): number {
   const diceNum = (!dice || dice.length < 5) ? 0 : dice.reduce((acc, d) => acc * 10 + d, 0)
-  const keptMask = state.value.kept.reduce((acc, k, idx) => acc + (k ? (1 << idx) : 0), 0)
-  return turnIdx * 1000000 + keptMask * 100000 + diceNum
+  return turnIdx * 1000000 + diceNum
 }
 
-// 정수 -> { turnIdx, dice, kept } 로 디코딩
+// 정수 -> { turnIdx, dice } 로 디코딩
 function decodeDinoY(dinoY: number): { turnIdx: number; dice: number[]; kept: boolean[] } {
   const turnIdx = Math.floor(dinoY / 1000000)
-  const rem = dinoY % 1000000
-  const keptMask = Math.floor(rem / 100000)
-  const diceNum = rem % 100000
+  const diceNum = dinoY % 1000000
 
-  const kept = [0, 1, 2, 3, 4].map(idx => (keptMask & (1 << idx)) !== 0)
+  const kept = [false, false, false, false, false]
   if (diceNum === 0) return { turnIdx, dice: [], kept }
 
   const str = String(diceNum).padStart(5, '0')

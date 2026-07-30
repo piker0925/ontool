@@ -1,13 +1,40 @@
 <template>
   <div class="flex flex-col items-center gap-4 py-6">
-    <GameStat v-if="state.status === 'playing'" testid="status" text="지뢰가 아닌 칸을 모두 열어보세요" tone="neutral"/>
-    <GameStat label="경과 시간" testid="elapsed" :value="`${elapsedSeconds}초`"/>
-    <p v-if="state.status === 'playing'" class="text-[11px] text-muted-foreground">칸을 길게 누르면 깃발을 꽂을 수 있어요 (데스크톱은 우클릭)</p>
+    <!-- 난이도 선택기 (초급 / 중급 / 상급) -->
+    <div class="flex items-center gap-2 border border-border/60 bg-muted/30 p-1.5 rounded-xl">
+      <button
+          v-for="d in DIFFICULTIES"
+          :key="d.id"
+          :class="difficulty.id === d.id ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+          class="px-3 py-1 rounded-lg text-xs transition-colors"
+          type="button"
+          @click="selectDifficulty(d)"
+      >
+        {{ d.label }} ({{ d.rows }}×{{ d.cols }})
+      </button>
+    </div>
 
-    <div class="relative">
+    <div class="flex items-center gap-4">
+      <GameStat label="남은 지뢰" testid="remaining-mines" :value="remainingMines"/>
+      <GameStat label="경과 시간" testid="elapsed" :value="`${elapsedSeconds}초`"/>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button
+          :class="flagMode ? 'bg-destructive text-destructive-foreground font-bold shadow-md' : 'bg-muted border border-border text-muted-foreground'"
+          class="px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-colors"
+          type="button"
+          @click="flagMode = !flagMode"
+      >
+        🚩 깃발모드 {{ flagMode ? 'ON' : 'OFF' }}
+      </button>
+      <span class="text-[11px] text-muted-foreground">터치 롱프레스 또는 깃발모드 토글</span>
+    </div>
+
+    <div class="relative overflow-x-auto max-w-full p-2">
       <div
           class="grid gap-1 rounded-xl bg-muted/60 p-2"
-          :style="{gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))`}"
+          :style="{gridTemplateColumns: `repeat(${difficulty.cols}, minmax(0, 1fr))`}"
           data-testid="board"
       >
         <template v-for="(row, r) in state.grid" :key="r">
@@ -15,9 +42,9 @@
               v-for="(cell, c) in row"
               :key="`${r}-${c}-${cell.revealed}-${cell.flagged}`"
               :class="cellClass(cell)"
-              class="flex size-8 items-center justify-center rounded text-[13px] font-bold transition-colors"
+              class="flex size-7 items-center justify-center rounded text-[12px] font-bold transition-colors"
               type="button"
-              @click="onReveal(r, c)"
+              @click="onCellAction(r, c)"
               @click.right.prevent="onFlag(r, c)"
               @contextmenu.prevent
               @touchcancel="onCellTouchEnd"
@@ -31,7 +58,7 @@
         </template>
       </div>
 
-      <GameResultOverlay :restart="props.restart" :show="state.status !== 'playing'" :title="statusText" :tone="resultTone" testid="game-result-overlay">
+      <GameResultOverlay :restart="resetGame" :show="state.status !== 'playing'" :title="statusText" :tone="resultTone" testid="game-result-overlay">
         <span v-if="state.status === 'won'" data-testid="clear-time">{{ elapsedSeconds }}초 만에 클리어했습니다</span>
       </GameResultOverlay>
     </div>
@@ -45,153 +72,136 @@ import {useGameSound} from '../../composables/useGameSound'
 import GameResultOverlay from '../GameResultOverlay.vue'
 import GameStat from '../GameStat.vue'
 
-const ROWS = 9
-const COLS = 9
-const MINE_COUNT = 10
+interface Difficulty {
+  id: string
+  label: string
+  rows: number
+  cols: number
+  mines: number
+}
+
+const DIFFICULTIES: Difficulty[] = [
+  { id: 'easy', label: '초급', rows: 9, cols: 9, mines: 10 },
+  { id: 'medium', label: '중급', rows: 16, cols: 16, mines: 40 },
+  { id: 'hard', label: '상급', rows: 16, cols: 30, mines: 99 }
+]
+
+const difficulty = ref<Difficulty>(DIFFICULTIES[0])
+const flagMode = ref(false)
+
+const props = defineProps<{
+  submitScore?: (score: number) => void
+  restart?: () => void
+  onGameEnd?: () => void
+}>()
+
 const LONG_PRESS_MS = 500
-// 롱프레스 도중 손가락이 이 픽셀만큼 움직이면 스크롤 의도로 보고 깃발 꽂기를 취소한다.
 const TOUCH_MOVE_CANCEL_PX = 10
 
-// 053: 지뢰찾기는 자체 점수 개념이 없으므로 "클리어까지 걸린 시간(ms, 낮을수록 좋음)"을 점수로 쓴다.
-// 컴포넌트가 마운트된 시점을 시작 시각으로 본다 — GamePage가 재시작마다 slot 전체를 재마운트하므로
-// 별도 reset 로직 없이 매 판마다 새로 잰다. elapsedSeconds는 화면 표시용(053 AC: "게임 종료 시 항상
-// 점수 표시") — 1초마다 갱신하고, 게임이 끝나면(승/패 무관) 그 시점의 값에서 멈춘다.
-// 174: onGameEnd는 승/패 모두에서 호출된다(GamePage가 순위표 자동 표시 여부를 판단하는 신호) —
-// submitScore는 승리 시에만 호출되므로 패배(지뢰를 밟음)를 GamePage가 알 수 있는 유일한 통로다.
-const props = defineProps<{ submitScore?: (score: number) => void; restart?: () => void; onGameEnd?: () => void }>()
-const startedAt = Date.now()
+const state = ref<MinesweeperState>(createMinesweeperState(placeMines(difficulty.value.rows, difficulty.value.cols, difficulty.value.mines)))
 const elapsedSeconds = ref(0)
-let tickTimer: ReturnType<typeof setInterval> | null = null
-tickTimer = setInterval(() => {
-  elapsedSeconds.value = Math.floor((Date.now() - startedAt) / 1000)
-}, 1000)
+const {playSuccess, playFail} = useGameSound()
 
-const state = ref<MinesweeperState>(createMinesweeperState(placeMines(ROWS, COLS, MINE_COUNT)))
+let timerId: ReturnType<typeof setInterval> | null = null
+let longPressTimer: ReturnType<typeof setTimeout> | null = null
+let touchStartPos: { x: number; y: number } | null = null
 
-const {playClick, playSuccess, playFail} = useGameSound()
+const remainingMines = computed(() => {
+  let flagged = 0
+  for (const row of state.value.grid) {
+    for (const cell of row) {
+      if (cell.flagged) flagged++
+    }
+  }
+  return difficulty.value.mines - flagged
+})
+
+function selectDifficulty(d: Difficulty) {
+  difficulty.value = d
+  resetGame()
+}
+
+function resetGame() {
+  state.value = createMinesweeperState(placeMines(difficulty.value.rows, difficulty.value.cols, difficulty.value.mines))
+  elapsedSeconds.value = 0
+  if (timerId) clearInterval(timerId)
+  timerId = setInterval(() => {
+    if (state.value.status === 'playing') elapsedSeconds.value++
+  }, 1000)
+}
+
+function onCellAction(r: number, c: number) {
+  if (flagMode.value) {
+    onFlag(r, c)
+  } else {
+    onReveal(r, c)
+  }
+}
 
 function onReveal(r: number, c: number) {
-  if (state.value.status !== 'playing') return
-  // 이 칸을 여는 것으로 곧바로 승패가 갈리면(지뢰를 밟거나 마지막 안전 칸을 열면) 클릭음 대신
-  // watch(status)가 울리는 승리/패배음만 나가도록 한다 — 안 그러면 같은 입력에 소리가 겹친다.
-  const next = reveal(state.value, r, c)
-  state.value = next
-  if (next.status === 'playing') playClick()
+  const before = state.value.status
+  state.value = reveal(state.value, r, c)
+  if (before === 'playing' && state.value.status === 'won') playSuccess()
+  else if (before === 'playing' && state.value.status === 'lost') playFail()
 }
 
 function onFlag(r: number, c: number) {
-  if (state.value.status !== 'playing') return
-  playClick()
   state.value = toggleFlag(state.value, r, c)
 }
 
-// 모바일에는 우클릭이 없으므로 칸을 길게 누르면 깃발을 꽂도록 지원한다.
-// 롱프레스가 발동하면 뒤이어 브라우저가 만들어내는 합성 클릭(reveal 중복 트리거)을 막는다.
-let touchTimer: ReturnType<typeof setTimeout> | null = null
-let touchStartPos: { x: number; y: number } | null = null
-let longPressTriggered = false
-
 function onCellTouchStart(r: number, c: number, e: TouchEvent) {
-  longPressTriggered = false
-  const t = e.touches[0]
-  touchStartPos = {x: t.clientX, y: t.clientY}
-  if (touchTimer) clearTimeout(touchTimer)
-  touchTimer = setTimeout(() => {
-    longPressTriggered = true
+  const touch = e.touches[0]
+  touchStartPos = { x: touch.clientX, y: touch.clientY }
+  if (longPressTimer) clearTimeout(longPressTimer)
+  longPressTimer = setTimeout(() => {
     onFlag(r, c)
+    longPressTimer = null
   }, LONG_PRESS_MS)
 }
 
 function onCellTouchMove(e: TouchEvent) {
-  if (!touchStartPos || !touchTimer) return
-  const t = e.touches[0]
-  const moved = Math.max(Math.abs(t.clientX - touchStartPos.x), Math.abs(t.clientY - touchStartPos.y))
-  if (moved > TOUCH_MOVE_CANCEL_PX) {
-    clearTimeout(touchTimer)
-    touchTimer = null
+  if (!touchStartPos || !longPressTimer) return
+  const touch = e.touches[0]
+  const dist = Math.hypot(touch.clientX - touchStartPos.x, touch.clientY - touchStartPos.y)
+  if (dist > TOUCH_MOVE_CANCEL_PX) {
+    clearTimeout(longPressTimer)
+    longPressTimer = null
   }
 }
 
-function onCellTouchEnd(e: TouchEvent) {
-  if (touchTimer) {
-    clearTimeout(touchTimer)
-    touchTimer = null
+function onCellTouchEnd() {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer)
+    longPressTimer = null
   }
   touchStartPos = null
-  if (longPressTriggered) {
-    e.preventDefault()
-  }
 }
-
-watch(() => state.value.status, (next, prev) => {
-  if (next === prev) return
-  if (next === 'won' || next === 'lost') {
-    if (tickTimer) {
-      clearInterval(tickTimer)
-      tickTimer = null
-    }
-    elapsedSeconds.value = Math.floor((Date.now() - startedAt) / 1000)
-    props.onGameEnd?.()
-  }
-  if (next === 'won') {
-    playSuccess()
-    props.submitScore?.(Date.now() - startedAt)
-  } else if (next === 'lost') {
-    playFail()
-  }
-})
 
 const statusText = computed(() => {
-  if (state.value.status === 'won') return '승리했습니다!'
-  if (state.value.status === 'lost') return '게임 오버'
-  return '지뢰가 아닌 칸을 모두 열어보세요'
+  if (state.value.status === 'won') return '클리어 성공!'
+  if (state.value.status === 'lost') return '지뢰 폭발!'
+  return ''
 })
 
-const resultTone = computed<'win' | 'lose' | 'neutral'>(() => {
-  if (state.value.status === 'won') return 'win'
-  if (state.value.status === 'lost') return 'lose'
-  return 'neutral'
-})
-
-const NUMBER_COLORS: Record<number, string> = {
-  1: 'text-blue-600',
-  2: 'text-emerald-600',
-  3: 'text-red-600',
-  4: 'text-indigo-700',
-  5: 'text-amber-700',
-  6: 'text-cyan-600',
-  7: 'text-foreground',
-  8: 'text-muted-foreground',
-}
+const resultTone = computed(() => (state.value.status === 'won' ? 'win' : 'lose'))
 
 function cellClass(cell: Cell): string {
-  if (!cell.revealed) return 'bg-secondary hover:bg-accent'
-  const revealAnim = 'cell-reveal'
-  if (cell.hasMine) return `bg-destructive/20 ${revealAnim}`
-  return `bg-background border border-border ${revealAnim} ${NUMBER_COLORS[cell.adjacentCount] ?? ''}`
+  if (!cell.revealed) return 'bg-muted-foreground/20 hover:bg-muted-foreground/30'
+  if (cell.hasMine) return 'bg-destructive text-destructive-foreground'
+  return 'bg-background border border-border/40'
 }
+
+resetGame()
+
+watch(() => state.value.status, status => {
+  if (status !== 'playing') {
+    if (timerId) clearInterval(timerId)
+    if (status === 'won') props.submitScore?.(elapsedSeconds.value * 1000)
+    props.onGameEnd?.()
+  }
+})
 
 onUnmounted(() => {
-  if (touchTimer) clearTimeout(touchTimer)
-  if (tickTimer) clearInterval(tickTimer)
+  if (timerId) clearInterval(timerId)
 })
 </script>
-
-<style scoped>
-@media (prefers-reduced-motion: no-preference) {
-  .cell-reveal {
-    animation: cell-reveal 0.15s ease-out both;
-  }
-
-  @keyframes cell-reveal {
-    from {
-      transform: scale(0.7);
-      opacity: 0.4;
-    }
-    to {
-      transform: scale(1);
-      opacity: 1;
-    }
-  }
-}
-</style>

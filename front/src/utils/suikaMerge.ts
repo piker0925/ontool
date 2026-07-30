@@ -130,7 +130,7 @@ export function dropFruit(state: SuikaState, random: () => number = Math.random)
 const GRAVITY = 2200 // px/s^2 (묵직한 현실 물리 중력)
 const RESTITUTION = 0.15 // 바운스 반발력 감소 (묵직한 억제)
 
-export function stepPhysics(state: SuikaState, deltaMs: number, random: () => number = Math.random): SuikaState {
+export function stepPhysics(state: SuikaState, deltaMs: number, _random: () => number = Math.random): SuikaState {
     if (state.status !== 'playing') return state
 
     const dropCooldownMs = Math.max(0, state.dropCooldownMs - deltaMs)

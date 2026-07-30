@@ -1,5 +1,5 @@
 import {computed, ref} from 'vue'
-import {createRoom, joinRoom, leaveRoom, nextRoom, startRoom, submitRoomClick, type RoomParticipant, type RoomRoundResultEntry} from '../api/games'
+import {createRoom, joinRoom, nextRoom, startRoom, submitRoomClick, type RoomParticipant, type RoomRoundResultEntry} from '../api/games'
 import {handleRoundStarted, type MultiplayerRoundState} from '../utils/multiplayerRound'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'

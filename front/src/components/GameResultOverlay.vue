@@ -37,7 +37,7 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, onMounted, onUnmounted, watch} from 'vue'
+import {computed, onMounted, onUnmounted} from 'vue'
 import {RotateCcw} from 'lucide-vue-next'
 
 const props = withDefaults(defineProps<{

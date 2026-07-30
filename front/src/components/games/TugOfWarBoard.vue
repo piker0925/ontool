@@ -185,7 +185,7 @@ const PLAYER_COLORS = ['bg-blue-500', 'bg-emerald-500', 'bg-purple-500', 'bg-amb
 const initialStatus = props.isMulti || consumeGameRetry('game-tug-of-war') ? 'playing' : 'ready'
 const state = ref(createTugState(initialStatus))
 const boardRef = ref<HTMLDivElement | null>(null)
-const {playSuccess, playFail} = useGameSound()
+const {playSuccess} = useGameSound()
 let intervalId: ReturnType<typeof setInterval> | null = null
 
 const otherParticipants = computed(() => {

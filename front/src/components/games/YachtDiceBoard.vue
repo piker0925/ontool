@@ -267,7 +267,6 @@ const isMyTurn = computed(() => {
 })
 
 // 실시간 멀티 동기화 (현재 턴 수행 플레이어의 주사위 및 턴 상태 수신)
-const remoteTurnParticipantId = ref<string | null>(null)
 const remoteDice = ref<number[]>([])
 const remoteKept = ref<boolean[]>([false, false, false, false, false])
 const remoteRerollsLeft = ref<number>(3)

@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest'
-import {createFlappyState, flapBird, FLAPPY_HEIGHT, FLAPPY_WIDTH, startFlappyGame, tickFlappy} from './flappyBird'
+import {createFlappyState, flapBird, FLAPPY_HEIGHT, startFlappyGame, tickFlappy} from './flappyBird'
 
 describe('flappyBird game engine', () => {
     it('초기 상태 생성 시 ready 상태이고 startFlappyGame 시 playing이 된다', () => {

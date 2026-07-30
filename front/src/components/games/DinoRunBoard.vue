@@ -568,6 +568,17 @@ function resetGame() {
   props.restart?.()
 }
 
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyDown)
+  window.addEventListener('keyup', handleKeyUp)
+})
+
+onUnmounted(() => {
+  if (intervalId) clearInterval(intervalId)
+  window.removeEventListener('keydown', handleKeyDown)
+  window.removeEventListener('keyup', handleKeyUp)
+})
+
 let stepCount = 0
 
 function step() {

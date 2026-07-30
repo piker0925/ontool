@@ -70,7 +70,6 @@ const board = ref(shuffle(SIZE))
 const moveCount = ref(0)
 const minMoves = ref(Infinity)
 const solved = computed(() => isSolved(board.value))
-const blankIndex = computed(() => board.value.indexOf(0))
 
 const {playClick, playSuccess} = useGameSound()
 
@@ -216,7 +215,7 @@ function onMouseDown(e: MouseEvent, index: number) {
     dragOffsetY.value = moveEvt.clientY - startY
   }
 
-  const onMouseUp = (upEvt: MouseEvent) => {
+  const onMouseUp = (_upEvt: MouseEvent) => {
     window.removeEventListener('mousemove', onMouseMove)
     window.removeEventListener('mouseup', onMouseUp)
     const isMoved = Math.abs(dragOffsetX.value) > 15 || Math.abs(dragOffsetY.value) > 15

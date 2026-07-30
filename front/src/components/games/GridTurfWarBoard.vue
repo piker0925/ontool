@@ -312,7 +312,7 @@ function sendProgressReport() {
   ).catch(() => {})
 }
 
-function getCellStyle(r: number, c: number, cell: number) {
+function getCellStyle(_r: number, _c: number, cell: number) {
   if (cell === 0) {
     return { backgroundColor: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.03)' }
   }

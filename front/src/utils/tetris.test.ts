@@ -7,9 +7,7 @@ import {
     getGhostY,
     hardDrop,
     moveLeft,
-    moveRight,
-    rotatePiece,
-    tickTetris
+    moveRight
 } from './tetris'
 
 describe('tetris logic engine', () => {

@@ -33,7 +33,7 @@ export function startTugGame(state: TugState): TugState {
     }
 }
 
-export function pullRope(state: TugState, team: 'A' | 'B', nowMs: number = Date.now()): TugState {
+export function pullRope(state: TugState, team: 'A' | 'B', _nowMs: number = Date.now()): TugState {
     if (state.status !== 'playing') return state
     const delta = team === 'A' ? -3 : 3
     const ropePosition = Math.max(-100, Math.min(100, state.ropePosition + delta))
@@ -58,9 +58,6 @@ export function tickTug(state: TugState, deltaMs: number): { nextState: TugState
     const timeLeftMs = Math.max(0, state.timeLeftMs - deltaMs)
     let status: TugStatus = state.status
     let winnerTeam = state.winnerTeam
-
-    const elapsedSec = Math.max(0.2, (10000 - timeLeftMs) / 1000)
-    const cps = Math.round((state.teamAPulls / elapsedSec) * 10) / 10
 
     if (timeLeftMs <= 0 || Math.abs(state.ropePosition) >= 100) {
         status = 'over'

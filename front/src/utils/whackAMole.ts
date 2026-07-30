@@ -10,7 +10,7 @@ export interface WhackAMoleState {
     status: 'playing' | 'over'
 }
 
-export const MOLE_LIFETIME_MS = 1200
+export const MOLE_LIFETIME_MS = 750
 
 export function createWhackAMoleState(holeCount = 9, durationMs = 30000): WhackAMoleState {
     return {

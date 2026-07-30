@@ -1,0 +1,52 @@
+<template>
+  <BattleLobbyShell
+      :game-id="props.gameId"
+      :code="code"
+      :phase="shellPhase"
+      :participants="lobby.participants.value"
+      :is-host="lobby.isHost.value"
+      :error="lobby.error.value"
+      :max-players="5"
+      :countdown="countdown"
+      testid-prefix="code-rain"
+      @create="onCreate"
+      @join="onJoin"
+      @start="onStart"
+  >
+    <CodeRainTypingBoard :code="code ?? undefined" :is-multi="true" :participant-id="lobby.participantId.value || undefined" :room-session-token="lobby.roomSessionToken.value || undefined"/>
+  </BattleLobbyShell>
+</template>
+
+<script lang="ts" setup>
+import {computed, ref, watch} from 'vue'
+import {useRoomLobby} from '../../composables/useRoomLobby'
+import {generateNickname} from '../../utils/randomNickname'
+import {accessToken} from '../../composables/useAuth'
+import BattleLobbyShell from './BattleLobbyShell.vue'
+import CodeRainTypingBoard from './CodeRainTypingBoard.vue'
+
+const props = defineProps<{ gameId: string }>()
+const lobby = useRoomLobby()
+const code = computed(() => lobby.code.value)
+const countdown = ref(3)
+
+const shellPhase = computed(() => {
+  if (!code.value) return 'lobby' as const
+  const p = lobby.round.value.phase
+  if (p === 'lobby') return 'lobby' as const
+  if (p === 'countdown') return 'countdown' as const
+  return 'playing' as const
+})
+
+watch(() => lobby.round.value.phase, (p) => {
+  if (p === 'countdown') {
+    countdown.value = 3
+    const t = setInterval(() => { countdown.value--; if (countdown.value <= 0) clearInterval(t) }, 1000)
+  }
+})
+
+function guestOrRealNickname() { return accessToken.value ? undefined : generateNickname() }
+async function onCreate() { try { await lobby.create(props.gameId, guestOrRealNickname()) } catch {} }
+async function onJoin(inputCode: string) { if (!inputCode) return; try { await lobby.join(props.gameId, inputCode, guestOrRealNickname()) } catch {} }
+async function onStart() { await lobby.startRound(props.gameId) }
+</script>
